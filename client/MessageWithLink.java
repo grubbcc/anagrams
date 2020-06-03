@@ -1,7 +1,7 @@
 /**
+* Just like it says, a MessagePane with a hyperlink.
 * Adapted from Jean-Marc Astesana's answer at https://stackoverflow.com/a/33446134/3736508
 */
-
 
 import java.awt.Color;
 import java.awt.Font;
@@ -15,12 +15,16 @@ import java.net.URI;
 
 public class MessageWithLink extends JEditorPane {
 
-    public MessageWithLink(String htmlBody) {
-        super("text/html", "<html><body style=\"" + getStyle() + "\"><p>" + htmlBody + "</p></body></html>");
-        addHyperlinkListener(new HyperlinkListener() {
-            @Override
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
+	/**
+	*
+	*/
+
+	public MessageWithLink(String htmlBody) {
+		super("text/html", "<html><body style=\"" + getStyle() + "\"><p>" + htmlBody + "</p></body></html>");
+		addHyperlinkListener(new HyperlinkListener() {
+			@Override
+			public void hyperlinkUpdate(HyperlinkEvent e) {
+				if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
 
 					try	{
 						URI uri = new URI(e.getURL().toString());
@@ -31,25 +35,29 @@ public class MessageWithLink extends JEditorPane {
 					catch (Exception e2) {
 						e2.printStackTrace();
 					}
-                }
-            }
-        });
-        setEditable(false);
-        setBorder(null);
-    }
+				}
+			}
+		});
+		setEditable(false);
+		setBorder(null);
+	}
+	
+	/**
+	*
+	*/
 
-    static StringBuffer getStyle() {
-        // for copying style
-        JLabel label = new JLabel();
-        Font font = label.getFont();
-        Color color = label.getBackground();
+	static StringBuffer getStyle() {
+		// for copying style
+		JLabel label = new JLabel();
+		Font font = label.getFont();
+		Color color = label.getBackground();
 
-        // create some css from the label's font
-        StringBuffer style = new StringBuffer("font-family:" + font.getFamily() + ";");
-        style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
-        style.append("font-size:" + font.getSize() + "pt;");
+		// create some css from the label's font
+		StringBuffer style = new StringBuffer("font-family:" + font.getFamily() + ";");
+		style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+		style.append("font-size:" + font.getSize() + "pt;");
 		style.append("text-align:center;");
-        style.append("background-color: rgb("+color.getRed()+","+color.getGreen()+","+color.getBlue()+");");
-        return style;
-    }
+		style.append("background-color: rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ");");
+		return style;
+	}
 }
