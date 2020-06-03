@@ -1,3 +1,8 @@
+/**
+* Adapted from Jean-Marc Astesana's answer at https://stackoverflow.com/a/33446134/3736508
+*/
+
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Desktop;
