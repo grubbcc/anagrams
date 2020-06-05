@@ -6,13 +6,6 @@
 * show time remaining and names of players on game panes
 */
 
-import java.net.Socket;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,9 +13,12 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+import java.io.*;
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
+import javax.sound.sampled.*;
+import java.net.Socket;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,7 +30,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 //	private final String serverName = "localhost"; //connect to this computer
 	private final static int port = 8118;
 	private final static int testPort = 8117;
-	public final String version = "0.9.1";
+	public final String version = "0.9.2";
 	
 	private Socket socket;
 	private InputStream serverIn;
@@ -74,7 +70,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				else if(args[0].equals("test")) {
 					new AnagramsClient(testPort).setVisible(true);
 				}
-
 			}
 		});
 	}
@@ -91,8 +86,8 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		setBackground(Color.BLUE);
 
 		//exit the program when the user presses ESC or CTRL + W
-		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_FOCUSED);
-		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_FOCUSED);
+		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		
 		createGameButton.addActionListener(this);
 		menu = new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
@@ -117,6 +112,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		playersPanel.add(playersTextArea);
 		
 		//chat pane
+		chatScrollPane.setPreferredSize(new Dimension(600, 100));
 		chatPanel.setBackground(Color.WHITE);
 		chatBox.setLineWrap(true);
 		chatBox.setEditable(false);
@@ -126,8 +122,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		chatField.setBackground(Color.LIGHT_GRAY);
 		chatPanel.add(chatBox);
 		handleChat("<------------------------------------------------------------------------Chat------------------------------------------------------------------------>");
-
-
 		chatPanel.add(chatField, BorderLayout.SOUTH);
 
 		//main panel
@@ -156,7 +150,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	}
 
 
-
 	/**
 	* 
 	*/
@@ -182,7 +175,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	*
 	*/
 
-	void addGame(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsWatchers) {
+	void addGame(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
 
 		JPanel gamePane = new JPanel(new GridLayout(4, 2, 10, 10));
 		gamePane.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -198,7 +191,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 						dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
 						dictionary = dictionaries.get(lexicon);
 						
-						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty)));
+						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat)));
 						send("joingame " + gameID + " " + username);
 					}
 				}
@@ -214,7 +207,10 @@ public class AnagramsClient extends JFrame implements ActionListener {
 					@Override
 					public void actionPerformed(ActionEvent evt) {
 						if(!gameWindows.containsKey(gameID)) {
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength)));
+							dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
+							dictionary = dictionaries.get(lexicon);	
+							
+							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat)));
 							send("watchgame " + gameID + " " + username);
 						
 						}
@@ -233,7 +229,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 		//this is probably way more convluted than it needs to be
 		boolean placed = false;
-		System.out.println(addresses.size());
 		for(JPanel row : addresses.keySet()) {
 			if(addresses.get(row).size() < 2) {
 				row.add(gamePane);
@@ -251,18 +246,21 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 			nextRow.add(gamePane);
 			gamesPanel.add(nextRow);
-			System.out.println("adding new row");
-			
 		}
 		
 		revalidate();
 	}
 	
 	/**
+	* Inform the server that the player is no longer an active part of the specified game.
 	*
+	* @param String gameID the game to exit
+	* @param boolean isWatcher whether the player is watching
 	*/
 	
 	void exitGame(String gameID, boolean isWatcher) {
+
+		gameWindows.remove(gameID);
 
 		if(isWatcher) {
 			send("stopwatching " + gameID);
@@ -381,7 +379,19 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						for(String player : playersList)
 							players += player + "\n ";
 						playersTextArea.setText(players);
-						getContentPane().revalidate();
+						if(isFocused()) {
+							try {
+								InputStream audioSource = getClass().getResourceAsStream("new player sound.wav");
+								InputStream audioBuffer = new BufferedInputStream(audioSource);
+								AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
+								Clip clip = AudioSystem.getClip();
+								clip.open(audioStream);
+								clip.start();
+							}
+							catch(Exception e) {
+								System.out.println(e.toString());
+							}
+						}
 					}
 					else if(cmd.equals("removeplayer")) {
 						playersList.remove(tokens[1]);
@@ -395,7 +405,7 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						handleChat(line.replaceFirst("chat ", ""));
 					}
 					else if(cmd.equals("addgame")) {
-						addGame(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens[7], tokens[8]);
+						addGame(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens[7], tokens[8], tokens[9]);
 					}
 					else if (cmd.equals("logoff")) {
 						bufferedIn.close();
@@ -440,18 +450,21 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						}
 						else if(cmd.equals("leavegame")) {
 							gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-							if(tokens[2].equals(username)) {
-								gameWindows.remove(tokens[1]);
-							}
+//							if(tokens[2].equals(username)) {
+//								gameWindows.remove(tokens[1]);
+//							}
 						}
 						else if(cmd.equals("watchgame")) {
 							gameWindows.get(tokens[1]).addWatcher(tokens[2]);
 						}
 						else if(cmd.equals("unwatchgame")) {
 							gameWindows.get(tokens[1]).removeWatcher(tokens[2]);
-							if(tokens[2].equals(username)) {
-								gameWindows.remove(tokens[1]);
-							}
+//							if(tokens[2].equals(username)) {
+//								gameWindows.remove(tokens[1]);
+//							}
+						}
+						else if(cmd.equals("gamechat")) {
+							gameWindows.get(tokens[1]).handleChat((line.split(tokens[1]))[1]);
 						}
 
 					}
