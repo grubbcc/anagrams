@@ -1,6 +1,11 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
+import javax.sound.sampled.*;
+import javax.swing.text.DefaultEditorKit;;
+import javax.swing.border.EmptyBorder;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.HashMap;
@@ -13,20 +18,25 @@ import java.util.ArrayList;
 
 class GameWindow extends JDialog implements ActionListener {
 
+	private JPanel controlPanel = new JPanel();
 	private JLabel notificationArea = new JLabel("New Game");
 	private JButton exitGameButton = new JButton("Exit Game");	
 	private JTextField textField = new JTextField("", 35);
+	private JPanel chatPanel = new JPanel(new BorderLayout());
+	private JScrollPane chatScrollPane = new JScrollPane(chatPanel);
+	private JTextArea chatBox = new JTextArea(5, 100);	
 
 	private GridBagLayout boardLayout = new GridBagLayout();
 	private GridBagConstraints constraints = new GridBagConstraints();;
 	private JPanel boardPanel = new JPanel();
 	private ArrayList<GamePanel> gamePanels = new ArrayList<GamePanel>();
+	private GamePanel homePanel = new GamePanel();
 	private WordExplorer explorer;
 	
 	private final AnagramsClient client;
 	final String gameID;
 	private final String username;
-	public final boolean isWatcher;
+	public boolean isWatcher;
 	private int minLength;
 	private int blankPenalty;	
 	private String tilePool = "";
@@ -41,7 +51,7 @@ class GameWindow extends JDialog implements ActionListener {
 	* Constructor for watching
 	*/
 	
-	GameWindow(AnagramsClient client, String gameID, String username, int minLength) {
+	GameWindow(AnagramsClient client, String gameID, String username, int minLength, boolean allowsChat) {
 		super(client);
 
 		this.client = client;
@@ -56,16 +66,13 @@ class GameWindow extends JDialog implements ActionListener {
 		//register keyboard closing actions.
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);		
-
 		explorer = new WordExplorer(client.dictionary);
 	
-		setSize(900, 800);
+		setSize(1000, 700);
 		setLocation(client.getX() + 10, client.getY() + 20);
 		setLayout(new BorderLayout());
 	
 		exitGameButton.addActionListener(this);
-		textField.addActionListener(this);
-		JPanel controlPanel = new JPanel();
 		boardPanel.setBackground(new Color(0, 255, 51));
 		controlPanel.add(notificationArea);
 		controlPanel.add(exitGameButton);
@@ -84,10 +91,26 @@ class GameWindow extends JDialog implements ActionListener {
 		makeComponent(1, 1, new TilePanel());
 		makeComponent(2, 1, new GamePanel());
 		constraints.gridwidth = 3;
-		makeComponent(0, 2, new GamePanel());
+		makeComponent(0, 2, homePanel);
 		
 		mainPanel.add(controlPanel, BorderLayout.PAGE_START);
 		mainPanel.add(boardPanel);
+
+		//chat pane
+		if(allowsChat) {
+			chatScrollPane.setPreferredSize(new Dimension(600, 85));
+			chatPanel.setBackground(Color.WHITE);
+			chatBox.setLineWrap(true);
+			chatBox.setEditable(false);
+			JTextField chatField = new JTextField("", 85);		
+			chatField.addActionListener(ae -> {client.send("gamechat " + gameID + " " + username + ": " + chatField.getText()); chatField.setText("");});
+			chatField.setBorder(new EmptyBorder(1,1,1,1));
+			chatField.setBackground(Color.LIGHT_GRAY);
+			chatPanel.add(chatBox);
+			handleChat(" ");
+			chatPanel.add(chatField, BorderLayout.SOUTH);
+			mainPanel.add(chatScrollPane, BorderLayout.PAGE_END);
+		}
 
 		revalidate();
 		setVisible(true);
@@ -103,81 +126,37 @@ class GameWindow extends JDialog implements ActionListener {
 	* Constructor for playing
 	*/
 	
-	GameWindow(AnagramsClient client, String gameID, String username, int minLength, int blankPenalty) {
+	GameWindow(AnagramsClient client, String gameID, String username, int minLength, int blankPenalty, boolean allowsChat) {
+		this(client, gameID, username, minLength, allowsChat);
 
-		super(client);
-
-		this.client = client;
-		this.gameID = gameID;
-		this.username = username;
-		this.minLength = minLength;
-		this.blankPenalty = blankPenalty;
 		isWatcher = false;
+		this.blankPenalty = blankPenalty;
 
-		JPanel mainPanel = new JPanel();
-		setContentPane(mainPanel);		
-		
-		//register keyboard closing actions.
-		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
-		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);		
-
-		explorer = new WordExplorer(client.dictionary);
-		
-		setSize(900, 700);
-		setLocation(client.getX() + 10, client.getY() + 20);
-		setLayout(new BorderLayout());
-	
-		exitGameButton.addActionListener(this);
 		textField.addActionListener(this);
-		JPanel controlPanel = new JPanel();
-		boardPanel.setBackground(new Color(0, 255, 51));
+		textField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new MyDeletePrevCharAction());
+		controlPanel.add(textField);		
 
-		controlPanel.add(notificationArea);
-		controlPanel.add(exitGameButton);
-		controlPanel.add(textField);
-		controlPanel.setBackground(new Color(0, 255, 51));
-		
-		boardPanel.setLayout(boardLayout);
-		boardPanel.setBackground(new Color(0, 255, 51));
-		boardLayout.columnWeights = new double[] {1,1,1};
-		boardLayout.rowWeights = new double[] {1,1,1};
-		constraints.fill = GridBagConstraints.BOTH;
-		
-		makeComponent(0, 0, new GamePanel());
-		makeComponent(1, 0, new GamePanel());
-		makeComponent(2, 0, new GamePanel());
-		makeComponent(0, 1, new GamePanel());
-		makeComponent(1, 1, new TilePanel());
-		makeComponent(2, 1, new GamePanel());
-		constraints.gridwidth = 3;
-		makeComponent(0, 2, new GamePanel(username));
-		
-		mainPanel.add(controlPanel, BorderLayout.PAGE_START);
-		mainPanel.add(boardPanel);
-
-		setVisible(true);
-		
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				client.exitGame(gameID, isWatcher);							
-			}
-		});
+		homePanel.takeSeat(username);
 	}
 	
 
 	/**
+	* Sets the GridBagConstraints for the JPanel to be added to the mainPanel
 	*
+	* @param xCoord the horizontal position of the panel in the GridBagLayout scheme
+	* @param int yCoord vertical position of the panel in the GridBagLayout scheme
+	* @param JComponent panel The gamePanel or tilePanel to be added
 	*/
 
-	public void makeComponent(int x, int y, JComponent c) {
+	public void makeComponent(int xCoord, int yCoord, JComponent panel) {
 
-		constraints.gridx = x;
-		constraints.gridy = y;
+		constraints.gridx = xCoord;
+		constraints.gridy = yCoord;
 		constraints.insets = new Insets(3, 3, 3, 3);
 		constraints.anchor = GridBagConstraints.WEST;
-		boardLayout.setConstraints(c, constraints);
-		c.setBackground(Color.GREEN);
-		boardPanel.add(c);
+		boardLayout.setConstraints(panel, constraints);
+		panel.setBackground(new Color(166, 180, 216));
+		boardPanel.add(panel);
 	}
 	
 	/**
@@ -247,24 +226,17 @@ class GameWindow extends JDialog implements ActionListener {
 			playerNameLabel.setFont(new Font("SansSerif", Font.PLAIN, 24));
 			playerScore.setFont(new Font("SansSerif", Font.PLAIN, 24));
 			
-			infoPane.setBackground(Color.GREEN);			
+			infoPane.setBackground(new Color(166, 180, 216));			
 			infoPane.add(playerNameLabel);
 			infoPane.add(playerScore);
 			
-			wordPane.setBackground(Color.GREEN);
+			wordPane.setBackground(new Color(166, 180, 216));
 		}
 		
 		/**
-		* A gamePanel with a player seated
-		*/
-		
-		GamePanel(String playerName) {
-			this();
-			takeSeat(playerName);
-		}
-		
-		/**
+		* Puts the given player's name on this panel and displays their score.
 		*
+		* @param newPlayer The player to be added.
 		*/
 		
 		public void takeSeat(String newPlayer) {
@@ -274,7 +246,9 @@ class GameWindow extends JDialog implements ActionListener {
 			if(playerName.startsWith("Robot")) {		
 				playerNameLabel.setIcon(robotIcon);
 			}
-			playerScore.setText("          0");
+			if(words.isEmpty() ) {
+				playerScore.setText("          0");
+			}
 			isOccupied = true;
 			isAvailable = false;
 			revalidate();
@@ -282,7 +256,8 @@ class GameWindow extends JDialog implements ActionListener {
 		}
 		
 		/**
-		*
+		* The player has left this seat. If they have any words, they remain. 
+		* Otherwise, the seat becomes available for another player.
 		*/
 		
 		public void abandonSeat() {
@@ -320,9 +295,19 @@ class GameWindow extends JDialog implements ActionListener {
 			playerScore.setText("          " + score);
 
 			validate();
-			revalidate();
-			repaint();
-		}	
+
+			try {
+				InputStream audioSource = getClass().getResourceAsStream("steal sound.wav");
+				InputStream audioBuffer = new BufferedInputStream(audioSource);
+				AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
+				Clip clip = AudioSystem.getClip();
+				clip.open(audioStream);
+				clip.start();
+			}
+			catch(Exception e) {
+				System.out.println(e.toString());
+			}
+		}
 	
 		/**
 		* Remove a word from the player's collection and reclalculate their score.
@@ -354,7 +339,7 @@ class GameWindow extends JDialog implements ActionListener {
 		
 		
 		/**
-		*
+		* A clickable object that displays a word
 		*/
 		
 		class WordLabel extends JPanel {
@@ -369,9 +354,16 @@ class GameWindow extends JDialog implements ActionListener {
 				this.word = word;
 				length = 4 + 18*word.length();
 				setPreferredSize(new Dimension(length, height));
-				setBackground(Color.GREEN);
+				setBackground(new Color(166, 180, 216));
 		
 				MouseListener mouseListener = new MouseAdapter() {
+					
+					/**
+					* Displays possible steals for this word.
+					*
+					* MouseEvent e A click in this panel.
+					*/
+					
 					public void mousePressed(MouseEvent e) {
 						if(gameOver || isWatcher) {
 
@@ -379,7 +371,6 @@ class GameWindow extends JDialog implements ActionListener {
 							explorer.setVisible(true);
 						}
 					}
-					
 				};
 				addMouseListener(mouseListener);
 				
@@ -387,7 +378,7 @@ class GameWindow extends JDialog implements ActionListener {
 			}
 			
 			/**
-			*
+			* Draws a word, showing blanks as red and regular tiles as black.
 			*/
 
 			public void paintComponent(Graphics g) {
@@ -416,7 +407,9 @@ class GameWindow extends JDialog implements ActionListener {
 	
 	
 	/**
+	* Displays messages from the server such as the time remaining.
 	*
+	* @param nextMessage The message to be displayed.
 	*/
 	
 	public void setNotificationArea(String nextMessage) {
@@ -425,7 +418,9 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Updates the tilePool
 	*
+	* @param String nextTiles The new contents of the tilePool.
 	*/
 	
 	public void setTiles(String nextTiles) {
@@ -438,6 +433,8 @@ class GameWindow extends JDialog implements ActionListener {
 	/**
 	* If the player already has words at this table, the player claims them.
 	* Otherwise, the player takes the next available seat, if there is one.
+	*
+	* @param String playerName the player to be added.
 	*/
 
 	public void addPlayer(String playerName) {
@@ -457,7 +454,10 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Places the given word in the panel occupied by the given player.
 	*
+	* @param String playerName The player that has claimed the new word
+	* @param String wordToAdd The new word that the player has created
 	*/
 	
 	public void addWord(String playerName, String wordToAdd) {
@@ -466,7 +466,10 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Removes the given word from the given player from whom it has been stolen.
 	*
+	* @param String playerName the player whose word has been stolen
+	* @param String the stolen word
 	*/
 	
 	public void removeWord(String playerName, String wordToRemove) {
@@ -475,7 +478,10 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Removes the named player from their current seat. Their words, if any, remain to be
+	* reclaimed if the player returns.
 	*
+	* @param String playerToRemove The name of the player to remove.
 	*/
 	
 	public void removePlayer(String playerToRemove) {
@@ -485,7 +491,9 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Adds the named watcher to list of watchers
 	*
+	* @param String watcherName the name of the watcher to add
 	*/
 
 	public void addWatcher(String watcherName) {
@@ -493,7 +501,9 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Removed the named watcher from the list of watchers
 	*
+	* @param String watcherToRemove the name of the player to remove
 	*/
 	
 	public void removeWatcher(String watcherToRemove) {
@@ -504,7 +514,25 @@ class GameWindow extends JDialog implements ActionListener {
 	
 
 	/**
+	* Displays the new chat message (and sender) in the chat box and automatically scrolls to view
+	* 
+	* @param String msg The message to display.
+	*/
+	
+	public void handleChat(String msg) {
+		chatBox.append("\n" + msg);
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
+			}
+		});
+	}
+
+	/**
+	* Responds to button clicks and textField entries
 	*
+	* @param ActionEvent evt
 	*/
 	
 	public void actionPerformed(ActionEvent evt) {
@@ -624,7 +652,11 @@ class GameWindow extends JDialog implements ActionListener {
 	}
 	
 	/**
+	* Given a word, determines whether the appropriate tiles can be found in the pool. If so, true is returned
+	* and an instruction is sent to the server that the tiles should be removed and the current player should 
+	* claim them.
 	*
+	* @param String entry The word that was entered.
 	*/
 
 	private boolean attemptMakeWord(String entry) {
