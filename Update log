@@ -1,5 +1,15 @@
 Update log
 
+0.9.3
+*
+* The game ends immediately and goes to analysis mode if the tile bag and tile pool are both empty.
+* Added NWL18 definitions
+* Players may now select minimum word length of 4 or 5.
+* Game notifications are now displayed in the main screen.
+* You can now resume a game after leaving or getting connected. The game will automatically delete if there is no activity after one minute.
+* Improved robot loading speed
+*
+
 0.9.2
 * Fixed bug where watcher would sometimes fail to load dictionary
 * Added chat to the game window
@@ -9,13 +19,10 @@ Update log
 *
 
 0.9.1
-*You can no longer make a word if it is already on the board
-*Fixed a bug that would sometimes cause socket errors if you quit the application with a game open
-*Created a warning panel that informs the player when their version is out of date
-*Fixed a bug that would cause player names not to be removed if they disconnected unexpectedly
-*Improved the way that game panes tile on the main screen
-*Switched the server to run on Dynamic DNS
-*Adjusted Robot settings to better match their names
-
-
-
+* You can no longer make a word if it is already on the board
+* Fixed a bug that would sometimes cause socket errors if you quit the application with a game open
+* Created a warning panel that informs the player when their version is out of date
+* Fixed a bug that would cause player names not to be removed if they disconnected unexpectedly
+* Improved the way that game panes tile on the main screen
+* Switched the server to run on Dynamic DNS
+* Adjusted Robot settings to better match their names
