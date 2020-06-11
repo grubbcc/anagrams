@@ -1,16 +1,3 @@
-/****
-*
-* A utility allowing the user to create new WordTrees and read definitions
-*
-* TO DO: make it so the scrollbar appears only on the TreePanel
-*		 put everything in a package, make jar file, etc
-*
-* 2) scroll to top when new wordlist created
-* 3) allow user to choose between extensions or steals
-* 4) make messagepane scrollable when number of steals is large
-*
-*****/
-
 import java.awt.Point;
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -27,9 +14,19 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Enumeration;
 import java.io.*;
-//import javax.swing.filechooser.FileNameExtensionFilter;
 
-
+/****
+*
+* A utility allowing the user to create new WordTrees and read definitions
+*
+* TO DO: make it so the scrollbar appears only on the TreePanel
+*		 put everything in a package, make jar file, etc
+*
+* 2) scroll to top when new wordlist created
+* 3) allow user to choose between extensions or steals
+* 4) make messagepane scrollable when number of steals is large
+*
+*****/
 
 public class WordExplorer extends JDialog implements ActionListener {
 
@@ -37,7 +34,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 	private JTextField textField = new JTextField("", 15);
 	private JButton goButton = new JButton("Go");
 	private JComboBox<String> lexiconSelector;
-	private String[] lexicons = {"CSW19", "NWL2018", "LONG"};	
+	private String[] lexicons = {"CSW19", "NWL18", "LONG"};	
 	private TreeMap<String, AlphagramTrie> tries = new TreeMap<String, AlphagramTrie>();
 	private WordTree tree;
 	private JTextArea messagePane = new JTextArea();
@@ -49,7 +46,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 
 	
 	/**
-	* Create a WordExplorer using the default lexicon
+	* Create a WordExplorer using the given lexicon
 	*/
 		
 	public WordExplorer(AlphagramTrie trie) {
@@ -161,13 +158,37 @@ public class WordExplorer extends JDialog implements ActionListener {
 		setUpMessagePane();
 		
 	}
+	
+	/**
+	*
+	*/
+	
+	public void lookUp(String query, String tilePool) {
+		treePanel.removeAll();
+		tree = new WordTree(new DefaultMutableTreeNode(new UserObject(query.toUpperCase(), "")), tries.get(lexicon));
+		setUpTree();
+		
+		messagePanel.removeAll();
+
+		if(tree.root.getChildCount() > 0) {
+			messagePane.setText("");
+			messagePanel.add(tree.treeSummary(), BorderLayout.LINE_END);
+		}
+		else {
+			messagePane.setText("This word cannot be stolen.");
+
+		}
+		messagePanel.revalidate();
+		setUpMessagePane();		
+		
+	}
 
 	
 	/**
 	*
 	*/
 
-	public class TooltipTreeRenderer  extends DefaultTreeCellRenderer  {	
+	public class ToolTipTreeRenderer  extends DefaultTreeCellRenderer  {	
 		@Override
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			final Component rc = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);		
@@ -176,7 +197,13 @@ public class WordExplorer extends JDialog implements ActionListener {
 				Object object = ((DefaultMutableTreeNode) value).getUserObject();
 				if (object instanceof UserObject) {
 					UserObject uo = (UserObject) object;
-					this.setToolTipText(uo.getTooltip());
+					if(!uo.getToolTip().isEmpty()) {
+						this.setToolTipText(uo.getToolTip());
+					}
+					else {
+						System.out.println("nullify");
+						this.setToolTipText(null);
+					}
 				}
 			}
  			
@@ -195,7 +222,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 		tree.expandRow(0);
 
 		//add tool tips
-		tree.setCellRenderer(new TooltipTreeRenderer());
+		tree.setCellRenderer(new ToolTipTreeRenderer());
 		javax.swing.ToolTipManager.sharedInstance().registerComponent(tree);
 
 		//find steals of selected node when user pressers enter
@@ -231,7 +258,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 			}
 		};
 
-		//find steals of node when node is double-clicked
+		//respond to mouse actions
 		MouseListener mouseListener = new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
 				int selRow = tree.getRowForLocation(e.getX(), e.getY());
@@ -239,19 +266,18 @@ public class WordExplorer extends JDialog implements ActionListener {
 				if(selRow != -1) {
 					String selectedWord = selPath.getLastPathComponent().toString();
 
+					//allow user to save list on right click
 					if (SwingUtilities.isRightMouseButton(e)) {
-						
-							doPop(e);
- 
+						doPop(e);
 					}
+					
+					//find steals of selected node on double-click
 					else if(e.getClickCount() == 2) {
 						textField.setText(selectedWord);
 						goButton.doClick();
 					}			
 				}					
-			}
-			
-			
+			}		
 		};
 		
 		tree.addKeyListener(keyListener);		
