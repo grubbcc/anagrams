@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 /***
 *
+* Handles tasks for the client on the server side.
 */
 
 public class ServerWorker extends Thread {
@@ -43,8 +44,9 @@ public class ServerWorker extends Thread {
 			handleClientSocket();
 		}
 		catch (IOException e) {
+			
 			System.out.println(username + " has unexpectedly disconnected.");
-
+			e.printStackTrace();
 			//attempt to reconnect
 			try {
 				for(Game game : server.getGames()) {
@@ -103,28 +105,28 @@ public class ServerWorker extends Thread {
 					server.broadcast(line);
 				}
 				else if(cmd.equals("gamechat")) {
-					server.gameList.get(tokens[1]).handleChat(line);
+					server.getGame(tokens[1]).handleChat(line);
 				}
 				else if(cmd.equals("newgame")) {
 					handleCreateGame(tokens);			
 				}
 				else if(cmd.equals("joingame")) {
-					server.gameList.get(tokens[1]).addPlayer(this);
+					server.getGame(tokens[1]).addPlayer(this);
 				}
 				else if(cmd.equals("watchgame")) {
-					server.gameList.get(tokens[1]).addWatcher(this);
+					server.getGame(tokens[1]).addWatcher(this);
 				}
 				else if(cmd.equals("exitgame")) {
-					server.gameList.get(tokens[1]).removePlayer(this);
+					server.getGame(tokens[1]).removePlayer(this);
 				}
 				else if(cmd.equals("stopwatching")) {
-					server.gameList.get(tokens[1]).removeWatcher(this);
+					server.getGame(tokens[1]).removeWatcher(this);
 				}
 				else if(cmd.equals("makeword")) {
-					server.gameList.get(tokens[1]).doMakeWord(tokens[2], tokens[3]);
+					server.getGame(tokens[1]).doMakeWord(tokens[2], tokens[3]);
 				}
 				else if(cmd.equals("steal")) {
-					server.gameList.get(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
+					server.getGame(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
 				}
 				else {	
 					System.out.println("Error: Command not recognized: " + line);
@@ -248,7 +250,9 @@ public class ServerWorker extends Thread {
 	}
 	
 	/**
+	* Inform the player about events happening on the server
 	*
+	* @param String msg The message to be sent.
 	*/
 	
 
@@ -264,6 +268,7 @@ public class ServerWorker extends Thread {
 			try {
 				for(Game game : server.getGames()) {
 					game.removePlayer(this);
+					game.removeWatcher(this);
 				}
 
 				outputStream.flush();
