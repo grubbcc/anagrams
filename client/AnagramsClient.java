@@ -3,7 +3,7 @@
 * To do: 
 * animate steals
 * read a default lexicon from file and load on startup
-* show time remaining and names of players on game panes
+*
 */
 
 import java.util.Vector;
@@ -25,12 +25,10 @@ import java.awt.event.ActionListener;
 
 public class AnagramsClient extends JFrame implements ActionListener {
 
-	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
-//	private final String serverName = "192.168.0.11"; //connect over home network
-//	private final String serverName = "localhost"; //connect to this computer
-	private final static int port = 8118;
-	private final static int testPort = 8117;
-	public final String version = "0.9.2";
+	private final String serverName = "localhost"; //connect to this computer
+	private final static int port = 10011;
+	private final static int testPort = 10010;
+	public final String version = "0.9.3";
 	
 	private Socket socket;
 	private InputStream serverIn;
@@ -49,7 +47,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	private JTextArea chatBox = new JTextArea(5, 100);
 
 	private HashMap<String, GameWindow> gameWindows = new HashMap<String, GameWindow>();
-	private HashMap<String, JPanel> gamePanes = new HashMap<String, JPanel>();
+	private HashMap<String, GamePane> gamePanes = new HashMap<String, GamePane>();
 	private LinkedHashMap<JPanel, Vector<String>> addresses = new LinkedHashMap<JPanel, Vector<String>>();
 	
 	public String username;
@@ -80,7 +78,8 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 	public AnagramsClient(int port) {
 		System.out.println("Welcome to Anagrams!");
-		setSize(800, 500);
+		setSize(790, 500);
+		setMinimumSize(new Dimension(790,400));
 		if(port == 8117) setTitle("Anagrams (testing mode)");
 		else setTitle("Anagrams");
 		setBackground(Color.BLUE);
@@ -93,7 +92,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		menu = new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
 		
 		//games pane
-        JScrollPane gamesScrollPane = new JScrollPane(gamesPanel);
+		JScrollPane gamesScrollPane = new JScrollPane(gamesPanel);
 		gamesPanel.setLayout(new BoxLayout(gamesPanel, BoxLayout.Y_AXIS));
 		JPanel firstRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
 		gamesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -130,7 +129,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		getContentPane().add(playersScrollPane, BorderLayout.EAST);
 		getContentPane().add(chatScrollPane, BorderLayout.SOUTH);
         
-
 		//load default dictionary from player profile
 
 		addWindowListener(new WindowAdapter() {
@@ -164,91 +162,141 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 	public void actionPerformed(ActionEvent evt) {
 		if (evt.getSource() == createGameButton) {
-			menu.setVisible(true);
+			if(gameWindows.size() < 4) { //maximum of 4 windows open at a time
+				menu.setVisible(true);
+			}
 		}
 		repaint();
 	}
-
-
 	
-	/**
-	*
+	/***
+	* A display for information and controls related to a game
 	*/
 
-	void addGame(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
 
-		JPanel gamePane = new JPanel(new GridLayout(4, 2, 10, 10));
-		gamePane.setBorder(new EmptyBorder(10, 10, 10, 10));
-		gamePanes.put(gameID, gamePane);
-
-		//join button
-		JButton joinButton = new JButton("Join game");
-		joinButton.addActionListener(
-			new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent evt) {
-					if(!gameWindows.containsKey(gameID)) {
-						dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
-						dictionary = dictionaries.get(lexicon);
-						
-						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat)));
-						send("joingame " + gameID + " " + username);
-					}
-				}
-			}
-		);
-		gamePane.add(joinButton);
+	class GamePane extends JPanel {
 		
-		//watch button
-		if(Boolean.parseBoolean(allowsWatchers)) {
-			JButton watchButton = new JButton("Watch");
-			watchButton.addActionListener(
+		JLabel notificationLabel = new JLabel();
+		
+		GamePane(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
+			setLayout(new GridLayout(4, 2, 10, 10));
+			setPreferredSize(new Dimension(300,150));
+			setBorder(new EmptyBorder(10, 10, 10, 10));
+			gamePanes.put(gameID, this);			
+		
+			//join button
+			JButton joinButton = new JButton("Join game");
+			joinButton.addActionListener(
 				new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent evt) {
 						if(!gameWindows.containsKey(gameID)) {
 							dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
-							dictionary = dictionaries.get(lexicon);	
+							dictionary = dictionaries.get(lexicon);
 							
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat)));
-							send("watchgame " + gameID + " " + username);
-						
+							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat)));
+							send("joingame " + gameID + " " + username);
 						}
 					}
 				}
-			);	
-			gamePane.add(watchButton);
+			);
+			add(joinButton);	
+			
+			//watch button
+			if(Boolean.parseBoolean(allowsWatchers)) {
+				JButton watchButton = new JButton("Watch");
+				watchButton.addActionListener(
+					new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent evt) {
+							if(!gameWindows.containsKey(gameID)) {
+								dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
+								dictionary = dictionaries.get(lexicon);	
+								
+								gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat)));
+								send("watchgame " + gameID + " " + username);
+							
+							}
+						}
+					}
+				);	
+				add(watchButton);
+			}
+			
+			setBackground(new Color(0, 255, 51));
+			add(new JLabel("Lexicon: "  + lexicon));
+			add(new JLabel("Minimum word length: " + minLength));
+			add(new JLabel("Number of sets: " + numSets));
+			add(new JLabel("Blank Penalty: " + blankPenalty));	
+			add(new JLabel("Speed: " + speed));
+			add(notificationLabel);			
 		}
-		
-		gamePane.setBackground(new Color(0, 255, 51));
-		gamePane.add(new JLabel("Lexicon: "  + lexicon));
-		gamePane.add(new JLabel("Minimum word length: " + minLength));
-		gamePane.add(new JLabel("Number of sets: " + numSets));
-		gamePane.add(new JLabel("Blank Penalty: " + blankPenalty));	
-		gamePane.add(new JLabel("Speed: " + speed));
+	}
+	
+	
+	/**
+	* Adds a new game to the gamePanel
+	* #This is probably way more convoluted than it needs to be
+	* 
+	* @param String newGameID 
+	* @param GamePane newGamePane
+	*/
 
-		//this is probably way more convluted than it needs to be
+	void addGame(String newGameID, GamePane newGamePane) {
+	
+		gamePanes.put(newGameID, newGamePane);
+		
 		boolean placed = false;
+		
+		//tries to place the newGamePane in an existing row
 		for(JPanel row : addresses.keySet()) {
 			if(addresses.get(row).size() < 2) {
-				row.add(gamePane);
-				addresses.get(row).add(gameID);
+				row.add(newGamePane);
+				addresses.get(row).add(newGameID);
 				placed = true;
 				break;
 			}
 		}
+		//creates a new row and puts the newGamePane in the first position
 		if(!placed) {
 		
 			JPanel nextRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
 			nextRow.setBackground(Color.BLUE);
 			addresses.put(nextRow, new Vector<String>(2));
-			addresses.get(nextRow).add(gameID);
+			addresses.get(nextRow).add(newGameID);
 
-			nextRow.add(gamePane);
+			nextRow.add(newGamePane);
 			gamesPanel.add(nextRow);
 		}
 		
 		revalidate();
+	}
+
+	/**
+	* Adds a player to the playerList, updates the textArea, and plays a notification sound
+	*
+	* @param String newPlayerName The name of the new player
+	*/
+
+	void addPlayer(String newPlayerName) {
+		playersList.add(newPlayerName);
+		String players = " ";
+		for(String player : playersList)
+			players += player + "\n ";
+		playersTextArea.setText(players);
+		if(isFocused()) {
+			try {
+				InputStream audioSource = getClass().getResourceAsStream("new player sound.wav");
+				InputStream audioBuffer = new BufferedInputStream(audioSource);
+				AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
+				Clip clip = AudioSystem.getClip();
+				clip.open(audioStream);
+				clip.start();
+			}
+			catch(Exception e) {
+				System.out.println(e.toString());
+			}
+		}
 	}
 	
 	/**
@@ -288,7 +336,8 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 			if (JOptionPane.showConfirmDialog(this, "The program is having trouble connecting to the host server. Try again?", "Connection issues", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 				connect(serverName, serverPort);
-			} else {
+			}
+			else {
 				System.exit(0);
 			}
 		}
@@ -309,7 +358,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				return;
 			}
 			else if("unsupported".equalsIgnoreCase(response)) {
-JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
 
 				System.exit(0);
 			}
@@ -318,7 +367,8 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 
 			if (JOptionPane.showConfirmDialog(this, "The program is having trouble connecting to the host server. Try again?", "Connection issues", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 				connect(serverName, port);
-			} else {
+			}
+			else {
 				System.exit(0);
 			}
 		}		
@@ -372,26 +422,16 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 				if (tokens != null && tokens.length > 0) {
 					System.out.println("command received: " + line);
 					String cmd = tokens[0];
-					
-					if(cmd.equals("addplayer")) {
-						playersList.add(tokens[1]);
-						String players = " ";
-						for(String player : playersList)
-							players += player + "\n ";
-						playersTextArea.setText(players);
-						if(isFocused()) {
-							try {
-								InputStream audioSource = getClass().getResourceAsStream("new player sound.wav");
-								InputStream audioBuffer = new BufferedInputStream(audioSource);
-								AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
-								Clip clip = AudioSystem.getClip();
-								clip.open(audioStream);
-								clip.start();
-							}
-							catch(Exception e) {
-								System.out.println(e.toString());
-							}
+					if(cmd.equals("note")) {
+						if(gamePanes.get(tokens[1]) != null) {
+							gamePanes.get(tokens[1]).notificationLabel.setText(line.split("@")[1]);
 						}
+						if(gameWindows.get(tokens[1]) != null) {
+							gameWindows.get(tokens[1]).setNotificationArea(line.split("@")[1]);
+						}
+					}					
+					else if(cmd.equals("addplayer")) {
+						addPlayer(tokens[1]);
 					}
 					else if(cmd.equals("removeplayer")) {
 						playersList.remove(tokens[1]);
@@ -405,7 +445,7 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						handleChat(line.replaceFirst("chat ", ""));
 					}
 					else if(cmd.equals("addgame")) {
-						addGame(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens[7], tokens[8], tokens[9]);
+						addGame(tokens[1], new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens[7], tokens[8], tokens[9]));
 					}
 					else if (cmd.equals("logoff")) {
 						bufferedIn.close();
@@ -433,9 +473,6 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						if(cmd.equals("nexttiles")) {;
 							gameWindows.get(tokens[1]).setTiles(tokens[2]);
 						}
-						else if(cmd.equals("note")) {
-							gameWindows.get(tokens[1]).setNotificationArea((line.split("@"))[1]);
-						}
 						else if(cmd.equals("addword")) {
 								gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
 						}
@@ -450,18 +487,12 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 						}
 						else if(cmd.equals("leavegame")) {
 							gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-//							if(tokens[2].equals(username)) {
-//								gameWindows.remove(tokens[1]);
-//							}
 						}
 						else if(cmd.equals("watchgame")) {
 							gameWindows.get(tokens[1]).addWatcher(tokens[2]);
 						}
 						else if(cmd.equals("unwatchgame")) {
 							gameWindows.get(tokens[1]).removeWatcher(tokens[2]);
-//							if(tokens[2].equals(username)) {
-//								gameWindows.remove(tokens[1]);
-//							}
 						}
 						else if(cmd.equals("gamechat")) {
 							gameWindows.get(tokens[1]).handleChat((line.split(tokens[1]))[1]);
@@ -476,7 +507,7 @@ JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of
 		}
 		catch (Exception ex) {
 			System.out.println("The connection between client and host has been lost. Now logging out.");
-JOptionPane.showMessageDialog(this, "The connection to the server has been lost. Exiting program.", "Connection error", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "The connection to the server has been lost. Exiting program.", "Connection error", JOptionPane.INFORMATION_MESSAGE);
 			ex.printStackTrace();
 			System.exit(0);
 		}
@@ -507,6 +538,8 @@ JOptionPane.showMessageDialog(this, "The connection to the server has been lost.
 	
 	/**
 	* Displays the new chat message (and sender) in the chat box and automatically scrolls to view
+	*
+	* @param String msg The chat message to display
 	*/
 	
 	public void handleChat(String msg) {
@@ -522,6 +555,8 @@ JOptionPane.showMessageDialog(this, "The connection to the server has been lost.
 	
 	/**
 	* Transmit a command to the server
+	*
+	* @param String cmd The command to send
 	*/
 	
 	void send(String cmd) {
