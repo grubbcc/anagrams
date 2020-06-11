@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.util.Enumeration;
 import javax.swing.tree.*;
 
-/**
-* To do: put in thread
+/***
+* 
 */
 
 public class Game {
@@ -31,13 +31,15 @@ public class Game {
 	int minLength;
 	int blankPenalty;
 	private int delay;
-	int timeRemaining;
+	private int timeRemaining;
 	String lexicon;
 	private String speed;
 	private boolean allowsChat;
 	private boolean allowsWatchers;
-	private Timer timer = new Timer(true);
-	private TimerTask task;
+	private Timer gameTimer = new Timer(true);
+	private GameTask gameTask;
+	private Timer deleteTimer;
+	
 	private Random rgen = new Random();	
 
 	boolean lock = false;
@@ -90,91 +92,129 @@ public class Game {
 		else
 			delay = 3;
 
-		timeRemaining = delay*tileBag.length + 30;		
+		timeRemaining = delay*tileBag.length + 30;	
 
-		start();
+		GameTask gameTask = new GameTask();
+		gameTimer.schedule(gameTask, 1000, 1000);
+
 	}
 	
 	/**
-	* Begin game loop
+	*
 	*/
 	
-	void start() {
-
-		task = new TimerTask() {
-			int countdown = 10;
+	private class DeleteTask extends TimerTask {
 		
-			@Override
-			public void run() {
-			
-				//draw initial tiles				
-				if(countdown == 10)
-					for(int i = 0; i < minLength - 1; i++)
-						drawTile();
-
-				if(countdown > 0) {
-					sendNotification("Game will begin in " + countdown + " seconds");
-					countdown--;
-					return;
-				}
-							
-				else if(timeRemaining > 0) {
-					lock = true;
-					sendNotification("Time remaining: " + timeRemaining--);
-					think--;
-				}
-				
-				else {
-					timer.cancel();
-					timer.purge();
-					sendNotification("Game over");
-					for(ServerWorker player : playerList) {
-						player.send("endgame " + gameID);
-					}				
-				}
-
-				if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
-					drawTile();
-					if(!robotList.isEmpty() && rgen.nextInt(50) <= 2*robotPlayer.skillLevel + delay/3 + 7*(tilePool.length()/minLength - 1)) {
-						System.out.println("thinking");
-						think = 2;
-					}
-				}
-				//robot-related tasks
-				if(!robotList.isEmpty() && think == 0) {
-					synchronized(this) {
-						lock = false;
-						robotPlayer.found = false;
-//						startTime = System.nanoTime();
-						//choose whether to make a word or steal
-						if(tilePool.length() >= 2*minLength) {
-//							System.out.println(robotPlayer.robotName + " tries to make a word. Pool: " + tilePool);
-							robotPlayer.makeWord("", "", tilePool.replace("?",""), minLength);
-						}								
-						else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
-//							System.out.println(robotPlayer.robotName + " tries to make a word. Pool: " + tilePool);
-							robotPlayer.makeWord("", "", tilePool.replace("?",""), minLength);
-						}
-						else if(tilePool.length() < tileCount) {
-							System.out.println(robotPlayer.robotName + " tries to steal. Pool: " + tilePool);
-							robotPlayer.makeSteal(words);
-						}
-					}
-				}
-
-			}
-		};
-		
-		timer.scheduleAtFixedRate(task, 1000, 1000);
-		
+		@Override
+		public void run() {
+			server.endGame(gameID);	
+		}			
 	}
 	
+	/**
+	*
+	*/
+
+
+	private class GameTask extends TimerTask {
+		
+		private int countdown = 10;
+
+		@Override
+		public void run() {
+
+			//draw initial tiles				
+			if(countdown == 10 && tileCount < minLength - 1)
+				for(int i = 0; i < minLength - 1; i++)
+					drawTile();
+
+			if(countdown > 0) {
+				if(tileCount < minLength)
+					sendNotification("Game will begin in " + countdown + " seconds");
+				else
+					sendNotification("Game will resume in " + countdown + " seconds");
+				countdown--;
+				return;
+			}
+			
+			else if(timeRemaining > 0) {
+				lock = true;
+				sendNotification("Time remaining: " + timeRemaining--);
+				think--;
+				if(tileCount >= tileBag.length && tilePool.isEmpty()) {
+					//no more possible plays
+					timeRemaining = 0;
+					endGame();
+				}
+			}
+			
+			else {
+				endGame();
+			}
+
+			if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
+				drawTile();
+				if(!robotList.isEmpty() && rgen.nextInt(50) <= 2*robotPlayer.skillLevel + delay/3 + 7*(tilePool.length()/minLength - 1)) {
+					think = 2; //robot starts thinking of a play
+				}
+			}
+			
+			//robot-related tasks
+			if(!robotList.isEmpty() && think == 0) {
+				synchronized(this) {
+					lock = false;
+					robotPlayer.found = false;
+
+					if(tilePool.length() >= 2*minLength) {
+						robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
+					}								
+					else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
+						robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
+					}
+					else if(tilePool.length() < tileCount) {
+						robotPlayer.makeSteal(words);
+					}
+				}
+			}
+			return;
+		}
+	};
+	
+
+
 	
 	/**
-	* maybe change to addParticipant() method that works for players, watchers, and robots
+	* Stops the gameTimer and sends a notification to the players and watchers the game is over
+	*/
+	
+	synchronized void endGame() {
+		gameTimer.cancel();
+		gameTimer.purge();
+		sendNotification("Game over");
+		
+		notifyRoom("endgame " + gameID);
+	}
+	
+	/**
+	* Add a new player to the playerList, inform the newPlayer of the other players/
+	* watchers, and inform the other players/watchers of the newPlayer.
+	*
+	* #maybe change to addParticipant() method that works for players, watchers, and robots
+	*
+	* @param ServerWorker newPlayer The player to be added
+	*
 	*/
 
 	synchronized void addPlayer(ServerWorker newPlayer) throws IOException {
+		
+		if(deleteTimer != null) {
+			deleteTimer.cancel();
+			deleteTimer.purge();
+			gameTimer = new Timer(true);
+			gameTask = new GameTask();
+			gameTimer.schedule(gameTask, 1000, 1000);
+		}		
+			
 		//inform newPlayer of all opponents and their words		
 		for(String opponent : words.keySet()) {		
 			newPlayer.send("joingame " + gameID + " " + opponent);
@@ -182,16 +222,13 @@ public class Game {
 				newPlayer.send("addword " + gameID + " " + opponent + " " + word);
 			}
 		}
-		//inform newPlayer of watchers and vice versa
+		
+		//inform newPlayer of watchers
 		for(ServerWorker watcher : watcherList) {		
 			newPlayer.send("watchgame " + gameID + " " + watcher.username);
-			watcher.send("joingame " + gameID + " " + newPlayer.username);
 		}
-
-		//inform opponents of the newPlayer
-		for(ServerWorker opponent : playerList) {
-			opponent.send("joingame " + gameID + " " + newPlayer.username);
-		}
+		
+		notifyRoom("joingame " + gameID + " " + newPlayer.username);
 
 		playerList.add(newPlayer);
 		if(!words.containsKey(newPlayer.getUsername())) {
@@ -210,74 +247,81 @@ public class Game {
 		robotPlayer = new Robot(this, skillLevel);
 		robotList.add(robotPlayer);
 		
-		//inform watchers of the new robot player
-		for(ServerWorker watcher : watcherList) {		
-			watcher.send("joingame " + gameID + " " + robotPlayer.robotName);
-		}
-
-		//inform opponents of the new robot player
-		for(ServerWorker opponent : playerList) {
-			opponent.send("joingame " + gameID + " " + robotPlayer.robotName);
-		}
+		notifyRoom("joingame " + gameID + " " + robotPlayer.robotName);
 
 		words.put(robotPlayer.robotName, new Vector<String>());
 		
 	}
 		
 	/**
+	* Add a new watcher to the watcherList, inform the newWatcher of the other players/
+	* watchers, and inform the other players/watchers of the newWatcher.
 	*
+	* @param ServerWorker newWatcher The watcher to be added
 	*/
 
 	synchronized void addWatcher(ServerWorker newWatcher) throws IOException {
-		//inform newWatcher of all players and their words		
+		
+		if(deleteTimer != null) {
+			deleteTimer.cancel();
+			deleteTimer.purge();
+		}
+		
+		//inform newWatcher of all players and their words
 		for(String player : words.keySet()) {		
 			newWatcher.send("joingame " + gameID + " " + player);
 			for(String word : words.get(player)) {
 				newWatcher.send("addword " + gameID + " " + player + " " + word);
 			}
 		}
-		//inform players of the newWatcher
-		for(ServerWorker player : playerList) {
-			player.send("watchgame " + gameID + " " + newWatcher.username);
-		}
-		//inform watchers of the newWatcher
-		for(ServerWorker watcher : watcherList) {
-			watcher.send("watchgame " + gameID + " " + newWatcher.username);
-		}
+		
+		notifyRoom("watchgame " + gameID + " " + newWatcher.username);
+
 		watcherList.add(newWatcher);
 	}
 	
 	/**
+	* Remove a player from the playerList and inform the other other players.
+	* If there are no more players or watchers left, sends a signal to the server
+	* to end the game.
 	*
+	* @param ServerWorker playerToRemove The player to be removed
 	*/
 	
 	synchronized void removePlayer(ServerWorker playerToRemove) {
 
 		playerList.remove(playerToRemove);
-		for(ServerWorker player : playerList) {
-			player.send("leavegame " + gameID + " " + playerToRemove.username);
-		}
-
+		
+		notifyRoom("leavegame " + gameID + " " + playerToRemove.username);
 
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
-			task.cancel();
-			server.endGame(gameID);
+
+			gameTimer.cancel();
+			gameTimer.purge();
+			deleteTimer = new Timer(true);
+			deleteTimer.schedule(new DeleteTask(), 5000);
+
 		}
 	}
 	
 	/**
+	* Remove a watcher from the watcherList and inform the other other players.
+	* If there are no more players or watchers left, sends a signal to the server
+	* to end the game.
 	*
+	* @param ServerWorker watcherToRemove The watcher to be removed
 	*/
 	
 	synchronized void removeWatcher(ServerWorker watcherToRemove) {
 		watcherList.remove(watcherToRemove);
-		for(ServerWorker watcher : watcherList) {
-			watcher.send("unwatchgame " + gameID + " " + watcherToRemove.username);
-		}
+		
+		notifyRoom("unwatchgame " + gameID + " " + watcherToRemove.username);
 
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
-			task.cancel();
-			server.endGame(gameID);
+			gameTimer.cancel();
+			gameTimer.purge();
+			deleteTimer = new Timer(true);
+			deleteTimer.schedule(new DeleteTask(), 5000);
 		}
 	}
 
@@ -299,7 +343,9 @@ public class Game {
 	}
 	
 	/**
+	* Post a chat message to this game's chat window
 	*
+	* 
 	*/
 	
 	synchronized void handleChat(String message) {
@@ -320,13 +366,9 @@ public class Game {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];		
 			tileCount++;
-			
-			for(ServerWorker player : playerList) {
-				player.send("nexttiles " + gameID + " " + tilePool);
-			}
-			for(ServerWorker watcher : watcherList) {
-				watcher.send("nexttiles " + gameID + " " + tilePool);
-			}
+
+			notifyRoom("nexttiles " + gameID + " " + tilePool);
+
 		}
 	}
 	
@@ -378,8 +420,6 @@ public class Game {
 
 		if(longWord.length() - shortWord.length() < additionalTilesRequired)
 			return false;
-
-String oldTiles = tilePool; //for testing only
 		
 		//steal is successful
 		String oldWord = shortWord;
@@ -415,11 +455,6 @@ String oldTiles = tilePool; //for testing only
 			}
 		}
 
-		System.out.println(shortWord + " stolen from " + shortPlayer + " by " + longPlayer + " to make " + longWord + ". old pool: " + oldTiles + ", new pool: " + tilePool);
-		if(shortWord.length() + oldTiles.length() != longWord.length() + tilePool.length())
-			System.out.println("TILE COUNT ERROR OCCURRED WHILE STEALING");	//for testing only
-		
-
 		if(tilePool.isEmpty())	tiles = "#";
 
 		for(Robot robot : robotList) {
@@ -433,22 +468,10 @@ String oldTiles = tilePool; //for testing only
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 30;
 
-		//inform players that steal has occurred
-		try {
-			for(ServerWorker player : playerList) {
-				player.send("nexttiles " + gameID + " " + tiles);
-				player.send("removeword " + gameID + " " + shortPlayer + " " + shortWord);
-				player.send("addword " + gameID + " " + longPlayer + " " + newWord);
-			}
-			for(ServerWorker watcher : watcherList) {
-				watcher.send("nexttiles " + gameID + " " + tiles);
-				watcher.send("removeword " + gameID + " " + shortPlayer + " " + shortWord);
-				watcher.send("addword " + gameID + " " + longPlayer + " " + newWord);
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		notifyRoom("nexttiles " + gameID + " " + tiles);
+		notifyRoom("removeword " + gameID + " " + shortPlayer + " " + shortWord);
+		notifyRoom("addword " + gameID + " " + longPlayer + " " + newWord);
+
 		return true;
 	}
 	
@@ -470,7 +493,6 @@ String oldTiles = tilePool; //for testing only
 			else
 				blanksRequired++;
 		}
-String oldTiles = tilePool; //for testing only
 		
 		if(blanksAvailable < blanksRequired)
 			return false; //not enough blanks in pool
@@ -492,35 +514,26 @@ String oldTiles = tilePool; //for testing only
 				newWord = newWord.concat(s.toLowerCase());
 			}
 		}
-
-		System.out.println( "new word: " + newWord + " played by " + newWordPlayer + " old pool: " + oldTiles + ", new pool: " + tilePool);
-		if(oldTiles.length() != newWord.length() + tilePool.length())
-			System.out.println("TILE COUNT ERROR OCCURRED WHILE MAKING A WORD"); //for testing only
-		
+	
 		words.get(newWordPlayer).add(newWord);		
 
 		for(Robot robot : robotList)
 			robot.makeTree(newWord);
 
-		if(tileCount > tileBag.length && tilePool.length() > 0) 
+		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;		
 	
 		if(tilePool.isEmpty())	tiles = "#";	
 		//inform players that a new word has been made
-		
-		for(ServerWorker player : playerList) {
+	
 
-			player.send("nexttiles " + gameID + " " + tiles);
-			player.send("addword " + gameID + " " + newWordPlayer + " " + newWord);
-		}
-		for(ServerWorker watcher : watcherList) {
-			watcher.send("nexttiles " + gameID + " " + tiles);
-			watcher.send("addword " + gameID + " " + newWordPlayer + " " + newWord);
-		}
+		notifyRoom("nexttiles " + gameID + " " + tiles);
+		notifyRoom("addword " + gameID + " " + newWordPlayer + " " + newWord);		
+
 		return true;
 	}
 	
-	/**		
+	/**
 	* Initialize the tileBag with the chosen number of tiles sets.
 	*
 	*/
@@ -544,4 +557,18 @@ String oldTiles = tilePool; //for testing only
 			tileBag[randomPosition] = temp;
 		}
 	}
+	
+	/**
+	*
+	*/
+	
+	synchronized public void notifyRoom(String msg) {
+			for(ServerWorker player : playerList) {
+				player.send(msg);
+			}
+			for(ServerWorker watcher : watcherList) {
+				watcher.send(msg);
+			}	
+	}
+	
 }
