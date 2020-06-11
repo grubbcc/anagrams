@@ -1,13 +1,3 @@
-/****
-*
-* More options pane:
-* allow chatting?
-* allow watchers?
-* show watchers?
-* allow kibitzing?
-*
-*/
-
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
@@ -18,6 +8,10 @@ import java.awt.event.ActionListener;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
+/****
+* A menu for choosing options whe creating a new game
+*
+*/
 
 class GameMenu extends JDialog implements ActionListener {
 	
@@ -34,10 +28,10 @@ class GameMenu extends JDialog implements ActionListener {
 	private JCheckBox robotChooser = new JCheckBox("Add robot player");
 	
 	private Integer[] players = {1, 2, 3, 4, 5, 6};
-	private Integer[] lengths = {6, 7, 8, 9, 10};
+	private Integer[] lengths = {4, 5, 6, 7, 8, 9, 10};
 	private Integer[] sets = {1, 2, 3};
 	private Integer[] blankPenalty = {1, 2};
-	private String[] lexicons = {"CSW19", "NWL2018", "LONG"};
+	private String[] lexicons = {"CSW19", "NWL18", "LONG"};
 	private String[] speeds = {"slow", "medium", "fast"};
 	private String[] difficulties = {"novice", "standard", "expert", "genius"};
 	private String lexicon = "";
@@ -67,7 +61,7 @@ class GameMenu extends JDialog implements ActionListener {
 
 		//Set default values
 		playersSelector.setSelectedItem(players[5]);
-		lengthsSelector.setSelectedItem(lengths[1]);
+		lengthsSelector.setSelectedItem(lengths[3]);
 		setsSelector.setSelectedItem(sets[0]);
 		blanksSelector.setSelectedItem(blankPenalty[1]);
 		speedSelector.setSelectedItem(speeds[1]);
@@ -166,13 +160,11 @@ class GameMenu extends JDialog implements ActionListener {
 
 			client.dictionary = client.dictionaries.get(lexicon);
 
-			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty));
+			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat));
 
-			String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowWatchers + " " + addRobot + " " + skillLevel;
+			String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
 			client.send(cmd);
-
-
+			
 		}
 	}
-
 }
