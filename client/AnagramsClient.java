@@ -20,15 +20,16 @@ import java.awt.event.*;
 import javax.sound.sampled.*;
 import java.net.Socket;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultEditorKit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class AnagramsClient extends JFrame implements ActionListener {
 
 	private final String serverName = "localhost"; //connect to this computer
-	private final static int port = 10011;
-	private final static int testPort = 10010;
-	public final String version = "0.9.3";
+	private final static int port = 1001;
+	private final static int testPort = 1000;
+	public final String version = "0.9.4";
 	
 	private Socket socket;
 	private InputStream serverIn;
@@ -44,7 +45,16 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	private JTextArea playersTextArea = new JTextArea();
 	private JPanel chatPanel = new JPanel(new BorderLayout());
 	private JScrollPane chatScrollPane = new JScrollPane(chatPanel);
-	private JTextArea chatBox = new JTextArea(5, 100);
+	private JTextArea chatBox = new JTextArea(5, 70);
+	private JTextField chatField = new JTextField("Type here to chat", 70);
+	private FocusListener fl = new FocusListener() {
+		public void focusGained(FocusEvent e) {
+			chatField.setText("");
+			chatField.setForeground(Color.BLACK);
+		}
+		public void focusLost(FocusEvent e) {
+		}
+	};
 
 	private HashMap<String, GameWindow> gameWindows = new HashMap<String, GameWindow>();
 	private HashMap<String, GamePane> gamePanes = new HashMap<String, GamePane>();
@@ -115,12 +125,14 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		chatPanel.setBackground(Color.WHITE);
 		chatBox.setLineWrap(true);
 		chatBox.setEditable(false);
-		JTextField chatField = new JTextField("", 100);		
+		chatField.setForeground(Color.GRAY);
+		chatField.addFocusListener(fl);
 		chatField.addActionListener(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.setText("");});
+		chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new MyDeletePrevCharAction());
 		chatField.setBorder(new EmptyBorder(1,1,1,1));
 		chatField.setBackground(Color.LIGHT_GRAY);
 		chatPanel.add(chatBox);
-		handleChat("<------------------------------------------------------------------------Chat------------------------------------------------------------------------>");
+		chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());		
 		chatPanel.add(chatField, BorderLayout.SOUTH);
 
 		//main panel
@@ -178,6 +190,13 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		
 		JLabel notificationLabel = new JLabel();
 		
+		//use this to display players in this game
+		ArrayList<String> players = new ArrayList<String>();
+		
+		/**
+		*
+		*/
+		
 		GamePane(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
 			setLayout(new GridLayout(4, 2, 10, 10));
 			setPreferredSize(new Dimension(300,150));
@@ -231,11 +250,23 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			add(new JLabel("Speed: " + speed));
 			add(notificationLabel);			
 		}
+		
+		/**
+		*
+		*/
+		
+		void addPlayer(String playerName) {
+			//to be filled in later
+		}
+		
+		void removePlayer(String playerName) {
+			//to be filled in later
+		}
 	}
 	
 	
 	/**
-	* Adds a new game to the gamePanel
+	* Adds a new game to the gamePanel 
 	* #This is probably way more convoluted than it needs to be
 	* 
 	* @param String newGameID 
@@ -345,7 +376,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	}
 	
 	/**
-	* Verifies that the user is using a up-date-version of the client software.
+	* Verifies that the user is using a up-to-date version of the client software.
 	* Directs the user to the project homepage if they are not.
 	*/
 	
@@ -357,6 +388,9 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			if("ok version".equalsIgnoreCase(response)) {
 				return;
 			}
+			else if("outdated".equalsIgnoreCase(response)) {
+				JOptionPane.showMessageDialog(this, new MessageWithLink("There is a updated version of Anagrams available. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to get the latest features."), "Warning", JOptionPane.INFORMATION_MESSAGE);
+			}				
 			else if("unsupported".equalsIgnoreCase(response)) {
 				JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
 
@@ -391,6 +425,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			return true;
 		}
 		else {
+			JOptionPane.showMessageDialog(this, response);
 			return false;
 		}
 	}
@@ -420,8 +455,12 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 				String[] tokens = line.split(" ");
 				if (tokens != null && tokens.length > 0) {
-					System.out.println("command received: " + line);
+
 					String cmd = tokens[0];
+
+					if(!cmd.equals("note")) {
+						System.out.println("command received: " + line);
+					}
 					if(cmd.equals("note")) {
 						if(gamePanes.get(tokens[1]) != null) {
 							gamePanes.get(tokens[1]).notificationLabel.setText(line.split("@")[1]);
@@ -481,12 +520,16 @@ public class AnagramsClient extends JFrame implements ActionListener {
 						}
 						else if(cmd.equals("joingame")) {
 							gameWindows.get(tokens[1]).addPlayer(tokens[2]);
+							//the server will need to send this information for all games--not just the ones this client is involved in
+							gamePanes.get(tokens[1]).addPlayer(tokens[2]);
 						}
 						else if(cmd.equals("endgame")) {
 							gameWindows.get(tokens[1]).gameOver = true;
 						}
 						else if(cmd.equals("leavegame")) {
 							gameWindows.get(tokens[1]).removePlayer(tokens[2]);
+							//the server will need to send this information for all games--not just the ones this client is involved in
+							gamePanes.get(tokens[1]).removePlayer(tokens[2]);
 						}
 						else if(cmd.equals("watchgame")) {
 							gameWindows.get(tokens[1]).addWatcher(tokens[2]);
@@ -544,7 +587,9 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	
 	public void handleChat(String msg) {
 		chatBox.append("\n" + msg);
-		
+		if(chatField.hasFocus()) {
+			chatField.removeFocusListener(fl);
+		}	
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
