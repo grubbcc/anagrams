@@ -1,19 +1,35 @@
+/***
+* Stores a word and tooltip (the letters required for a steal) for use in the WordTree.
+*/
+
 class UserObject {
 	
 	private String word;
-	private String tooltip;
+	private String toolTip;
 	
-	public UserObject(String word, String tooltip) {
+	/**
+	*
+	*/
+	
+	public UserObject(String word, String toolTip) {
 		this.word = word.toUpperCase();
-		this.tooltip = tooltip;
+		this.toolTip = toolTip;
 	}
+	
+	/**
+	*
+	*/
 	
 	public String toString() {
 		return word;
 	}
 	
-	public String getTooltip() {
-		return tooltip;
+	/**
+	*
+	*/
+	
+	public String getToolTip() {
+		return toolTip;
 	}
 	
 }
