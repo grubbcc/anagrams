@@ -116,7 +116,7 @@ class GameWindow extends JFrame implements ActionListener {
 			chatField.setForeground(Color.GRAY);
 			new CustomFocusListener(chatField);
 			chatField.addActionListener(ae -> {client.send("gamechat " + gameID + " " + username + ": " + chatField.getText()); chatField.setText("");});
-			chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new MyDeletePrevCharAction());
+			chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
 			chatField.setBorder(new EmptyBorder(1,1,1,1));
 			chatField.setBackground(Color.LIGHT_GRAY);
 			chatPanel.add(chatBox);
@@ -158,7 +158,7 @@ class GameWindow extends JFrame implements ActionListener {
 		textField.setForeground(Color.GRAY);
 		textField.addActionListener(this);
 		new CustomFocusListener(textField);
-		textField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new MyDeletePrevCharAction());
+		textField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
 		controlPanel.remove(infoPane);
 		controlPanel.add(textField);
 		controlPanel.add(infoPane);
