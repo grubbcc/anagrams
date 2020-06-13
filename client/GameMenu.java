@@ -8,8 +8,8 @@ import java.awt.event.ActionListener;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
-/****
-* A menu for choosing options whe creating a new game
+/**
+* A menu for choosing options when creating a new game
 *
 */
 
@@ -50,7 +50,19 @@ class GameMenu extends JDialog implements ActionListener {
 	GameMenu(AnagramsClient client, int x, int y) {
 
 		this.client = client;
-		getRootPane().registerKeyboardAction(ae -> {startButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_FOCUSED);	
+		getRootPane().registerKeyboardAction(ae -> {startButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_FOCUSED);
+
+		//labels
+		JLabel tileSetsLabel = new JLabel("Number of tile sets");
+		tileSetsLabel.setToolTipText("<html>100 tiles per set</html>");
+		JLabel blankPenaltyLabel = new JLabel("Blank penalty");
+		blankPenaltyLabel.setToolTipText("<html>To use a blank, you must take<br> this many additional tiles</html>");
+		JLabel wordListLabel = new JLabel("Word list");
+		wordListLabel.setToolTipText("<html>NWL18 = North American<br>CSW19 = International</html>");
+		JLabel speedLabel = new JLabel("Speed");
+		speedLabel.setToolTipText("<html>Slow: 9 seconds per tile<br>Medium: 6 seconds per tile<br>Fast: 3 seconds per tile</html>");
+		
+		//selectors
 		playersSelector = new JComboBox<Integer>(players);
 		lengthsSelector = new JComboBox<Integer>(lengths);
 		setsSelector = new JComboBox<Integer>(sets);
@@ -72,11 +84,11 @@ class GameMenu extends JDialog implements ActionListener {
 		
 		setTitle("New Game");
 		setModal(true);
+		setResizable(false);		
 		setVisible(false);
 		startButton.addActionListener(this);
 		playersSelector.addActionListener(this);
 		robotChooser.addActionListener(this);
-
 		
 		setLayout(menuLayout);
 	
@@ -84,13 +96,13 @@ class GameMenu extends JDialog implements ActionListener {
 		makeComponent(1, 0, playersSelector);
 		makeComponent(0, 1, new JLabel("Minimum word length"));
 		makeComponent(1, 1, lengthsSelector);
-		makeComponent(0, 2, new JLabel("Number of tile sets"));
+		makeComponent(0, 2, tileSetsLabel);
 		makeComponent(1, 2, setsSelector);
-		makeComponent(0, 3, new JLabel("Blank penalty"));
+		makeComponent(0, 3, blankPenaltyLabel);
 		makeComponent(1, 3, blanksSelector);
-		makeComponent(0, 4, new JLabel("Word list"));
+		makeComponent(0, 4, wordListLabel);
 		makeComponent(1, 4, lexiconSelector);
-		makeComponent(0, 5, new JLabel("Speed"));
+		makeComponent(0, 5, speedLabel);
 		makeComponent(1, 5, speedSelector);
 		makeComponent(0, 6, chatChooser);
 		makeComponent(1, 6, watchersChooser);
@@ -164,7 +176,9 @@ class GameMenu extends JDialog implements ActionListener {
 
 			String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
 			client.send(cmd);
-			
+
+
 		}
 	}
+
 }
