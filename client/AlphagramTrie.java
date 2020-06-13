@@ -1,16 +1,13 @@
-/****
+import java.io.*;
+import java.util.Arrays;
+
+/***
 * Stores a list of words as a trie data structure for fast lookup. 
 * See: https://en.wikipedia.org/wiki/Trie
 * Words are indexed according to a unique alphabetical ordering ("alphagram") so that
 * words which are anagrams of each other are stored in the same node.
 *
-*
-*****/
-
-
-import java.io.*;
-import java.util.Arrays;
-
+*/
 
 
 public class AlphagramTrie {
@@ -90,7 +87,7 @@ public class AlphagramTrie {
 	/**
 	* Checks whether the given entry is a valid word in this trie's lexicon
 	*
-	* @param searchKey the String to be searched for
+	* @param String searchKey the String to be searched for
 	*/	
 	
 	public boolean contains(String searchKey) {
@@ -109,7 +106,10 @@ public class AlphagramTrie {
 	}
 	
 	/**
+	* Given a series of letters, not necessarily ordered, returns the corresponding node in
+	* the trie. If the node does not exist, returns null.
 	*
+	* @param String searchKey the sequence of letters corresponding to the address of the searched-for node
 	*/
 	
 	public Node getNode(String searchKey) {
@@ -157,7 +157,7 @@ public class AlphagramTrie {
 	}
 	
 	/**
-	*
+	* For testing only
 	*/
 	
 	public static void main(String[] args) {
