@@ -1,16 +1,3 @@
-/****
-* Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
-* how the word can be "stolen" according to the rules of Anagrams.
-*
-* For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALPUA
-* with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
-* However, PROMENADE is not a steal of POMADE because the latter can be formed from the former by
-* insertion of letters without rearrangement.
-*
-* TO DO: add an asterisk next to words that are not in the dictionary.
-*****/
-
-
 import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
@@ -30,13 +17,23 @@ import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.Iterator;
 
+/**
+* Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
+* how the word can be "stolen" according to the rules of Anagrams.
+*
+* For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALPUA
+* with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
+* However, PROMENADE is not a steal of POMADE because the latter can be formed from the former by
+* insertion of letters without rearrangement.
+*
+*/
+
 public class WordTree extends JTree {
 	
 	private TreeSet<DefaultMutableTreeNode> treeNodeList;
 	private String rootWord;
 	public AlphagramTrie trie;
 	public DefaultMutableTreeNode root;
-//	public String selectedWord;
 	
 
 	/**
