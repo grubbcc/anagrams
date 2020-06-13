@@ -201,7 +201,6 @@ public class WordExplorer extends JDialog implements ActionListener {
 						this.setToolTipText(uo.getToolTip());
 					}
 					else {
-						System.out.println("nullify");
 						this.setToolTipText(null);
 					}
 				}
