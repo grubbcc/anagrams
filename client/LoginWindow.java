@@ -3,6 +3,11 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.io.IOException;
 
+/***
+*
+*
+*/
+
 
 public class LoginWindow extends JDialog implements ActionListener, KeyListener {
 
@@ -28,12 +33,12 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 		usernameField.addKeyListener(this);
 		setLayout(menuLayout);
 		
-		makeComponent(0, 0, new JLabel("Enter username"));
+		makeComponent(0, 0, new JLabel("Enter a username"));
 		makeComponent(0, 1, usernameField);
 		makeComponent(1, 0, loginButton);
 
 		pack();
-		setLocation(x + 700/2 - getWidth()/2, y + 500/2 -getHeight()/2);		
+		setLocation(x + 700/2 - getWidth()/2, y + 500/2 - getHeight()/2);		
 		setVisible(true);
 	}
 
@@ -76,10 +81,6 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 				//login successful
 				setVisible(false);
 				dispose();
-			}
-			else {
-				//show error message
-				JOptionPane.showMessageDialog(this, "Invalid login/password");
 			}
 		}
 		catch (IOException e) {
