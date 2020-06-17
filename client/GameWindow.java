@@ -9,7 +9,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +43,7 @@ class GameWindow extends JFrame implements ActionListener {
 	private WordExplorer explorer;
 	
 	private final AnagramsClient client;
+	private final AlphagramTrie dictionary;
 	final String gameID;
 	private final String username;
 	public boolean isWatcher;
@@ -48,7 +51,6 @@ class GameWindow extends JFrame implements ActionListener {
 	private int blankPenalty;	
 	private String tilePool = "";
 	private HashMap<String, GamePanel> players = new HashMap<>();
-	private ArrayList<String> watchers = new ArrayList<String>();
 	private TilePanel tilePanel;
 	private ImageIcon robotIcon = new ImageIcon(getClass().getResource("robot.png"));		
 //	private int[] weights = {1,1,2,3,5,8,13};
@@ -58,7 +60,7 @@ class GameWindow extends JFrame implements ActionListener {
 	* Constructor for watching
 	*/
 	
-	GameWindow(AnagramsClient client, String gameID, String username, int minLength, boolean allowsChat) {
+	GameWindow(AnagramsClient client, String gameID, String username, int minLength, boolean allowsChat, AlphagramTrie dictionary) {
 
 		this.client = client;
 		this.gameID = gameID;
@@ -72,10 +74,11 @@ class GameWindow extends JFrame implements ActionListener {
 		//register keyboard closing actions.
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
-		explorer = new WordExplorer(client.dictionary);
-	
+		this.dictionary = dictionary;
+		explorer = new WordExplorer(dictionary);
+
 		setSize(1000, 700);
-		setMinimumSize(new Dimension(750, 500));
+		setMinimumSize(new Dimension(750, 523	));
 		setLocation(client.getX() + 10, client.getY() + 20);
 		setLayout(new BorderLayout());
 	
@@ -84,7 +87,7 @@ class GameWindow extends JFrame implements ActionListener {
 		boardPanel.setBackground(new Color(0, 255, 51));
 		controlPanel.add(notificationArea);
 		controlPanel.add(exitGameButton);
-		infoPane.setText(client.dictionary.lexicon + "      Minimum length = " + minLength);
+		infoPane.setText(dictionary.lexicon + "      Minimum length = " + minLength);
 		controlPanel.add(infoPane);
 		controlPanel.setBackground(new Color(0, 255, 51));
 		
@@ -120,7 +123,7 @@ class GameWindow extends JFrame implements ActionListener {
 			chatField.setBorder(new EmptyBorder(1,1,1,1));
 			chatField.setBackground(Color.LIGHT_GRAY);
 			chatPanel.add(chatBox);
-			chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());			
+			chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
 
 			chatPanel.add(chatField, BorderLayout.SOUTH);
 			mainPanel.add(chatScrollPane, BorderLayout.PAGE_END);
@@ -135,13 +138,15 @@ class GameWindow extends JFrame implements ActionListener {
 						gamePanel.updateTileSize();
 					}
 				}
+				revalidate();
+			chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
 			}
 		});
 
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				client.exitGame(gameID, isWatcher);							
+				client.exitGame(gameID, isWatcher, homePanel.words.isEmpty());							
 			}
 		});
 	}
@@ -150,8 +155,8 @@ class GameWindow extends JFrame implements ActionListener {
 	* Constructor for playing
 	*/
 	
-	GameWindow(AnagramsClient client, String gameID, String username, int minLength, int blankPenalty, boolean allowsChat) {
-		this(client, gameID, username, minLength, allowsChat);
+	GameWindow(AnagramsClient client, String gameID, String username, int minLength, int blankPenalty, boolean allowsChat, AlphagramTrie dictionary) {
+		this(client, gameID, username, minLength, allowsChat, dictionary);
 
 		isWatcher = false;
 		this.blankPenalty = blankPenalty;
@@ -245,7 +250,7 @@ class GameWindow extends JFrame implements ActionListener {
 
 			for (int i = 1; i <= tilePool.length(); i++) {
 				int x = (int)(getSize().width/2 + 16*Math.sqrt(i)*Math.cos(Math.sqrt(i)*Math.PI*4/3));
-				int y = (int)(getSize().height/2 + 16*Math.sqrt(i)*Math.sin(Math.sqrt(i)*Math.PI*4/3));				
+				int y = 3 + (int)(getSize().height/2 + 16*Math.sqrt(i)*Math.sin(Math.sqrt(i)*Math.PI*4/3));				
 				
 				g.setColor(Color.YELLOW);
 				g.fillRoundRect(x-1, y-19, 20, 21, 3, 3);	 
@@ -280,9 +285,9 @@ class GameWindow extends JFrame implements ActionListener {
 		boolean isOccupied = false;
 		boolean isAvailable = true;
 		private int wordArea;
-		TreeMap<String, WordLabel> words = new TreeMap<>();
+		LinkedHashMap<String, WordLabel> words = new LinkedHashMap<>();
+		
 		int score = 0;
-		int size = 0;
 		
 		/**
 		* An empty placeholder gamePanel
@@ -317,6 +322,7 @@ class GameWindow extends JFrame implements ActionListener {
 			this.playerName = newPlayer;
 			players.put(newPlayer, this);
 			playerNameLabel.setText(playerName);
+			playerNameLabel.setForeground(Color.BLACK);
 			if(playerName.startsWith("Robot")) {		
 				playerNameLabel.setIcon(robotIcon);
 			}
@@ -327,7 +333,7 @@ class GameWindow extends JFrame implements ActionListener {
 			
 			isOccupied = true;
 			isAvailable = false;
-			revalidate();
+//			revalidate();
 		}
 		
 		/**
@@ -337,6 +343,7 @@ class GameWindow extends JFrame implements ActionListener {
 		
 		public void abandonSeat() {
 			isOccupied = false;
+			playerNameLabel.setForeground(Color.GRAY);
 			if(words.isEmpty()) {
 				makeAvailable();
 			}
@@ -347,11 +354,13 @@ class GameWindow extends JFrame implements ActionListener {
 		*/
 		
 		private void makeAvailable() {
+			System.out.println("make available");
 			isAvailable = true;
 			playerNameLabel.setText("");
 			playerScore.setText("");
 			players.remove(playerName);
 			playerName = null;
+
 		}
 		
 		/**
@@ -370,14 +379,9 @@ class GameWindow extends JFrame implements ActionListener {
 			playerScore.setText(score + "");
 			
 			validate();
-			System.out.println(newWordLabel.getLocation().y + tileHeight + " vs " + wordPane.getHeight());
+//			System.out.println(newWordLabel.getLocation().y + tileHeight + " vs " + wordPane.getHeight());
 			
-			if(newWordLabel.getLocation().y + tileHeight > wordPane.getHeight() && savingSpace == false) {
-				makeSmall();
-			}
-
-			size += 4 + 18*newWord.length();
-
+			updateTileSize();
 
 			try {
 				InputStream audioSource = getClass().getResourceAsStream("steal sound.wav");
@@ -400,37 +404,56 @@ class GameWindow extends JFrame implements ActionListener {
 		* @param String word The word to be removed.
 		*/
 		
-		void removeWord(String word) {
-			wordPane.remove(words.remove(word));
-			if(words.size() < 13) {
-				savingSpace = false;
-			}
+		void removeWord(String wordToRemove) {
+			wordPane.remove(words.remove(wordToRemove));
 //			score -= weights[word.length() - minLength];
-			score -= word.length()*word.length();
+			score -= wordToRemove.length()*wordToRemove.length();
 			playerScore.setText(score + "");
 			if(words.isEmpty() && isOccupied == false) {
 				makeAvailable();
 			}
 
-			if(wordPane.getWidth() * wordPane.getHeight() > 20*size && savingSpace == true) {
-				makeBig();
-			}
+			updateTileSize();
 
-		}	
+		}
 		
 		/**
 		*
 		*/
 		
 		void updateTileSize() {
-			
-			if(wordPane.getWidth() * wordPane.getHeight() > 20*size && savingSpace == true) {
-				makeBig();
-			}
 
-			else if(words.get(words.lastKey()).getLocation().y + tileHeight > wordPane.getHeight() && savingSpace == false) {
-				makeSmall();
-			}			
+			if(savingSpace == false) {
+
+				Iterator<WordLabel> iterator = words.values().iterator();
+				WordLabel newestWord = null;
+				while (iterator.hasNext()) {
+					newestWord = iterator.next();
+				}
+
+				if(newestWord != null) {
+//					System.out.println(newestWord.getLocation().y + tileHeight + " vs " + wordPane.getHeight());
+					if(newestWord.getLocation().y + tileHeight > wordPane.getHeight()) {
+						makeSmall();
+					}
+				}
+			}
+			
+			else {
+				int newLength = -16;
+				int newHeight = 26;
+				for(String word : words.keySet()) {
+					newLength += 20 + 18*word.length();
+					if(newLength > wordPane.getWidth()) {
+						newHeight += 25;
+						newLength = -16;
+					}
+				}
+//				System.out.println("max height = " + newHeight +", window height = " + wordPane.getHeight());
+				if(newHeight < wordPane.getHeight()) {
+					makeBig();
+				}
+			}
 		}
 		
 		/**
@@ -443,7 +466,8 @@ class GameWindow extends JFrame implements ActionListener {
 			tilePadding = 4;
 			tileWidth = 16;
 			tileHeight = 18;
-			
+			revalidate();
+			wordPane.revalidate();			
 			for(WordLabel wordLabel : words.values()) {
 				wordLabel.resize();
 			}
@@ -458,7 +482,8 @@ class GameWindow extends JFrame implements ActionListener {
 			tilePadding = 3;
 			tileWidth = 12;
 			tileHeight = 16;
-			
+			revalidate();
+			wordPane.revalidate();			
 			for(WordLabel wordLabel : words.values()) {
 				wordLabel.resize();
 			}
@@ -525,6 +550,7 @@ class GameWindow extends JFrame implements ActionListener {
 				height = tileHeight;
 				setPreferredSize(new Dimension(length, height));
 				revalidate();
+				repaint();
 			}
 			
 			/**
@@ -613,9 +639,11 @@ class GameWindow extends JFrame implements ActionListener {
 	*/
 
 	public void addPlayer(String playerName) {
-
-		if(players.containsKey(playerName))	 {
-			players.get(playerName).takeSeat(playerName);
+		
+		if(players.containsKey(playerName))	{
+			if(!players.get(playerName).isOccupied) {
+				players.get(playerName).takeSeat(playerName);
+			}
 		}
 
 		else {
@@ -637,8 +665,6 @@ class GameWindow extends JFrame implements ActionListener {
 	
 	public void addWord(String playerName, String wordToAdd) {
 		players.get(playerName).addWord(wordToAdd);
-//		players.get(playerName).revalidate();
-//		repaint();
 	}
 	
 	/**
@@ -650,7 +676,8 @@ class GameWindow extends JFrame implements ActionListener {
 	
 	public void removeWord(String playerName, String wordToRemove) {
 		players.get(playerName).removeWord(wordToRemove);
-//		repaint();
+		revalidate();
+		repaint();
 	}
 	
 	/**
@@ -665,29 +692,6 @@ class GameWindow extends JFrame implements ActionListener {
 			players.get(playerToRemove).abandonSeat();
 		}
 	}
-	
-	/**
-	* Adds the named watcher to list of watchers
-	*
-	* @param String watcherName the name of the watcher to add
-	*/
-
-	public void addWatcher(String watcherName) {
-		watchers.add(watcherName);
-	}
-	
-	/**
-	* Removed the named watcher from the list of watchers
-	*
-	* @param String watcherToRemove the name of the player to remove
-	*/
-	
-	public void removeWatcher(String watcherToRemove) {
-		if(watchers.contains(watcherToRemove)) {
-			watchers.remove(watcherToRemove);
-		}
-	}
-	
 
 	/**
 	* Displays the new chat message (and sender) in the chat box and automatically scrolls to view
@@ -697,9 +701,6 @@ class GameWindow extends JFrame implements ActionListener {
 	
 	public void handleChat(String msg) {
 		chatBox.append("\n" + msg);
-/*		if(chatField.hasFocus()) {
-			chatField.removeFocusListener(fl);
-		}*/
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
@@ -716,8 +717,7 @@ class GameWindow extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent evt) {
 
 		if (evt.getSource() == exitGameButton) {
-			//JOptionPane "Are you sure you want to exit the game?"
-			client.exitGame(gameID, isWatcher);
+			client.exitGame(gameID, isWatcher, homePanel.words.isEmpty());
 			explorer.setVisible(false);
 			dispose();
 		}
@@ -737,7 +737,7 @@ class GameWindow extends JFrame implements ActionListener {
 					}
 				}
 
-				if(client.dictionary.contains(input)) {
+				if(dictionary.contains(input)) {
 					
 					for(Map.Entry<String, GamePanel> entry : players.entrySet()) {
 						String player = entry.getKey();
@@ -757,7 +757,6 @@ class GameWindow extends JFrame implements ActionListener {
 			}
 			textField.setText("");
 		}
-		repaint();
 	}
 
 
