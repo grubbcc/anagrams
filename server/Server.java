@@ -8,10 +8,10 @@ import java.util.Collection;
 public class Server extends Thread {
 	
 	private final int serverPort;	
-	public int numGames;
-	
+	private String[] lexicons = {"NWL18", "CSW19", "LONG"};
 	private HashMap<String, ServerWorker> workerList = new HashMap<>();
-	public HashMap<String, Game> gameList = new HashMap<>();
+	private HashMap<String, Game> gameList = new HashMap<>();
+	private HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	
 	
 	/**
@@ -20,6 +20,9 @@ public class Server extends Thread {
 	
 	public Server(int serverPort) {
 		this.serverPort = serverPort;
+		for(String lexicon : lexicons) {
+			dictionaries.put(lexicon, new AlphagramTrie(lexicon));
+		}
 	}
 	
 	/**
@@ -64,30 +67,22 @@ public class Server extends Thread {
 	synchronized public void removeWorker(String username) {
 		
 		ServerWorker removedWorker = workerList.remove(username);
-		broadcast("removeplayer " + username);
-/*		try {
-			removedWorker.join();
-		}
-		catch (InterruptedException e) {
-			e.printStackTrace();
-		}*/
+		broadcast("logoffplayer " + username);
+
+	}
+	
+	synchronized public ServerWorker getWorker(String username) {
+		return workerList.get(username);
 	}
 	
 	/**
 	*
 	*/
 	
-	public void addGame(String gameID, Game game) {
+	synchronized public void addGame(String gameID, Game game) {
 		gameList.put(gameID, game);
 	}
 	
-	/**
-	*
-	*/
-	
-	synchronized public Collection<String> getGameIDs() {
-		return gameList.keySet();
-	}
 	
 	/**
 	*
@@ -99,6 +94,24 @@ public class Server extends Thread {
 	
 	/**
 	*
+	*/
+	
+	synchronized public Game getGame(String gameID) {
+		return gameList.get(gameID);
+	}
+
+	/**
+	*
+	*/
+	
+	synchronized public AlphagramTrie getDictionary(String lexicon) {
+		return dictionaries.get(lexicon);
+	}
+	
+	/**
+	* Send a message or command to every client
+	*
+	* @param msg the message to be sent
 	*/
 	
 	synchronized void broadcast(String msg) {
