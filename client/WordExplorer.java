@@ -15,7 +15,7 @@ import java.util.TreeSet;
 import java.util.Enumeration;
 import java.io.*;
 
-/****
+/**
 *
 * A utility allowing the user to create new WordTrees and read definitions
 *
@@ -26,7 +26,7 @@ import java.io.*;
 * 3) allow user to choose between extensions or steals
 * 4) make messagepane scrollable when number of steals is large
 *
-*****/
+*/
 
 public class WordExplorer extends JDialog implements ActionListener {
 
@@ -57,8 +57,6 @@ public class WordExplorer extends JDialog implements ActionListener {
 		for(String wordList : wordLists)
 			if(wordList.endsWith(".txt"))8
 				lexicons.add(wordList.substring(0, wordList.length() - 4));*/
-
-		
 
 		//Create the WordTree
 		this.lexicon = trie.lexicon;
