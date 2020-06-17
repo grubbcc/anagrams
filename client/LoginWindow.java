@@ -3,15 +3,15 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.io.IOException;
 
-/***
+/**
 *
 *
 */
 
-
 public class LoginWindow extends JDialog implements ActionListener, KeyListener {
 
-	private JButton loginButton = new JButton("Login");	
+	private JButton loginButton = new JButton("Login");
+	private boolean loginButtonClicked = false;
 	private JTextField usernameField = new JTextField("", 35);
 	private GridBagLayout menuLayout = new GridBagLayout();
 	private GridBagConstraints constraints;
@@ -24,6 +24,12 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 	
 	public LoginWindow(AnagramsClient client, int x, int y) {
 		this.client = client;
+
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				System.exit(0);
+			}
+		});
 	
 		setTitle("Login");
 		setModal(true);
@@ -64,23 +70,25 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 	*
 	*/
 	
-	
 	public void actionPerformed(ActionEvent evt) {
-
 		doLogin();
-
 	}
+	
 	
 	/**
 	*
 	*/
 
 	private void doLogin() {
+		setVisible(false);
 		try {
 			if(client.login(username)) {
 				//login successful
-				setVisible(false);
+
 				dispose();
+			}
+			else {
+				setVisible(true);
 			}
 		}
 		catch (IOException e) {
@@ -94,7 +102,6 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 	*/
 	
 	public void keyPressed(KeyEvent evt) {
-
 		if(evt.getKeyChar() == evt.VK_ENTER) {
 			loginButton.doClick();
 		}
@@ -105,8 +112,6 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 	*/
 
 	public void keyTyped(KeyEvent e) {
-
-
 	}
 	
 	/**
@@ -117,8 +122,9 @@ public class LoginWindow extends JDialog implements ActionListener, KeyListener 
 		username = usernameField.getText().replace(" ","_");
 		if (username.length() > 0 && username.length() < 21) {
 			loginButton.setEnabled(true);
-		} else {
+		}
+		else {
 			loginButton.setEnabled(false);
 		}		
-	} 
+	}
 }
