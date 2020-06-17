@@ -1,17 +1,13 @@
-/****
+import java.io.*;
+import java.util.Arrays;
+
+/**
 * Stores a list of words as a trie data structure for fast lookup. 
 * See: https://en.wikipedia.org/wiki/Trie
 * Words are indexed according to a unique alphabetical ordering ("alphagram") so that
 * words which are anagrams of each other are stored in the same node.
 *
-*
-* TO DO: add ability to store definitions in nodes
-*
-*****/
-
-import java.io.*;
-import java.util.Arrays;
-
+*/
 
 public class AlphagramTrie {
 	
@@ -91,7 +87,7 @@ public class AlphagramTrie {
 	* @param searchKey the String to be searched for
 	*/	
 	
-	public boolean contains(String searchKey) {
+	synchronized public boolean contains(String searchKey) {
 		
 		Node node = getNode(searchKey);
 		
@@ -110,7 +106,7 @@ public class AlphagramTrie {
 	*
 	*/
 	
-	public Node getNode(String searchKey) {
+	synchronized public Node getNode(String searchKey) {
 		
 		String alphagram = alphabetize(searchKey.toUpperCase());
 		Node node = rootNode;
@@ -129,42 +125,17 @@ public class AlphagramTrie {
 	}
 	
 	/**
-	*
-	*/
-	
-	public String getDefinition(String searchKey) {
-		Node node = getNode(searchKey);
-		if(node != null)
-			return node.definitions.get(searchKey.toUpperCase());
-		else
-			return null;
-	}
-	
-	/**
 	* Given a String, creates an "alphagram" consisting of its letters arranged in alphabetical order.
 	* 
 	* @param String entry: the letters to be rearranged
 	*/
 	
-	public static String alphabetize(String entry) {
+	synchronized public static String alphabetize(String entry) {
 
 	    char[] chars = entry.toCharArray();
         Arrays.sort(chars);
         return new String(chars);
 	
 	}
-	
-	/**
-	*
-	*/
-	
-	public static void main(String[] args) {
 
-		String lexicon = "CSW15";
-		AlphagramTrie trie = new AlphagramTrie(lexicon);
-
-		System.out.println(trie.contains("chalupa"));
-		System.out.println(trie.getDefinition("chalupa"));
-		
-	}
 }
