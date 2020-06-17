@@ -1,5 +1,5 @@
 /**
-* Just like it says, a MessagePane with a hyperlink.
+* A custom HTML-enabled frame for displaying pop-up messages
 * Adapted from Jean-Marc Astesana's answer at https://stackoverflow.com/a/33446134/3736508
 */
 
@@ -13,13 +13,13 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.net.URI;
 
-public class MessageWithLink extends JEditorPane {
+public class HypertextMessage extends JEditorPane {
 
 	/**
 	*
 	*/
 
-	public MessageWithLink(String htmlBody) {
+	public HypertextMessage(String htmlBody) {
 		super("text/html", "<html><body style=\"" + getStyle() + "\"><p>" + htmlBody + "</p></body></html>");
 		addHyperlinkListener(new HyperlinkListener() {
 			@Override
