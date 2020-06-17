@@ -24,11 +24,9 @@ import java.awt.event.ActionListener;
 
 public class AnagramsClient extends JFrame implements ActionListener {
 
-//	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
-	private final String serverName = "192.168.0.14"; //connect over home network
-//	private final String serverName = "localhost"; //connect to this computer
-	private final static int port = 8118;
-	private final static int testPort = 8117;
+	private final String serverName = "localhost"; //connect to this computer
+	private final static int port = 1001;
+	private final static int testPort = 1000;
 	public final String version = "0.9.5";
 	
 	private Socket socket;
