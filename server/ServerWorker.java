@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-/***
+/**
 *
 * Handles tasks for the client on the server side.
 */
@@ -18,10 +18,10 @@ public class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final Server server;
-	private final int[] latestVersion = {0, 9, 2};
+	private final int[] latestVersion = {0, 9, 5};
 	public String username = null;
 	private OutputStream outputStream;
-	private InputStream inputStream;	
+	private InputStream inputStream;
 	private BufferedReader reader;
 	
 	/**
@@ -104,29 +104,34 @@ public class ServerWorker extends Thread {
 				else if(cmd.equals("chat")) {
 					server.broadcast(line);
 				}
-				else if(cmd.equals("gamechat")) {
-					server.getGame(tokens[1]).handleChat(line);
-				}
 				else if(cmd.equals("newgame")) {
 					handleCreateGame(tokens);			
 				}
-				else if(cmd.equals("joingame")) {
-					server.getGame(tokens[1]).addPlayer(this);
-				}
-				else if(cmd.equals("watchgame")) {
-					server.getGame(tokens[1]).addWatcher(this);
-				}
-				else if(cmd.equals("exitgame")) {
-					server.getGame(tokens[1]).removePlayer(this);
-				}
-				else if(cmd.equals("stopwatching")) {
-					server.getGame(tokens[1]).removeWatcher(this);
-				}
-				else if(cmd.equals("makeword")) {
-					server.getGame(tokens[1]).doMakeWord(tokens[2], tokens[3]);
-				}
-				else if(cmd.equals("steal")) {
-					server.getGame(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
+				
+				//game related commands
+				else if(server.getGame(tokens[1]) != null) {
+					if(cmd.equals("makeword")) {
+						server.getGame(tokens[1]).doMakeWord(tokens[2], tokens[3]);
+					}
+					else if(cmd.equals("steal")) {
+						server.getGame(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
+					}
+					else if(cmd.equals("gamechat")) {
+						server.getGame(tokens[1]).notifyRoom(line);
+					}
+					else if(cmd.equals("joingame")) {
+						server.getGame(tokens[1]).addPlayer(this);
+					}
+					else if(cmd.equals("watchgame")) {
+						server.getGame(tokens[1]).addWatcher(this);
+					}
+					else if(cmd.equals("stopplaying")) {
+						server.getGame(tokens[1]).removePlayer(this);
+					}
+					else if(cmd.equals("stopwatching")) {
+						server.getGame(tokens[1]).removeWatcher(this);
+					}
+
 				}
 				else {	
 					System.out.println("Error: Command not recognized: " + line);
@@ -140,19 +145,23 @@ public class ServerWorker extends Thread {
 	}
 
 	/**
-	* Checks to see if the client is using an outdated and/or unsupported version of Anagrams.
+	* Checks to see if the client is using an "outdated" and/or "unsupported" version of Anagrams.
 	*
+	* 
+	*
+	* @param version the latest version of this software
 	*/
 	
 	private void checkVersion(String version) {
 		String[] subversions = version.split("\\.");
 		for(int i = 0; i < 3; i++) {
 			if(Integer.parseInt(subversions[i]) < latestVersion[i]) {
+//				send("outdated");
 				send("unsupported");
 				return;
 			}
 		}
-		send("ok");
+		send("ok version");
 	}
 
 	/**
@@ -168,6 +177,9 @@ public class ServerWorker extends Thread {
 		}
 		else {
 			send("ok login");
+
+			//use this space to send alert messages upon login
+
 			this.username = username;
 
 			System.out.println("User logged in successfully: " + username);
@@ -175,7 +187,11 @@ public class ServerWorker extends Thread {
 			//notify new player of games
 			for(Game game : server.getGames()) {
 				send("addgame " + game.getGameParams());
+				for(String player : game.words.keySet()) {
+					send("takeseat " + game.gameID + " " + player);
+				}
 			}
+
 			//notify new player of other players
 			for(String playerName : server.getUsernames()) {
 				send("addplayer " + playerName);
@@ -229,18 +245,20 @@ public class ServerWorker extends Thread {
 		boolean hasRobot = Boolean.parseBoolean(params[10]);
 		int skillLevel = Integer.parseInt(params[11]);
 		
-		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowWatchers, hasRobot, skillLevel);
+		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowWatchers);
 		
-		newGame.addPlayer(this);
-
 		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers);
 
-		server.addGame(gameID, newGame);
+		newGame.addPlayer(this);
 		
+		if(hasRobot) {
+			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon)));
+		}
+		server.addGame(gameID, newGame);
+		newGame.startGame();
 	}
 
 
-	
 	/**
 	*
 	*/
@@ -263,7 +281,7 @@ public class ServerWorker extends Thread {
 			outputStream.flush();
 		}
 		catch (IOException e) {
-			System.out.println(username + " has unexpectedly disonnected");
+			System.out.println(username + " has unexpectedly disconnected");
 			//attempt to reconnect
 			try {
 				for(Game game : server.getGames()) {
