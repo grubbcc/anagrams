@@ -9,7 +9,7 @@ import java.util.Date;
 import java.text.SimpleDateFormat;
 
 /**
-* A menu for choosing options when creating a new game
+* A menu for choosing options whilst creating a new game
 *
 */
 
@@ -31,10 +31,9 @@ class GameMenu extends JDialog implements ActionListener {
 	private Integer[] lengths = {4, 5, 6, 7, 8, 9, 10};
 	private Integer[] sets = {1, 2, 3};
 	private Integer[] blankPenalty = {1, 2};
-	private String[] lexicons = {"CSW19", "NWL18", "LONG"};
+	public String[] lexicons = {"CSW19", "NWL18", "LONG"};
 	private String[] speeds = {"slow", "medium", "fast"};
 	private String[] difficulties = {"novice", "standard", "expert", "genius"};
-	private String lexicon = "";
 
 	private JButton startButton = new JButton("Start");
 
@@ -114,8 +113,7 @@ class GameMenu extends JDialog implements ActionListener {
 		setLocation(x - getWidth()/2, y - getHeight()/2);
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				
-					client.getRootPane().requestFocus();		
+				client.getRootPane().requestFocus();		
 			}
 		});
 	}
@@ -158,10 +156,8 @@ class GameMenu extends JDialog implements ActionListener {
 			Integer minLength = (Integer)lengthsSelector.getSelectedItem();
 			Integer numSets = (Integer)setsSelector.getSelectedItem();
 			Integer blankPenalty = (Integer)blanksSelector.getSelectedItem();
-			if(!client.dictionaries.containsKey(lexicon)) {
-				lexicon = (String)lexiconSelector.getSelectedItem();
-				client.dictionaries.put(lexicon, new AlphagramTrie(lexicon));
-			}
+			String lexicon = (String)lexiconSelector.getSelectedItem();
+			
 			String speed = (String)speedSelector.getSelectedItem();
 			boolean allowChat = chatChooser.isSelected();
 			boolean allowWatchers = watchersChooser.isSelected();
@@ -169,15 +165,22 @@ class GameMenu extends JDialog implements ActionListener {
 			int skillLevel = (Integer)difficultySelector.getSelectedIndex() + 1;
 			
 			setVisible(false);
+			
+			AlphagramTrie dictionary = null; //later make this default dictionary
+			for(String key : client.dictionaries.keySet()) {
+				if(key.equals(lexicon)) {
+					dictionary = client.dictionaries.get(key);
+					if(dictionary == null) {
+						dictionary = new AlphagramTrie(key);
+						client.dictionaries.put(key, dictionary);
+					}
+				}
+			}
 
-			client.dictionary = client.dictionaries.get(lexicon);
-
-			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat));
+			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat, dictionary));
 
 			String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
 			client.send(cmd);
-
-
 		}
 	}
 
