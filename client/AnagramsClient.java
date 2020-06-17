@@ -1,13 +1,6 @@
-/***
-*
-* To do: 
-* animate steals
-* read a default lexicon from file and load on startup
-*
-*/
-
 import java.util.Vector;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Arrays;
@@ -24,12 +17,19 @@ import javax.swing.text.DefaultEditorKit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+*
+*
+*/
+
 public class AnagramsClient extends JFrame implements ActionListener {
 
-	private final String serverName = "localhost"; //connect to this computer
-	private final static int port = 1001;
-	private final static int testPort = 1000;
-	public final String version = "0.9.4";
+//	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
+	private final String serverName = "192.168.0.14"; //connect over home network
+//	private final String serverName = "localhost"; //connect to this computer
+	private final static int port = 8118;
+	private final static int testPort = 8117;
+	public final String version = "0.9.5";
 	
 	private Socket socket;
 	private InputStream serverIn;
@@ -37,7 +37,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	private BufferedReader bufferedIn;
 	
 	private LoginWindow loginWindow;
-	private GameMenu menu;
+	private GameMenu gameMenu;
 	
 	private JButton createGameButton = new JButton("Create Game");
 	private JPanel gamesPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
@@ -62,7 +62,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	
 	public String username;
 	private ArrayList<String> playersList = new ArrayList<String>();
-	public AlphagramTrie dictionary;
 	public HashMap<String, AlphagramTrie> dictionaries = new HashMap<String, AlphagramTrie>();
 
 	/**
@@ -99,7 +98,10 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		
 		createGameButton.addActionListener(this);
-		menu = new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
+		gameMenu = new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
+		for(String lexicon : gameMenu.lexicons) {
+			dictionaries.put(lexicon, null);
+		}
 		
 		//games pane
 		JScrollPane gamesScrollPane = new JScrollPane(gamesPanel);
@@ -128,7 +130,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		chatField.setForeground(Color.GRAY);
 		chatField.addFocusListener(fl);
 		chatField.addActionListener(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.setText("");});
-		chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new MyDeletePrevCharAction());
+		chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
 		chatField.setBorder(new EmptyBorder(1,1,1,1));
 		chatField.setBackground(Color.LIGHT_GRAY);
 		chatPanel.add(chatBox);
@@ -146,17 +148,16 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				send("logoff");
-
 			}
 		});
 
 		setVisible(true);
+		
 		connect(serverName, port);
 		checkVersion();
-		
 		loginWindow = new LoginWindow(this, getLocation().x, getLocation().y);
-
 		startMessageReader();
+
 	}
 
 
@@ -175,72 +176,97 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent evt) {
 		if (evt.getSource() == createGameButton) {
 			if(gameWindows.size() < 4) { //maximum of 4 windows open at a time
-				menu.setVisible(true);
+				gameMenu.setVisible(true);
 			}
 		}
 		repaint();
 	}
 	
 	/***
-	* A display for information and controls related to a game
+	* A user interface for gameplay
 	*/
 
 
 	class GamePane extends JPanel {
 		
+		String gameID;
+		int maxPlayers;
+		boolean allowWatchers;
 		JLabel notificationLabel = new JLabel();
-		
-		//use this to display players in this game
-		ArrayList<String> players = new ArrayList<String>();
+		JLabel playersLabel = new JLabel();
+		HashSet<String> players = new HashSet<String>();
+		HashSet<String> watchers = new HashSet<String>();
+		String toolTipText = "";
+		AlphagramTrie dictionary = null;
 		
 		/**
 		*
 		*/
 		
-		GamePane(String gameID, String maxPlayers, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
-			setLayout(new GridLayout(4, 2, 10, 10));
-			setPreferredSize(new Dimension(300,150));
-			setBorder(new EmptyBorder(10, 10, 10, 10));
-			gamePanes.put(gameID, this);			
+		GamePane(String gameID, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers) {
+
+			this.gameID = gameID;
+			allowWatchers = Boolean.parseBoolean(allowsWatchers);
+			maxPlayers = Integer.parseInt(playerMax);
+			playersLabel.setText("Players: 0/" + maxPlayers);
+
+			for(String key : dictionaries.keySet()) {
+				if(key.equals(lexicon)) {
+					dictionary = dictionaries.get(key);
+					if(dictionary == null) {
+						dictionary = new AlphagramTrie(key);
+						dictionaries.put(key, dictionary);
+					}
+				}
+			}
+
+			setLayout(new GridLayout(5, 2, 10, 10));
+			setPreferredSize(new Dimension(300, 150));
+			setBorder(new EmptyBorder(3, 3, 3, 3));
 		
 			//join button
 			JButton joinButton = new JButton("Join game");
-			joinButton.addActionListener(
-				new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent evt) {
-						if(!gameWindows.containsKey(gameID)) {
-							dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
-							dictionary = dictionaries.get(lexicon);
-							
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat)));
+			joinButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent evt) {
+					if(!players.contains(username) && !watchers.contains(username)) {
+						if(gameWindows.size() <= 4) {
+							addPlayer(username);
+							GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat), dictionary);
+							gameWindows.put(gameID, newGame);
+							for(String player : players) {
+								newGame.addPlayer(player);
+							}
 							send("joingame " + gameID + " " + username);
 						}
 					}
 				}
-			);
+			});
 			add(joinButton);	
 			
 			//watch button
-			if(Boolean.parseBoolean(allowsWatchers)) {
-				JButton watchButton = new JButton("Watch");
-				watchButton.addActionListener(
-					new ActionListener() {
-						@Override
-						public void actionPerformed(ActionEvent evt) {
-							if(!gameWindows.containsKey(gameID)) {
-								dictionaries.putIfAbsent(lexicon, new AlphagramTrie(lexicon));
-								dictionary = dictionaries.get(lexicon);	
-								
-								gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat)));
+			JButton watchButton = new JButton("Watch");
+			watchButton.setEnabled(allowWatchers);
+			if(allowWatchers) {
+				watchButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent evt) {
+						if(!players.contains(username) && !watchers.contains(username)) {
+							if(gameWindows.size() <= 4) {		
+								addWatcher(username);
+								GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat), dictionary);
+								gameWindows.put(gameID, newGame);
+								for(String player : players) {
+									newGame.addPlayer(player);
+								}
 								send("watchgame " + gameID + " " + username);
-							
 							}
 						}
 					}
-				);	
-				add(watchButton);
+				});
 			}
+			add(watchButton);
+			
 			
 			setBackground(new Color(0, 255, 51));
 			add(new JLabel("Lexicon: "  + lexicon));
@@ -248,19 +274,67 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			add(new JLabel("Number of sets: " + numSets));
 			add(new JLabel("Blank Penalty: " + blankPenalty));	
 			add(new JLabel("Speed: " + speed));
-			add(notificationLabel);			
+			add(playersLabel);
+			add(notificationLabel);	
+
 		}
 		
 		/**
 		*
 		*/
 		
-		void addPlayer(String playerName) {
-			//to be filled in later
+		void addPlayer(String newPlayer) {
+			players.add(newPlayer);
+			if(gameWindows.get(gameID) != null) {
+				gameWindows.get(gameID).addPlayer(newPlayer);
+			}
+			playersLabel.setText("Players: " + players.size() + "/" + maxPlayers);
+			if(toolTipText.isEmpty()) {
+				toolTipText = toolTipText.concat(newPlayer);
+			}
+			else {
+				toolTipText = toolTipText.concat("<br>" + newPlayer);
+			}
+			playersLabel.setToolTipText("<html>" + toolTipText + "</html>");
 		}
 		
-		void removePlayer(String playerName) {
-			//to be filled in later
+		/**
+		*
+		*/
+		
+		void removePlayer(String playerToRemove) {
+			players.remove(playerToRemove);
+			if(gameWindows.get(gameID) != null) {
+				gameWindows.get(gameID).removePlayer(playerToRemove);
+			}
+			playersLabel.setText("Players: " + players.size() + "/" + maxPlayers);
+			toolTipText = "";
+			playersLabel.setToolTipText(null);
+			
+			if(!players.isEmpty()) {
+				for(String player : players) {
+					toolTipText = toolTipText.concat("<br>" + player);
+				}
+				toolTipText = toolTipText.replaceFirst("<br>", "");
+				playersLabel.setToolTipText("<html>" + toolTipText + "</html>");
+			}
+		}
+		
+		
+		/**
+		*
+		*/
+		
+		void addWatcher(String newWatcher) {
+			watchers.add(newWatcher);
+		}
+		
+		/*
+		*
+		*/
+		
+		void removeWatcher(String watcherToRemove) {
+			watchers.remove(watcherToRemove);
 		}
 	}
 	
@@ -274,7 +348,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	*/
 
 	void addGame(String newGameID, GamePane newGamePane) {
-	
+		
 		gamePanes.put(newGameID, newGamePane);
 		
 		boolean placed = false;
@@ -337,19 +411,24 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	* @param boolean isWatcher whether the player is watching
 	*/
 	
-	void exitGame(String gameID, boolean isWatcher) {
+	void exitGame(String gameID, boolean isWatcher, boolean remove) {
 
 		gameWindows.remove(gameID);
 
 		if(isWatcher) {
+			gamePanes.get(gameID).removeWatcher(username);
 			send("stopwatching " + gameID);
 		}
 		else {
-			send("exitgame " + gameID);
+			send("stopplaying " + gameID);
 		}
+		if(remove) {
+			gamePanes.get(gameID).removePlayer(username);
+		}
+		
 		getRootPane().requestFocus();
 	}
-
+	
 
 	/**
 	*
@@ -362,6 +441,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			this.serverIn = socket.getInputStream();
 			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
 			return true;
+
 		}
 		catch (IOException e) {
 
@@ -372,6 +452,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				System.exit(0);
 			}
 		}
+		
 		return false;
 	}
 	
@@ -389,10 +470,10 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				return;
 			}
 			else if("outdated".equalsIgnoreCase(response)) {
-				JOptionPane.showMessageDialog(this, new MessageWithLink("There is a updated version of Anagrams available. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to get the latest features."), "Warning", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(this, new HypertextMessage("An updated version of Anagrams available. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to get the latest features."), "Warning", JOptionPane.INFORMATION_MESSAGE);
 			}				
 			else if("unsupported".equalsIgnoreCase(response)) {
-				JOptionPane.showMessageDialog(this, new MessageWithLink("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(this, new HypertextMessage("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"http://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
 
 				System.exit(0);
 			}
@@ -415,15 +496,16 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	public boolean login(String username) throws IOException {
 
 		this.username = username;
-
 		send("login " + username);
-		
 		String response = this.bufferedIn.readLine();
 		
-		if("ok login".equalsIgnoreCase(response)) {
+		//successful login
+		if("ok login".equals(response)) {
 			System.out.println(username + " has just logged in.");
 			return true;
 		}
+
+		//login was unsuccessful
 		else {
 			JOptionPane.showMessageDialog(this, response);
 			return false;
@@ -457,7 +539,6 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				if (tokens != null && tokens.length > 0) {
 
 					String cmd = tokens[0];
-
 					if(!cmd.equals("note")) {
 						System.out.println("command received: " + line);
 					}
@@ -468,13 +549,17 @@ public class AnagramsClient extends JFrame implements ActionListener {
 						if(gameWindows.get(tokens[1]) != null) {
 							gameWindows.get(tokens[1]).setNotificationArea(line.split("@")[1]);
 						}
-					}					
+					}
+					else if(cmd.equals("alert")) {
+
+						JOptionPane.showMessageDialog(this, new HypertextMessage(line.split("@")[1]), "Warning", JOptionPane.WARNING_MESSAGE);
+					}
 					else if(cmd.equals("addplayer")) {
 						addPlayer(tokens[1]);
 					}
-					else if(cmd.equals("removeplayer")) {
+					else if(cmd.equals("logoffplayer")) {
 						playersList.remove(tokens[1]);
-						String players = "";
+						String players = " ";
 						for(String player : playersList)
 							players += player + "\n ";
 						playersTextArea.setText(players);
@@ -507,40 +592,41 @@ public class AnagramsClient extends JFrame implements ActionListener {
 						}
 						gamesPanel.repaint();
 					}
-					//game related commands
-					else if(gameWindows.get(tokens[1]) != null) {
-						if(cmd.equals("nexttiles")) {;
+					
+					//gamePane commands
+					else if(gamePanes.get(tokens[1]) != null) {
+						if(cmd.equals("takeseat")) {
+							gamePanes.get(tokens[1]).addPlayer(tokens[2]);
+						}
+					
+						else if(cmd.equals("removeplayer")) {
+							gamePanes.get(tokens[1]).removePlayer(tokens[2]);
+						}
+						else if(cmd.equals("watchgame")) {
+							gamePanes.get(tokens[1]).addWatcher(tokens[2]);
+						}
+						else if(cmd.equals("unwatchgame")) {
+							gamePanes.get(tokens[1]).removeWatcher(tokens[2]);
+						}
+					}
+
+					//gameWindow commands
+					if(gameWindows.get(tokens[1]) != null) {
+						if(cmd.equals("nexttiles")) {
 							gameWindows.get(tokens[1]).setTiles(tokens[2]);
 						}
 						else if(cmd.equals("addword")) {
-								gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
+							gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
 						}
 						else if(cmd.equals("removeword")) {
 							gameWindows.get(tokens[1]).removeWord(tokens[2], tokens[3]);
 						}
-						else if(cmd.equals("joingame")) {
-							gameWindows.get(tokens[1]).addPlayer(tokens[2]);
-							//the server will need to send this information for all games--not just the ones this client is involved in
-							gamePanes.get(tokens[1]).addPlayer(tokens[2]);
-						}
 						else if(cmd.equals("endgame")) {
 							gameWindows.get(tokens[1]).gameOver = true;
-						}
-						else if(cmd.equals("leavegame")) {
-							gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-							//the server will need to send this information for all games--not just the ones this client is involved in
-							gamePanes.get(tokens[1]).removePlayer(tokens[2]);
-						}
-						else if(cmd.equals("watchgame")) {
-							gameWindows.get(tokens[1]).addWatcher(tokens[2]);
-						}
-						else if(cmd.equals("unwatchgame")) {
-							gameWindows.get(tokens[1]).removeWatcher(tokens[2]);
 						}
 						else if(cmd.equals("gamechat")) {
 							gameWindows.get(tokens[1]).handleChat((line.split(tokens[1]))[1]);
 						}
-
 					}
 					else {
 						System.out.println("Command " + cmd + " not recognized");
