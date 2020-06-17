@@ -33,9 +33,10 @@ class Robot extends Thread {
 	*
 	*/
 	
-	public Robot(Game game, int skillLevel) {
+	public Robot(Game game, int skillLevel, AlphagramTrie dictionary) {
 		
-		this.dictionary = new AlphagramTrie(game.lexicon);
+		this.dictionary = dictionary;
+
 		this.game = game;
 		this.blankPenalty = game.blankPenalty;
 		this.minLength = game.minLength;
