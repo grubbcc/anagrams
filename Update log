@@ -1,16 +1,32 @@
 Update log
 
-0.9.3
+0.9.5
+
+* You can now the names of players in a game from the home screen.
+* Capped the number of windows you can have open at a time at 4.
+* Enabled instantaneous Robot loading.
 *
+
+0.9.4 - June 12, 2020
+
+* Game window can now be maximized and minimized.
+* Game window now displays game parameters.
+* Added informative tooltips to game menu.
+* Tile size automatically adjusts according when panel is full.
+* 
+
+0.9.3 - June 10, 2020
+
 * The game ends immediately and goes to analysis mode if the tile bag and tile pool are both empty.
 * Added NWL18 definitions
 * Players may now select minimum word length of 4 or 5.
 * Game notifications are now displayed in the main screen.
 * You can now resume a game after leaving or getting connected. The game will automatically delete if there is no activity after one minute.
-* Improved robot loading speed
+* Improved robot loading speed.
 *
 
-0.9.2
+0.9.2 - June 5, 2020
+
 * Fixed bug where watcher would sometimes fail to load dictionary
 * Added chat to the game window
 * Prevented chat panel from growing too large
@@ -18,7 +34,8 @@ Update log
 * Removed that beep sound when the backspace key is entered in an empty text field
 *
 
-0.9.1
+0.9.1 - June 4, 2020
+
 * You can no longer make a word if it is already on the board
 * Fixed a bug that would sometimes cause socket errors if you quit the application with a game open
 * Created a warning panel that informs the player when their version is out of date
