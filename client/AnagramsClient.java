@@ -24,9 +24,11 @@ import java.awt.event.ActionListener;
 
 public class AnagramsClient extends JFrame implements ActionListener {
 
-	private final String serverName = "localhost"; //connect to this computer
-	private final static int port = 1001;
-	private final static int testPort = 1000;
+//	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
+	private final String serverName = "192.168.0.14"; //connect over home network
+//	private final String serverName = "localhost"; //connect to this computer
+	private final static int port = 8118;
+	private final static int testPort = 8117;
 	public final String version = "0.9.5";
 	
 	private Socket socket;
@@ -35,16 +37,35 @@ public class AnagramsClient extends JFrame implements ActionListener {
 	private BufferedReader bufferedIn;
 	
 	private LoginWindow loginWindow;
-	private GameMenu gameMenu;
 	
+	private JPanel controlPanel = new JPanel(new BorderLayout());
 	private JButton createGameButton = new JButton("Create Game");
+	private ImageIcon settingsIcon = new ImageIcon(getClass().getResource("settings.png"));	
+	private JButton settingsButton = new JButton("Settings   ", settingsIcon);
+
+	public String[] lexicons = {"CSW19", "NWL18", "LONG"};		
 	private JPanel gamesPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
 	private JPanel playersPanel = new JPanel(new BorderLayout());
+	private JLabel playersHeader = new JLabel("Players logged in");
 	private JTextArea playersTextArea = new JTextArea();
 	private JPanel chatPanel = new JPanel(new BorderLayout());
 	private JScrollPane chatScrollPane = new JScrollPane(chatPanel);
 	private JTextArea chatBox = new JTextArea(5, 70);
 	private JTextField chatField = new JTextField("Type here to chat", 70);
+
+	Color mainScreenBackgroundColor;
+	Color mainScreenBackgroundText; //unused
+	Color chatAreaColor;
+	Color chatAreaText;
+	Color playersPanelColor;
+	Color playersPanelText;
+	Color gameForegroundColor;
+	Color gameForegroundText;
+	Color gameBackgroundColor;
+	Color gameBackgroundText;
+
+	HashMap<String, String> settings = new HashMap<String, String>();
+	
 	private FocusListener fl = new FocusListener() {
 		public void focusGained(FocusEvent e) {
 			chatField.setText("");
@@ -89,40 +110,53 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		setMinimumSize(new Dimension(790,400));
 		if(port == 8117) setTitle("Anagrams (testing mode)");
 		else setTitle("Anagrams");
-		setBackground(Color.BLUE);
+		settings = loadSettings();
+		
+		for(String key : settings.keySet()) {
+			System.out.println("found " + key + " : " + settings.get(key));
+		}
+
+		for(String lexicon : lexicons) {
+			dictionaries.put(lexicon, null);
+		}
+		dictionaries.put(settings.get("lexicon"), new AlphagramTrie(settings.get("lexicon")));
 
 		//exit the program when the user presses ESC or CTRL + W
 		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
-		
+
+		//control panel
 		createGameButton.addActionListener(this);
-		gameMenu = new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
-		for(String lexicon : gameMenu.lexicons) {
-			dictionaries.put(lexicon, null);
-		}
+		settingsButton.addActionListener(this);
+		settingsButton.setPreferredSize(new Dimension(141, 33));
+		settingsButton.setHorizontalTextPosition(SwingConstants.LEFT);
+		controlPanel.add(settingsButton, BorderLayout.EAST);
+		controlPanel.add(createGameButton, BorderLayout.CENTER);
+
 		
-		//games pane
+		//games panel
 		JScrollPane gamesScrollPane = new JScrollPane(gamesPanel);
 		gamesPanel.setLayout(new BoxLayout(gamesPanel, BoxLayout.Y_AXIS));
 		JPanel firstRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
 		gamesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		gamesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		gamesPanel.setBackground(Color.BLUE);
 
-		//players pane
+
+		//players panel
 		JScrollPane playersScrollPane = new JScrollPane(playersPanel);
-		playersPanel.setBackground(Color.GREEN);
-		JLabel playersHeader = new JLabel("Players logged in");
+		playersScrollPane.setPreferredSize(new Dimension(141, 1000));
+
 		playersHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
 		playersHeader.setBorder(new EmptyBorder(3, 3, 3, 3));
-		playersTextArea.setBackground(Color.GREEN);
+		playersHeader.setOpaque(false);
+
 		playersTextArea.setEditable(false);
+		playersTextArea.setOpaque(false);
 		playersPanel.add(playersHeader, BorderLayout.NORTH);
 		playersPanel.add(playersTextArea);
 		
 		//chat pane
 		chatScrollPane.setPreferredSize(new Dimension(600, 100));
-		chatPanel.setBackground(Color.WHITE);
 		chatBox.setLineWrap(true);
 		chatBox.setEditable(false);
 		chatField.setForeground(Color.GRAY);
@@ -136,13 +170,12 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		chatPanel.add(chatField, BorderLayout.SOUTH);
 
 		//main panel
-		getContentPane().add(createGameButton, BorderLayout.NORTH);
+		setColors();
+		getContentPane().add(controlPanel, BorderLayout.NORTH);
 		getContentPane().add(gamesScrollPane, BorderLayout.CENTER);
 		getContentPane().add(playersScrollPane, BorderLayout.EAST);
 		getContentPane().add(chatScrollPane, BorderLayout.SOUTH);
         
-		//load default dictionary from player profile
-
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				send("logoff");
@@ -157,7 +190,39 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		startMessageReader();
 
 	}
+	
+	/**
+	*
+	*/
 
+	public void setColors() {
+
+		mainScreenBackgroundColor = Color.decode(settings.get("Main screen"));
+		mainScreenBackgroundText = Color.decode(settings.get("Main screen text")); //unused
+		playersPanelColor = Color.decode(settings.get("Players list"));
+		playersPanelText = Color.decode(settings.get("Players list text"));
+		chatAreaColor = Color.decode(settings.get("Chat area"));
+		chatAreaText = Color.decode(settings.get("Chat area text"));
+		gameForegroundColor = Color.decode(settings.get("Game foreground"));
+		gameForegroundText = Color.decode(settings.get("Game foreground text"));
+		gameBackgroundColor = Color.decode(settings.get("Game background"));
+		gameBackgroundText = Color.decode(settings.get("Game background text"));
+		
+		gamesPanel.setBackground(mainScreenBackgroundColor);
+		chatBox.setBackground(chatAreaColor);
+		chatBox.setForeground(chatAreaText);
+		playersPanel.setBackground(playersPanelColor);
+		playersHeader.setForeground(playersPanelText);
+		playersTextArea.setForeground(playersPanelText);
+
+		for(GamePane gamePane : gamePanes.values()) {
+			gamePane.setBackground(gameForegroundColor);
+		}
+		
+		for(GameWindow gameWindow : gameWindows.values()) {
+			gameWindow.setColors();
+		}
+	}
 
 	/**
 	* 
@@ -173,25 +238,33 @@ public class AnagramsClient extends JFrame implements ActionListener {
 
 	public void actionPerformed(ActionEvent evt) {
 		if (evt.getSource() == createGameButton) {
-			if(gameWindows.size() < 4) { //maximum of 4 windows open at a time
-				gameMenu.setVisible(true);
+			if(gameWindows.size() < 44) { //maximum of 4 windows open at a time
+				new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
 			}
 		}
-		repaint();
+		else if(evt.getSource() == settingsButton) {
+			new SettingsMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);		
+		}
 	}
 	
-	/***
-	* A user interface for gameplay
+	/**
+	* Displays information about games and tools for joining
 	*/
-
 
 	class GamePane extends JPanel {
 		
 		String gameID;
 		int maxPlayers;
 		boolean allowWatchers;
+		
+		JLabel lexiconLabel = new JLabel();
+		JLabel minLengthLabel = new JLabel();
+		JLabel numSetsLabel = new JLabel();
+		JLabel blankPenaltyLabel = new JLabel();
+		JLabel speedLabel = new JLabel();
 		JLabel notificationLabel = new JLabel();
 		JLabel playersLabel = new JLabel();
+		
 		HashSet<String> players = new HashSet<String>();
 		HashSet<String> watchers = new HashSet<String>();
 		String toolTipText = "";
@@ -206,7 +279,40 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			this.gameID = gameID;
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
 			maxPlayers = Integer.parseInt(playerMax);
+			setBackground(gameForegroundColor);
+
+			lexiconLabel.setText("Lexicon: " + lexicon);
+			lexiconLabel.setForeground(gameForegroundText);
+			if(lexicon.equals("CSW19")) 
+				lexiconLabel.setToolTipText("Collins Official Scrabble Words \u00a9 2019");
+			else if(lexicon.equals("NWL18")) 
+				lexiconLabel.setToolTipText("NASPA Word List \u00a9 2018");
+			
+			minLengthLabel.setText("Minimum word length: " + minLength);
+			minLengthLabel.setForeground(gameForegroundText);
+
+			numSetsLabel.setText("Number of sets: " + numSets);
+			numSetsLabel.setForeground(gameForegroundText);
+			numSetsLabel.setToolTipText(100*Integer.parseInt(numSets) + " total tiles");			
+
+			blankPenaltyLabel.setText("Blank Penalty: " + blankPenalty);	
+			blankPenaltyLabel.setForeground(gameForegroundText);
+			blankPenaltyLabel.setToolTipText("<html>To use a blank, you must<br>take " + blankPenalty + " additional tiles</html>");
+			
+			speedLabel.setText("Speed: " + speed);
+			speedLabel.setForeground(gameForegroundText);
+			if(speed.equals("slow"))
+				speedLabel.setToolTipText("9 seconds per tile");
+			else if(speed.equals("medium"))
+				speedLabel.setToolTipText("6 seconds per tile");
+			else
+				speedLabel.setToolTipText("3 seconds per tile");
+			
+			notificationLabel.setForeground(gameForegroundText);
+
 			playersLabel.setText("Players: 0/" + maxPlayers);
+			playersLabel.setForeground(gameForegroundText);
+			
 
 			for(String key : dictionaries.keySet()) {
 				if(key.equals(lexicon)) {
@@ -219,18 +325,18 @@ public class AnagramsClient extends JFrame implements ActionListener {
 			}
 
 			setLayout(new GridLayout(5, 2, 10, 10));
-			setPreferredSize(new Dimension(300, 150));
-			setBorder(new EmptyBorder(3, 3, 3, 3));
+			setPreferredSize(new Dimension(300, 140));
+			setBorder(new EmptyBorder(2, 3, 2, 3));
 		
 			//join button
 			JButton joinButton = new JButton("Join game");
 			joinButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent evt) {
-					if(!players.contains(username) && !watchers.contains(username)) {
-						if(gameWindows.size() <= 4) {
+					if(!gameWindows.containsKey(gameID) && !watchers.contains(username)) {
+						if(gameWindows.size() < 4 && players.size() < maxPlayers) {
 							addPlayer(username);
-							GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Integer.parseInt(blankPenalty), Boolean.parseBoolean(allowsChat), dictionary);
+							GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowsChat, dictionary);
 							gameWindows.put(gameID, newGame);
 							for(String player : players) {
 								newGame.addPlayer(player);
@@ -250,9 +356,9 @@ public class AnagramsClient extends JFrame implements ActionListener {
 					@Override
 					public void actionPerformed(ActionEvent evt) {
 						if(!players.contains(username) && !watchers.contains(username)) {
-							if(gameWindows.size() <= 4) {		
+							if(gameWindows.size() < 4) {
 								addWatcher(username);
-								GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, Integer.parseInt(minLength), Boolean.parseBoolean(allowsChat), dictionary);
+								GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, allowsChat, dictionary);
 								gameWindows.put(gameID, newGame);
 								for(String player : players) {
 									newGame.addPlayer(player);
@@ -264,17 +370,14 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				});
 			}
 			add(watchButton);
-			
-			
-			setBackground(new Color(0, 255, 51));
-			add(new JLabel("Lexicon: "  + lexicon));
-			add(new JLabel("Minimum word length: " + minLength));
-			add(new JLabel("Number of sets: " + numSets));
-			add(new JLabel("Blank Penalty: " + blankPenalty));	
-			add(new JLabel("Speed: " + speed));
-			add(playersLabel);
-			add(notificationLabel);	
 
+			add(lexiconLabel);
+			add(minLengthLabel);
+			add(numSetsLabel);
+			add(blankPenaltyLabel);
+			add(speedLabel);
+			add(playersLabel);
+			add(notificationLabel);
 		}
 		
 		/**
@@ -364,7 +467,7 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		if(!placed) {
 		
 			JPanel nextRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
-			nextRow.setBackground(Color.BLUE);
+			nextRow.setOpaque(false);
 			addresses.put(nextRow, new Vector<String>(2));
 			addresses.get(nextRow).add(newGameID);
 
@@ -427,6 +530,40 @@ public class AnagramsClient extends JFrame implements ActionListener {
 		getRootPane().requestFocus();
 	}
 	
+	/**
+	*
+	*/
+	
+	public HashMap<String, String> loadSettings() {
+
+		try {
+	//		ObjectInputStream inputStream = new ObjectInputStream(getClass().getResourceAsStream("settings.ser"));
+ ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("settings.ser"));
+//			ObjectInputStream inputStream = new ObjectInputStream("settings.ser");
+
+			@SuppressWarnings("unchecked")
+			HashMap<String, String> input = (HashMap<String, String>)inputStream.readObject();
+			settings = input;
+		}
+		catch (Exception e) {
+			System.out.println("Settings file not found or damaged; using defaults.");
+
+			settings.put("lexicon", "NWL18");
+			settings.put("play sounds", "true");
+			settings.put("Main screen", "#F5DEB3");
+			settings.put("Main screen text", "#000000");
+			settings.put("Players list", "#B36318");
+			settings.put("Players list text", "#000000");
+			settings.put("Game foreground", "#2080AA");
+			settings.put("Game foreground text", "#000000");
+			settings.put("Game background", "#F5DEB3");
+			settings.put("Game background text", "#000000");
+			settings.put("Chat area", "#00FFFF");
+			settings.put("Chat area text", "#000000");
+		}
+		return settings;
+    }
+
 
 	/**
 	*
@@ -592,37 +729,50 @@ public class AnagramsClient extends JFrame implements ActionListener {
 					}
 					
 					//gamePane commands
-					else if(gamePanes.get(tokens[1]) != null) {
-						if(cmd.equals("takeseat")) {
+					else if(cmd.equals("takeseat")) {
+						if(gamePanes.get(tokens[1]) != null) {
 							gamePanes.get(tokens[1]).addPlayer(tokens[2]);
 						}
-					
-						else if(cmd.equals("removeplayer")) {
+					}
+					else if(cmd.equals("removeplayer")) {
+						if(gamePanes.get(tokens[1]) != null) {	
 							gamePanes.get(tokens[1]).removePlayer(tokens[2]);
 						}
-						else if(cmd.equals("watchgame")) {
+					}
+					else if(cmd.equals("watchgame")) {
+						if(gamePanes.get(tokens[1]) != null) {
 							gamePanes.get(tokens[1]).addWatcher(tokens[2]);
 						}
-						else if(cmd.equals("unwatchgame")) {
+					}
+					else if(cmd.equals("unwatchgame")) {
+						if(gamePanes.get(tokens[1]) != null) {
 							gamePanes.get(tokens[1]).removeWatcher(tokens[2]);
 						}
 					}
 
 					//gameWindow commands
-					if(gameWindows.get(tokens[1]) != null) {
-						if(cmd.equals("nexttiles")) {
+					else if(cmd.equals("nexttiles")) {
+						if(gameWindows.get(tokens[1]) != null) {
 							gameWindows.get(tokens[1]).setTiles(tokens[2]);
 						}
-						else if(cmd.equals("addword")) {
+					}
+					else if(cmd.equals("addword")) {
+						if(gameWindows.get(tokens[1]) != null) {
 							gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
 						}
-						else if(cmd.equals("removeword")) {
+					}
+					else if(cmd.equals("removeword")) {
+							if(gameWindows.get(tokens[1]) != null) {
 							gameWindows.get(tokens[1]).removeWord(tokens[2], tokens[3]);
 						}
-						else if(cmd.equals("endgame")) {
+					}
+					else if(cmd.equals("endgame")) {
+						if(gameWindows.get(tokens[1]) != null) {							
 							gameWindows.get(tokens[1]).gameOver = true;
 						}
-						else if(cmd.equals("gamechat")) {
+					}
+					else if(cmd.equals("gamechat")) {
+							if(gameWindows.get(tokens[1]) != null) {							
 							gameWindows.get(tokens[1]).handleChat((line.split(tokens[1]))[1]);
 						}
 					}
