@@ -138,6 +138,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 	*/
 
 	public void lookUp(String query) {
+		textField.setText("");
 		treePanel.removeAll();
 		tree = new WordTree(new DefaultMutableTreeNode(new UserObject(query.toUpperCase(), "")), tries.get(lexicon));
 		setUpTree();
@@ -158,26 +159,11 @@ public class WordExplorer extends JDialog implements ActionListener {
 	}
 	
 	/**
-	*
+	* To be used later for examining missed words
 	*/
 	
 	public void lookUp(String query, String tilePool) {
-		treePanel.removeAll();
-		tree = new WordTree(new DefaultMutableTreeNode(new UserObject(query.toUpperCase(), "")), tries.get(lexicon));
-		setUpTree();
-		
-		messagePanel.removeAll();
-
-		if(tree.root.getChildCount() > 0) {
-			messagePane.setText("");
-			messagePanel.add(tree.treeSummary(), BorderLayout.LINE_END);
-		}
-		else {
-			messagePane.setText("This word cannot be stolen.");
-
-		}
-		messagePanel.revalidate();
-		setUpMessagePane();		
+		lookUp(query);
 		
 	}
 
