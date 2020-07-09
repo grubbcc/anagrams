@@ -1,4 +1,4 @@
-/****
+/**
 * Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
 * how the word can be "stolen" according to the rules of Anagrams.
 *
@@ -8,7 +8,7 @@
 * insertion of letters without rearrangement.
 *
 * TO DO: add an asterisk next to words that are not in the dictionary.
-*****/
+*/
 
 
 import java.io.*;
@@ -76,8 +76,6 @@ public class WordTree extends JTree {
 
 		sortChildren();
 
-		if(!trie.contains(rootWord))
-			root.setUserObject(rootWord.toLowerCase());
 	}
 	
 	
@@ -180,41 +178,6 @@ public class WordTree extends JTree {
 		for (TreeNode child : children)
 			root.insert((DefaultMutableTreeNode)child, 0);
 	}
-
-	
-	/**
-	* Creates a JTable showing the number of steals of the rootWord organized by word length
-	*/
-
-	public JTable treeSummary() {
-		TreeMap<Integer, Integer> nodeSummary = new TreeMap<Integer, Integer>();
-		Enumeration e = root.preorderEnumeration();
-		while(e.hasMoreElements()) {
-			DefaultMutableTreeNode nextNode = (DefaultMutableTreeNode)e.nextElement();
-		
-			String nextWord = nextNode.toString();
-			
-			if(nodeSummary.containsKey(nextWord.length()))
-				nodeSummary.replace(nextWord.length(), Integer.valueOf(nodeSummary.get(nextWord.length()).intValue() + 1));
-			else
-				nodeSummary.put(nextWord.length(), Integer.valueOf(1));
-		}
-		
-		String[][] array = new String[nodeSummary.size()][2];
-		int i = 0;
-		for(Map.Entry<Integer,Integer> entry : nodeSummary.entrySet()) {
-			array[i][0] = entry.getKey().toString();
-			array[i][1] = entry.getValue().toString();
-			i++;
-		}
-		array[0][0] = "length";
-		array[0][1] = "num words";	
-		JTable summary = new JTable(array, new String[] {"length", "num words"});	
-
-		return summary;
-
-		
-	}
 	
 	/**
 	* Given two words, determines whether one's letters are a strict subset of the other's.
@@ -305,30 +268,4 @@ public class WordTree extends JTree {
 	
 	}
 
-	/**
-	*
-	*/
-	
-/*	public static void main(String[] args) {
-
-		String lexicon = "CSW19";
-		String baseWord = "RACHEL";
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode(baseWord.toUpperCase());
-		
-        WordTree tree = new WordTree(root, lexicon);
-		tree.setRootVisible(true);
-		tree.expandRow(0);
-	
-		JFrame frame = new JFrame();
-		frame.setSize(400, 600);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
-		
-		JPanel panel = new JPanel();  
-		panel.setBackground(Color.WHITE);
-		frame.add(new JScrollPane(panel), BorderLayout.CENTER);  
-		panel.setLayout(new FlowLayout(FlowLayout.LEFT));
-		panel.add(tree);
-		frame.revalidate();		
-	}*/
 }
