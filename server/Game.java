@@ -2,12 +2,16 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.Enumeration;
 import javax.swing.tree.*;
+import java.util.Collections;
 
 /**
 * 
@@ -15,26 +19,27 @@ import javax.swing.tree.*;
 
 public class Game {
 	
-	private Server server;
-	
-	private HashSet<ServerWorker> playerList = new HashSet<>();
-	private HashSet<ServerWorker> watcherList = new HashSet<>();
-	private HashSet<Robot> robotList = new HashSet<>();
-	
+	Server server;
+
+	private Hashtable<String, ServerWorker> playerList = new Hashtable<>();
+	private Hashtable<String, ServerWorker> watcherList = new Hashtable<>();
+	private Hashtable<String, Robot> robotList = new Hashtable<>();
+
 	final String gameID;
 	private final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
 	private char[] tileBag;
 	private String tilePool = "";
 	private int tileCount = 0;
-	public HashMap<String, Vector<String>> words = new HashMap<>();
+	boolean gameOver = false;
+	public Hashtable<String, Vector<String>> words = new Hashtable<>();
 	
-	private int maxPlayers;
-	private int numSets;
-	int minLength;
-	int blankPenalty;
+	private final int maxPlayers;
+	private final int numSets;
+	final int minLength;
+	final int blankPenalty;
 	private int delay;
-	private int timeRemaining;
-	String lexicon;
+	int timeRemaining;
+	final String lexicon;
 	private String speed;
 	private boolean allowsChat;
 	private boolean allowsWatchers;
@@ -42,18 +47,19 @@ public class Game {
 	private GameTask gameTask;
 	private Timer deleteTimer;
 	private Random rgen = new Random();	
-
+	
 	boolean lock = false;
-	int think = 2;
+	private int think = 2;
 	private Robot robotPlayer;
-//	long startTime;
+
+	Vector<String> gameLog = new Vector<>();
 	
 	/**
 	*
 	*/
 	
 	public String getGameParams() {
-		return (gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers);
+		return (gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
 	}
 	
 	
@@ -82,9 +88,8 @@ public class Game {
 		else
 			delay = 3;
 
-		timeRemaining = delay*tileBag.length + 30;	
-
-
+		timeRemaining = delay*tileBag.length + 30;
+		saveState();
 
 	}
 	
@@ -95,10 +100,12 @@ public class Game {
 	public void startGame() {
 		GameTask gameTask = new GameTask();
 		gameTimer.schedule(gameTask, 1000, 1000);
+
+		saveState();
 	}
 	
 	/**
-	*
+	* Destroys the game after one minute of inactivity.
 	*/
 	
 	private class DeleteTask extends TimerTask {
@@ -154,6 +161,7 @@ public class Game {
 			}
 			
 			else {
+				gameTimer.cancel();
 				endGame();
 			}
 
@@ -166,19 +174,19 @@ public class Game {
 			
 			//robot-related tasks
 			if(!robotList.isEmpty() && think == 0) {
-				synchronized(this) {
-					lock = false;
-					robotPlayer.found = false;
 
-					if(tilePool.length() >= 2*minLength) {
-						robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
-					}								
-					else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
-						robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
-					}
-					else if(tilePool.length() < tileCount) {
-						robotPlayer.makeSteal(words);
-					}
+				lock = false;
+				robotPlayer.found = false;
+				robotPlayer.blanksAvailable = tilePool.length() - tilePool.replace("?","").length();
+				
+				if(tilePool.length() >= 2*minLength) {
+					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
+				}								
+				else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
+					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
+				}
+				else if(tilePool.length() < tileCount) {
+					robotPlayer.makeSteal(words);
 				}
 			}
 			return;
@@ -191,12 +199,17 @@ public class Game {
 	*/
 	
 	synchronized void endGame() {
-		gameTimer.cancel();
-		gameTimer.purge();
-
-		notifyEveryone("note " + gameID + " @" + "Game Over");
 		
-		notifyRoom("endgame " + gameID);
+		gameOver = true;
+
+		saveState();
+
+		notifyEveryone("note " + gameID + " @" + "Game over");
+
+		for(String gameState : gameLog) {
+			notifyEveryone("gamelog " + gameID + " " + gameState.toString());
+		}		
+		notifyEveryone("endgame " + gameID);
 	}
 	
 	/**
@@ -208,34 +221,54 @@ public class Game {
 
 	synchronized void addPlayer(ServerWorker newPlayer) throws IOException {
 		
-		if(playerList.isEmpty()) {
-			if(deleteTimer != null) {
-				deleteTimer.cancel();
-				deleteTimer.purge();
-				if(timeRemaining > 0) {
-					gameTimer = new Timer(true);
-					gameTask = new GameTask();
-					gameTimer.schedule(gameTask, 1000, 1000);
-				}
+		if(deleteTimer != null) {
+			deleteTimer.cancel();
+			deleteTimer = null;
+			if(timeRemaining > 0) {
+				gameTimer = new Timer(true);
+				gameTask = new GameTask();
+				gameTimer.schedule(gameTask, 1000, 1000);
+			}
+		}
+		
+
+		//inform newPlayer of other players
+		synchronized(getPlayerList()) {
+			for(String playerName : getPlayerList()) {
+				newPlayer.send("takeseat " + gameID + " " + playerName);
 			}
 		}
 
-		//inform new player of players' words
-		for(String playerName : words.keySet()) {
-			for(String word : words.get(playerName)) {
-				newPlayer.send("addword " + gameID + " " + playerName + " " + word);
+		//inform newPlayer of players' words
+		synchronized(words) {
+			for(String playerName : words.keySet()) {
+				for(String word : words.get(playerName)) {
+					newPlayer.send("addword " + gameID + " " + playerName + " " + word);
+				}
+			}
+		}
+		
+		
+		//inform newPlayers of inactive players
+		synchronized(getInactivePlayers()) {
+			for(String playerName : getInactivePlayers()) {
+				newPlayer.send("abandonseat " + gameID + " " + playerName);
 			}
 		}
 
 		//inform newPlayer of watchers
-		for(ServerWorker watcher : watcherList) {		
-			newPlayer.send("watchgame " + gameID + " " + watcher.getUsername());
+		synchronized(watcherList) {
+			for(String watcher : watcherList.keySet()) {
+				newPlayer.send("watchgame " + gameID + " " + watcher);
+			}
 		}
 
 		//add the newPlayer
-		playerList.add(newPlayer);
-		words.put(newPlayer.getUsername(), new Vector<String>());
-			
+		playerList.put(newPlayer.getUsername(), newPlayer);
+		words.putIfAbsent(newPlayer.getUsername(), new Vector<String>());
+
+		saveState();
+		
 		//inform everyone of the newPlayer
 		notifyEveryone("takeseat " + gameID + " " + newPlayer.getUsername());
 
@@ -249,29 +282,33 @@ public class Game {
 	* @param ServerWorker playerToRemove The player to be removed
 	*/
 	
-	synchronized void removePlayer(ServerWorker playerToRemove) {
+	synchronized void removePlayer(String playerToRemove) {
 		
 		playerList.remove(playerToRemove);
 		
-		if(words.get(playerToRemove.getUsername()) != null) {
+		notifyEveryone("abandonseat " + gameID + " " + playerToRemove);
 		
-			if(words.get(playerToRemove.getUsername()).isEmpty()) {
-				words.remove(playerToRemove.getUsername());
-				notifyEveryone("removeplayer " + gameID + " " + playerToRemove.getUsername());
-			}	
+		if(words.containsKey(playerToRemove)) {
+			
+			if(words.get(playerToRemove).isEmpty()) {
+				words.remove(playerToRemove);
+				notifyEveryone("removeplayer " + gameID + " " + playerToRemove);
+			}
 		}
+
+		saveState();
 
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
 
 			gameTimer.cancel();
-			gameTimer.purge();
+			
 			deleteTimer = new Timer(true);
 			deleteTimer.schedule(new DeleteTask(), 60000);
 
 		}
 	}
 	
-		
+	
 	/**
 	* Add a new watcher to the watcherList, inform the newWatcher of the other players/
 	* watchers, and inform the other players/watchers of the newWatcher.
@@ -283,20 +320,39 @@ public class Game {
 		
 		if(deleteTimer != null) {
 			deleteTimer.cancel();
-			deleteTimer.purge();
+			deleteTimer = null;
 		}
-		
-		//inform newWatcher of players' words
-		for(String playerName : words.keySet()) {
-			for(String word : words.get(playerName)) {
-				newWatcher.send("addword " + gameID + " " + playerName + " " + word);
-			}
-		}		
-		notifyRoom("watchgame " + gameID + " " + newWatcher.username);
 
-		watcherList.add(newWatcher);
+		if(!gameOver) {
+			//inform newWatcher of other players
+			synchronized(getPlayerList()) {
+				for(String playerName : getPlayerList()) {
+					newWatcher.send("takeseat " + gameID + " " + playerName);
+				}
+			}
+			
+			//inform newWatcher of players' words
+			synchronized(words) {			
+				for(String playerName : words.keySet()) {
+					for(String word : words.get(playerName)) {
+						newWatcher.send("addword " + gameID + " " + playerName + " " + word);
+					}
+				}
+			}
+
+			//inform newWatcher of inactive players
+			synchronized(getInactivePlayers()) {
+				for(String playerName : getInactivePlayers()) {
+					newWatcher.send("abandonseat " + gameID + " " + playerName);
+				}
+			}
+		}
+
+		//inform other players of newWatcher
+		notifyRoom("watchgame " + gameID + " " + newWatcher.getUsername());
+		watcherList.put(newWatcher.getUsername(), newWatcher);
+		
 	}
-	
 
 	
 	/**
@@ -307,14 +363,14 @@ public class Game {
 	* @param ServerWorker watcherToRemove The watcher to be removed
 	*/
 	
-	synchronized void removeWatcher(ServerWorker watcherToRemove) {
+	synchronized void removeWatcher(String watcherToRemove) {
 		watcherList.remove(watcherToRemove);
 		
-		notifyRoom("unwatchgame " + gameID + " " + watcherToRemove.username);
+		notifyRoom("unwatchgame " + gameID + " " + watcherToRemove);
 
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
 			gameTimer.cancel();
-			gameTimer.purge();
+
 			deleteTimer = new Timer(true);
 			deleteTimer.schedule(new DeleteTask(), 60000);
 		}
@@ -326,15 +382,13 @@ public class Game {
 	* @param int skillLevel a measure of how quickly the robot plays and how many words it knows
 	*/
 	
-	void addRobot(Robot newRobot) {
-		
-//		sendNotification("Robot player is getting ready.");
-		
-//		robotPlayer = new Robot(this, skillLevel);
+	synchronized void addRobot(Robot newRobot) {
 
-		robotList.add(newRobot);
+		robotList.put(newRobot.robotName, newRobot);
 		robotPlayer = newRobot;
 		words.put(newRobot.robotName, new Vector<String>());
+
+		saveState();
 
 		//inform everyone of the newPlayer
 		notifyEveryone("takeseat " + gameID + " " + newRobot.robotName);
@@ -347,8 +401,10 @@ public class Game {
 	synchronized void drawTile() {
 
 		if(tileCount < tileBag.length) {
-			tilePool += tileBag[tileCount];		
+			tilePool += tileBag[tileCount];
 			tileCount++;
+
+			saveState();
 
 			notifyRoom("nexttiles " + gameID + " " + tilePool);
 		}
@@ -447,34 +503,41 @@ public class Game {
 			}
 		}
 
-		if(tilePool.isEmpty())	tiles = "#";
-
-		for(Robot robot : robotList) {
+		for(Robot robot : robotList.values()) {
 			robot.removeTree(shortWord);
 			robot.makeTree(newWord);
 		}
 
-		words.get(shortPlayer).remove(shortWord);
 
-		//if this player has left the game and has no words, make room for another player to join
+		words.get(shortPlayer).remove(shortWord);	
+		
+		words.get(longPlayer).add(newWord);	
+		
+
+		
+		if(tileCount >= tileBag.length && tilePool.length() > 0) 
+			timeRemaining += 15;
+
+		if(tilePool.isEmpty())	tiles = "#";
+
+		saveState();
+
+		notifyRoom("removeword " + gameID + " " + shortPlayer + " " + shortWord);
+		notifyRoom("addword " + gameID + " " + longPlayer + " " + newWord);
+		notifyRoom("nexttiles " + gameID + " " + tiles);
+
+		//if the shortPlayer has left the game and has no words, make room for another player to join
 		if(words.get(shortPlayer).isEmpty()) {
-			if(!robotList.contains(shortPlayer)) {
-				if(!playerList.contains(server.getWorker(shortPlayer))) {
+			if(!shortPlayer.startsWith("Robot")) {
+				if(server.getWorker(shortPlayer) == null) { //player is not logged in
 					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);
+				}
+				else if(!playerList.containsKey(shortPlayer)) { //player has left the game
+					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);					
 				}
 			}
 		}
-
 		
-		words.get(longPlayer).add(newWord);	
-
-		if(tileCount >= tileBag.length && tilePool.length() > 0) 
-			timeRemaining += 30;
-
-		notifyRoom("nexttiles " + gameID + " " + tiles);
-		notifyRoom("removeword " + gameID + " " + shortPlayer + " " + shortWord);
-		notifyRoom("addword " + gameID + " " + longPlayer + " " + newWord);
-
 		return true;
 	}
 	
@@ -526,18 +589,20 @@ public class Game {
 	
 		words.get(newWordPlayer).add(newWord);		
 
-		for(Robot robot : robotList)
+		for(Robot robot : robotList.values())
 			robot.makeTree(newWord);
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
-			timeRemaining += 15;		
+			timeRemaining += 15;
 	
 		if(tilePool.isEmpty())	tiles = "#";	
 		//inform players that a new word has been made
 	
-		notifyRoom("nexttiles " + gameID + " " + tiles);
+		saveState();	
+	
 		notifyRoom("addword " + gameID + " " + newWordPlayer + " " + newWord);		
-
+		notifyRoom("nexttiles " + gameID + " " + tiles);
+		
 		return true;
 	}
 	
@@ -566,6 +631,64 @@ public class Game {
 			tileBag[randomPosition] = temp;
 		}
 	}
+
+	/**
+	*
+	*/
+
+	private void saveState() {
+		if(!gameOver) {
+			String tiles = tilePool.isEmpty() ? "#" : tilePool;
+			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
+		}
+	}
+	
+	/**
+	*
+	*/
+	
+	synchronized public Set<String> getPlayerList() {
+
+		Set<String> union = Collections.synchronizedSet(new HashSet<>());
+		union.addAll(words.keySet());
+		union.addAll(playerList.keySet());
+		union.addAll(robotList.keySet());
+		
+		return union;
+	}
+	
+	/**
+	*
+	*/
+	
+	public Set<String> getInactivePlayers() {
+		Set<String> union = getPlayerList();
+		union.removeAll(playerList.keySet());
+		union.removeAll(robotList.keySet());
+
+		return union;
+	}
+
+	/**
+	*
+	*/
+
+	private String getFormattedWordList() {
+		String wordList = new String();
+		Set<String> union = getPlayerList();
+		synchronized (union) {
+
+			for(String playerName : union) {
+				if(words.containsKey(playerName)) {
+					wordList += playerName + " " + words.get(playerName).toString().replace(", ", ",") + " ";
+				}
+				else {
+					wordList += playerName + " [] ";
+				}
+			}
+		}
+		return wordList;
+	}
 	
 	/**
 	* Informs players and watchers of events happening in the room.
@@ -574,12 +697,16 @@ public class Game {
 	*/
 	
 	synchronized public void notifyRoom(String msg) {
-		for(ServerWorker player : playerList) {
-			player.send(msg);
+		synchronized(playerList) {
+			for(ServerWorker player : playerList.values()) {
+				player.send(msg);
+			}
 		}
-		for(ServerWorker watcher : watcherList) {
-			watcher.send(msg);
-		}	
+		synchronized(watcherList) {
+			for(ServerWorker watcher : watcherList.values()) {
+				watcher.send(msg);
+			}
+		}
 	}
 
 	/**
