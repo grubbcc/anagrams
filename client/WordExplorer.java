@@ -3,6 +3,7 @@ import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.SwingUtilities;
 import java.awt.event.*;
+import java.awt.Font;
 import java.awt.Component;
 import javax.swing.event.*;
 import javax.swing.JTree;
@@ -10,6 +11,7 @@ import java.util.Vector;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Enumeration;
@@ -148,6 +150,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 		if(tree.root.getChildCount() > 0) {
 			messagePane.setText("");
 			messagePanel.add(tree.treeSummary(), BorderLayout.LINE_END);
+			doProbabilities(tree.root);
 		}
 		else {
 			messagePane.setText("This word cannot be stolen.");
@@ -155,45 +158,60 @@ public class WordExplorer extends JDialog implements ActionListener {
 		}
 		messagePanel.revalidate();
 		setUpMessagePane();
-		
 	}
-	
-	/**
-	* To be used later for examining missed words
-	*/
-	
-	public void lookUp(String query, String tilePool) {
-		lookUp(query);
-		
-	}
-
 	
 	/**
 	*
 	*/
 
-	public class ToolTipTreeRenderer  extends DefaultTreeCellRenderer  {	
+	public class CustomTreeRenderer extends DefaultTreeCellRenderer  {	
+	
 		@Override
-		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-			final Component rc = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);		
+		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+			
+			final Component rc = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);		
 
 			if ((value != null) && (value instanceof DefaultMutableTreeNode)) {
 				Object object = ((DefaultMutableTreeNode) value).getUserObject();
 				if (object instanceof UserObject) {
 					UserObject uo = (UserObject) object;
 					if(!uo.getToolTip().isEmpty()) {
-						this.setToolTipText(uo.getToolTip());
+
+						this.setToolTipText(uo.getToolTip() + "   " + round(100*uo.getProb(), 1) + "%");
+						this.setOpaque(true);
+
+						this.setBackground(Color.getHSBColor(0.0f, (float)uo.getProb(), 1.0f));
 					}
 					else {
 						this.setToolTipText(null);
+					}
+					if(hasFocus) {
+						this.setFont(getFont().deriveFont(Font.PLAIN + Font.BOLD));
+					}
+					else {
+						this.setFont(getFont().deriveFont(Font.PLAIN));
+					}
+					if(row == 0) {
+						setOpaque(false);
 					}
 				}
 			}
  			
 			return rc;
 		}
+		
+		/**
+		*
+		*/
+
+		private double round (double value, int precision) {
+			int scale = (int) Math.pow(10, precision);
+			return (double) Math.round(value * scale) / scale;
+		}		
 
 	}	
+	
+	
 	
 	/**
 	* Performs routine actions whenever a new WordTree is created.
@@ -205,7 +223,7 @@ public class WordExplorer extends JDialog implements ActionListener {
 		tree.expandRow(0);
 
 		//add tool tips
-		tree.setCellRenderer(new ToolTipTreeRenderer());
+		tree.setCellRenderer(new CustomTreeRenderer());
 		javax.swing.ToolTipManager.sharedInstance().registerComponent(tree);
 
 		//find steals of selected node when user pressers enter
@@ -262,11 +280,27 @@ public class WordExplorer extends JDialog implements ActionListener {
 				}					
 			}		
 		};
+
+		//
+		TreeWillExpandListener treeWillExpandListener = new TreeWillExpandListener() {
+			
+			public void treeWillCollapse(TreeExpansionEvent treeExpansionEvent) throws ExpandVetoException {
+
+			}
+			public void treeWillExpand(TreeExpansionEvent treeExpansionEvent) throws ExpandVetoException {
+				TreePath path = treeExpansionEvent.getPath();
+				DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+				doProbabilities(node);
+			}
+		};
+
+
 		
 		tree.addKeyListener(keyListener);		
 		tree.addTreeSelectionListener(selectionListener);
 		tree.addMouseListener(mouseListener);
-
+		tree.addTreeWillExpandListener(treeWillExpandListener);
+		
 		treePanel.repaint();
 	}
 	
@@ -371,6 +405,68 @@ public class WordExplorer extends JDialog implements ActionListener {
 		}
 	}
 
+	/**
+	*
+	*/
+	
+/*	public void doProbabilities(DefaultMutableTreeNode parentNode) {
+		double norm = 0;
+		double parentProb;
+		if(parentNode.getLevel() > 0) {
+			parentProb = ((UserObject)parentNode.getUserObject()).getProb();
+		}
+		else {
+			parentProb = 1.0;
+		}
+
+		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
+			UserObject uo = (UserObject)child.getUserObject();
+			norm += ProbCalc.getProbability(uo.getToolTip());
+
+		}
+		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
+			UserObject uo = (UserObject)child.getUserObject();
+			uo.setProb(parentProb*ProbCalc.getProbability(uo.getToolTip())/norm);
+		}
+	}*/
+	
+	public void doProbabilities(DefaultMutableTreeNode parentNode) {
+		double norm = 0;
+	
+		double parentProb;
+		if(parentNode.getLevel() > 0) {
+			parentProb = ((UserObject)parentNode.getUserObject()).getProb();
+		}
+		else {
+			parentProb = 1.0;
+		}
+		
+		WordTree parentTree = new WordTree(new DefaultMutableTreeNode(new UserObject(parentNode.toString(),"")), tries.get(lexicon));
+		DefaultMutableTreeNode parent = parentTree.root;
+
+		HashMap<String, Double> probs = new HashMap<>();
+
+		for(Enumeration e = parent.children(); e.hasMoreElements();) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode)e.nextElement();
+			UserObject uo = (UserObject)child.getUserObject();
+			norm += ProbCalc.getProbability(uo.getToolTip());
+		}
+
+		for(Enumeration e = parent.children(); e.hasMoreElements();) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
+			UserObject uo = (UserObject)child.getUserObject();
+			probs.put(uo.toString(), parentProb*ProbCalc.getProbability(uo.getToolTip())/norm);
+		}
+	
+		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
+			UserObject uo = (UserObject)child.getUserObject();
+			uo.setProb(probs.get(uo.toString()));
+		}
+	}
+
 
 	/**
 	* Performs routine actions whenever a new messagePane is created.
@@ -383,6 +479,14 @@ public class WordExplorer extends JDialog implements ActionListener {
 		messagePane.setBackground(Color.GREEN);		
 		messagePanel.add(messagePane, BorderLayout.CENTER);
 		messagePanel.revalidate();
+	}
+	
+	public static void main(String[] args) {
+		
+		WordExplorer explorer = new WordExplorer(new AlphagramTrie("CSW19"));
+		explorer.setVisible(true);
+		explorer.setAlwaysOnTop(false);
+		explorer.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
 	
 }
