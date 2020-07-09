@@ -1,32 +1,30 @@
 import javax.swing.tree.*;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.Vector;
-import java.util.Arrays;
-import java.io.IOException;
 import java.util.Random;
+import java.util.Collections;
 
-/***
-* An artificial intelligence that uses wordTrees to find words and make make steals
+/**
+* An artificial intelligence that uses wordTrees to find words and make steals
 */
 
-class Robot extends Thread {
+class Robot {
 
 	private Game game;
 	public final String robotName;
 	public final int skillLevel;
 	private final int blankPenalty;
 	private final int minLength;
-	private String tilePool;
-	private int blanksAvailable;
+	int blanksAvailable;
 	
 	private HashMap<String, WordTree> trees = new HashMap<>();
-	private HashMap<String, Vector<String>> words;
 	private AlphagramTrie dictionary;
 	
 	public boolean found = false;
-	public boolean ready = false;
 	private Random rgen = new Random();	
 	
 	/**
@@ -50,13 +48,11 @@ class Robot extends Thread {
 			robotName = "Robot-Expert";
 		else
 			robotName = "Robot-Genius";
-		
-		ready = true;
 	}
 	
 	/**
 	* Recursively generates all possible combinations of tiles from the tilePool whose length equals the minimum word length.
-	* Each combination is checked to see if a valid word can be formed using the remaining letters in the pool. The loop ends
+	* Each combination is checked to see if a valid word can be formed using the remaining letters in the pool. The loop halts
 	* if and when the first valid word is found.
 	*
 	* @param key: the character address of the node being searched
@@ -71,7 +67,6 @@ class Robot extends Thread {
 		
 		if(rest.length() == charsToTake) {
 			key += rest;
-			//System.out.println("Done: key = " + key + ", pool = " + pool);	
 			if(dictionary.getNode(key) != null) {
 				
 				searchForWord(dictionary.getNode(key), pool, 0);
@@ -100,8 +95,6 @@ class Robot extends Thread {
 			if(anagram.length() >= minLength + blanksRequired*blankPenalty) {
 				found = true;
 				game.doMakeWord(robotName, anagram);
-				//long endTime = System.nanoTime();
-				//System.out.println("found the word " + anagram + ". elapsed time: " + (endTime - game.startTime)/1000000 + "ms");
 			}
 		}
 		
@@ -110,12 +103,11 @@ class Robot extends Thread {
 				searchForWord(child.getValue(), remainingPool.replaceFirst(child.getKey() + "", ""), 0);
 			}
 			else {
-				if(blanksAvailable >= ++blanksRequired && remainingPool.length() >= ++blanksRequired*blankPenalty) {
+				blanksRequired++;
+				if(blanksAvailable >= blanksRequired && remainingPool.length() >= blanksRequired*blankPenalty) {
 					searchForWord(child.getValue(), remainingPool, blanksRequired);
 				}
 			}
-			//long endTime = System.nanoTime();
-			//System.out.println("no word found here. elapsed time: " + (endTime - game.startTime)/1000000 + "ms");
 		}
 	}
 	
@@ -141,29 +133,18 @@ class Robot extends Thread {
 	*
 	*/
 	
-	void setTilePool(String tilePool) {
-		this.tilePool = tilePool;
-	}
-	
-	/**
-	*
-	*/
-	
-	boolean makeSteal(HashMap<String, Vector<String>> words) {
-		
-		for(String player : words.keySet()) {
+	boolean makeSteal(Hashtable<String, Vector<String>> words) {
+		ArrayList<String> players = new ArrayList<>(words.keySet());
+		Collections.shuffle(players);
+		for(String player : players) {
 			for(String shortWord : words.get(player)) {
-				//WordTree currentTree = trees.get(shortWord); //fto
-				//System.out.println("shortWord = " + shortWord); //fto
-				//DefaultMutableTreeNode currentRoot = currentTree.root; //fto
-				//System.out.println("root word = " + currentRoot.getUserObject().toString()); //fto
 				if(trees.containsKey(shortWord)) {
 					Enumeration e = trees.get(shortWord).root.children();
 
 					while(e.hasMoreElements()) {
 						DefaultMutableTreeNode child = (DefaultMutableTreeNode)e.nextElement();
 						String longWord = child.getUserObject().toString();
-						//System.out.println("attempting to steal " + longWord + " from " + shortWord);
+						
 						if(rgen.nextInt(4) < skillLevel) {
 							if(game.doSteal(player, shortWord, robotName, longWord)) {
 								return true;
