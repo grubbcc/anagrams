@@ -1,3 +1,14 @@
+/**
+* Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
+* how the word can be "stolen" according to the rules of Anagrams.
+*
+* For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALPUA
+* with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
+* However, PROMENADE is not a steal of POMADE because the latter can be formed from the former by
+* insertion of letters without rearrangement.
+*
+*/
+
 import java.io.*;
 import java.util.Scanner;
 import javax.swing.*;
@@ -17,21 +28,11 @@ import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.Iterator;
 
-/**
-* Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
-* how the word can be "stolen" according to the rules of Anagrams.
-*
-* For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALPUA
-* with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
-* However, PROMENADE is not a steal of POMADE because the latter can be formed from the former by
-* insertion of letters without rearrangement.
-*
-*/
 
 public class WordTree extends JTree {
 	
 	private TreeSet<DefaultMutableTreeNode> treeNodeList;
-	private String rootWord;
+	public String rootWord;
 	public AlphagramTrie trie;
 	public DefaultMutableTreeNode root;
 	
@@ -81,8 +82,11 @@ public class WordTree extends JTree {
 		while(treeNodeList.size() > 1)
 			buildTree();
 
-		sortChildren();
-
+		Enumeration e = root.breadthFirstEnumeration();
+		while(e.hasMoreElements()) {
+			sortChildren((DefaultMutableTreeNode)e.nextElement());
+		}
+		
 		if(!trie.contains(rootWord))
 			root.setUserObject(rootWord.toLowerCase());
 	}
@@ -176,17 +180,19 @@ public class WordTree extends JTree {
 	* Make sure the children of the root node are listed in order from shortest to longest.
 	*/
 
-	private void sortChildren() {
+	private void sortChildren(DefaultMutableTreeNode node) {
 
-		ArrayList<TreeNode> children = Collections.list(root.children());
-	
-		Collections.sort(children, new TreeNodeComparator());
+		ArrayList<TreeNode> children = Collections.list(node.children());
+		if(node.getChildCount() > 1) {
+			Collections.sort(children, new TreeNodeComparator());
 
-		root.removeAllChildren();
+			node.removeAllChildren();
 
-		for (TreeNode child : children)
-			root.insert((DefaultMutableTreeNode)child, 0);
+			for (TreeNode child : children)
+				node.insert((DefaultMutableTreeNode)child, 0);
+		}
 	}
+
 
 	
 	/**
