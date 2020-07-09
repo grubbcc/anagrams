@@ -4,13 +4,14 @@ import java.awt.event.*;
 import javax.sound.sampled.*;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.util.Vector;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 /**
-* A front end user interface for displaying and interacting with a game.
+* A front end user interface for playing, watching, or analyzing a game.
 *
 */
 
@@ -27,55 +28,81 @@ class GameWindow extends JFrame implements ActionListener {
 
 	private JPanel controlPanel = new JPanel();
 	private JLabel notificationArea = new JLabel("");
-	private JButton exitGameButton = new JButton("Exit Game");	
+	private JButton exitGameButton = new JButton("Exit Game");
 	private JTextField textField = new JTextField("Enter a word here to play", 35);
 	private JLabel infoPane = new JLabel();
 	private JPanel chatPanel = new JPanel(new BorderLayout());
 	private JScrollPane chatScrollPane = new JScrollPane(chatPanel);
-	private JTextArea chatBox = new JTextArea(5, 75);	
+	private JTextArea chatBox = new JTextArea(5, 75);
 	private JTextField chatField = new JTextField("Type here to chat", 75);
+	private JButton backToStartButton = new JButton("|<");
+	private JButton backTenButton = new JButton("<<");
+	private JButton backButton = new JButton("<");
+	private JButton showPlaysButton = new JButton("Show plays");
+	private JButton forwardButton = new JButton(">");
+	private JButton forwardTenButton = new JButton(">>");
+	private JButton forwardToEndButton = new JButton(">|");
 
 	private GridBagLayout boardLayout = new GridBagLayout();
-	private GridBagConstraints constraints = new GridBagConstraints();;
+	private GridBagConstraints constraints = new GridBagConstraints();
 	private JPanel boardPanel = new JPanel();
 	private ArrayList<GamePanel> gamePanels = new ArrayList<GamePanel>();
 	private GamePanel homePanel = new GamePanel();
 	private WordExplorer explorer;
+	private WordFinder wordFinder;
+	private WordDisplay wordDisplay;
 	
 	private final AnagramsClient client;
 	private final AlphagramTrie dictionary;
+	ArrayList<String[]> gameLog = new ArrayList<>();
 	final String gameID;
 	private final String username;
-	public boolean isWatcher;
+	public final boolean isWatcher;
 	private int minLength;
-	private int blankPenalty;	
+	private int blankPenalty;
 	private String tilePool = "";
 	private HashMap<String, GamePanel> players = new HashMap<>();
+	private HashSet<String> allWords = new HashSet<>();
 	private TilePanel tilePanel;
-	private ImageIcon robotIcon = new ImageIcon(getClass().getResource("robot.png"));
-//	private int[] weights = {1,1,2,3,5,8,13};
+	private ImageIcon blackRobot = new ImageIcon(getClass().getResource("black robot.png"));
+	private ImageIcon whiteRobot = new ImageIcon(getClass().getResource("white robot.png"));
 	boolean gameOver = false;
 	
+	//fields for analysis
+	private int position;
+	private int maxPosition;
+	
 	/**
-	* Constructor for watching
+	* 
 	*/
 	
-	GameWindow(AnagramsClient client, String gameID, String username, String minLength, String allowsChat, AlphagramTrie dictionary) {
+	GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, String allowsChat, AlphagramTrie dictionary, ArrayList<String[]> gameLog, boolean isWatcher) {
 
 		this.client = client;
 		this.gameID = gameID;
 		this.username = username;
 		this.minLength = Integer.parseInt(minLength);
-		isWatcher = true;
+		this.blankPenalty = Integer.parseInt(blankPenalty);
+		this.gameLog = gameLog;
+		this.isWatcher = isWatcher;
+		
+		if(!gameLog.isEmpty()) {
+			gameOver = true;
+		}
 
 		JPanel mainPanel = new JPanel();
-		setContentPane(mainPanel);		
+		setContentPane(mainPanel);
 		
 		//register keyboard closing actions.
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		mainPanel.registerKeyboardAction(ae -> {exitGameButton.doClick();}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
+		mainPanel.registerKeyboardAction(ae -> {backButton.doClick();}, KeyStroke.getKeyStroke("DOWN"), JComponent.WHEN_IN_FOCUSED_WINDOW);
+		mainPanel.registerKeyboardAction(ae -> {forwardButton.doClick();}, KeyStroke.getKeyStroke("RIGHT"), JComponent.WHEN_IN_FOCUSED_WINDOW);		
+		
 		this.dictionary = dictionary;
 		explorer = new WordExplorer(dictionary);
+		wordFinder = new WordFinder(this.minLength, this.blankPenalty, dictionary);		
+		wordDisplay = new WordDisplay();
 
 		setSize(1000, 700);
 		setMinimumSize(new Dimension(750, 523));
@@ -98,6 +125,7 @@ class GameWindow extends JFrame implements ActionListener {
 		makeComponent(0, 0, new GamePanel());
 		makeComponent(1, 0, new GamePanel());
 		makeComponent(2, 0, new GamePanel());
+		
 		makeComponent(0, 1, new GamePanel());
 		makeComponent(1, 1, new TilePanel());
 		makeComponent(2, 1, new GamePanel());
@@ -113,7 +141,7 @@ class GameWindow extends JFrame implements ActionListener {
 			chatPanel.setBackground(client.chatAreaColor);
 			chatBox.setLineWrap(true);
 			chatBox.setEditable(false);
-			chatField.setForeground(Color.GRAY);
+			chatField.setForeground(Color.DARK_GRAY);
 			new CustomFocusListener(chatField);
 			chatField.addActionListener(ae -> {client.send("gamechat " + gameID + " " + username + ": " + chatField.getText()); chatField.setText("");});
 			chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
@@ -125,6 +153,22 @@ class GameWindow extends JFrame implements ActionListener {
 			chatPanel.add(chatField, BorderLayout.SOUTH);
 			mainPanel.add(chatScrollPane, BorderLayout.PAGE_END);
 		}
+		if(!isWatcher) {
+			textField.setForeground(Color.GRAY);
+			textField.addActionListener(this);
+			new CustomFocusListener(textField);
+			textField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
+			controlPanel.remove(infoPane);
+			controlPanel.add(textField);
+			controlPanel.add(infoPane);
+
+			homePanel.takeSeat(username);
+		}
+		
+		if(gameOver) {
+			endGame();
+		}
+		
 		setColors();
 		setVisible(true);
 		
@@ -140,35 +184,15 @@ class GameWindow extends JFrame implements ActionListener {
 			}
 		});
 
-		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				client.exitGame(gameID, isWatcher, homePanel.words.isEmpty());							
+				client.exitGame(gameID, isWatcher);
 				dispose();
 			}
 		});
-	}
-	
-	/**
-	* Constructor for playing
-	*/
-	
-	GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, String allowsChat, AlphagramTrie dictionary) {
-		this(client, gameID, username, minLength, allowsChat, dictionary);
 
-		isWatcher = false;
-		this.blankPenalty = Integer.parseInt(blankPenalty);
-		textField.setForeground(Color.GRAY);
-		textField.addActionListener(this);
-		new CustomFocusListener(textField);
-		textField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
-		controlPanel.remove(infoPane);
-		controlPanel.add(textField);
-		controlPanel.add(infoPane);
-
-		homePanel.takeSeat(username);
 	}
-	
+
 
 	/**
 	* Sets the GridBagConstraints for the JPanel to be added to the mainPanel
@@ -185,7 +209,11 @@ class GameWindow extends JFrame implements ActionListener {
 		constraints.insets = new Insets(3, 3, 3, 3);
 		constraints.anchor = GridBagConstraints.WEST;
 		boardLayout.setConstraints(panel, constraints);
+
 		boardPanel.add(panel);
+		if(panel instanceof GamePanel) {
+			gamePanels.add((GamePanel)panel);
+		}
 	}
 	
 	/**
@@ -200,6 +228,7 @@ class GameWindow extends JFrame implements ActionListener {
 		tilePanel.setBackground(client.gameForegroundColor);
 		chatPanel.setBackground(client.chatAreaColor);
 		chatBox.setBackground(client.chatAreaColor);
+		wordDisplay.setColors();
 		for(GamePanel gamePanel : gamePanels) {
 			gamePanel.setColors();
 		}
@@ -267,9 +296,9 @@ class GameWindow extends JFrame implements ActionListener {
 				int y = 3 + (int)(getSize().height/2 + 16*Math.sqrt(i)*Math.sin(Math.sqrt(i)*Math.PI*4/3));				
 				
 				g.setColor(Color.YELLOW);
-				g.fillRoundRect(x-1, y-19, 20, 21, 3, 3);	 
+				g.fillRoundRect(x-1, y-19, 20, 21, 3, 3);
 
-				g.setColor(Color.BLACK);	
+				g.setColor(Color.BLACK);
 				g.drawString(tilePool.charAt(i-1) + "", x, y); //tile to display
 
 			}
@@ -278,7 +307,7 @@ class GameWindow extends JFrame implements ActionListener {
 	
 	/**
 	* A Panel for displaying the name, score, and words possesed by a player.
-	*/	
+	*/
 
 	class GamePanel extends JPanel {
 	
@@ -308,10 +337,8 @@ class GameWindow extends JFrame implements ActionListener {
 		*/
 		
 		GamePanel() {
-			gamePanels.add(this);
 
 			setLayout(new BorderLayout());
-
 			add(infoPane, BorderLayout.NORTH);
 			add(wordPane, BorderLayout.CENTER);
 			
@@ -323,18 +350,34 @@ class GameWindow extends JFrame implements ActionListener {
 			infoPane.add(playerScoreLabel);
 			
 			wordPane.setOpaque(false);
-
 		}
 		
 		/**
 		*
 		*/
+
+
 		
 		public void setColors() {
 			setBackground(client.gameForegroundColor);
-			if(isOccupied) {
-				playerNameLabel.setForeground(client.gameForegroundText);
-				playerScoreLabel.setForeground(client.gameForegroundText);
+			playerNameLabel.setForeground(client.gameForegroundText);
+			playerScoreLabel.setForeground(client.gameForegroundText);
+			
+			if(playerName != null) {
+
+				if(playerName.startsWith("Robot")) {
+					if(client.gameForegroundText.equals(Color.BLACK)) {
+						playerNameLabel.setIcon(new ImageIcon(getClass().getResource("black robot.png")));
+					}
+					else {
+						playerNameLabel.setIcon(new ImageIcon(getClass().getResource("white robot.png")));
+					}
+				}
+			}
+			
+			else if(!gameOver) {
+				playerNameLabel.setForeground(Color.GRAY);
+				playerScoreLabel.setForeground(Color.GRAY);
 			}
 		}
 		
@@ -348,19 +391,14 @@ class GameWindow extends JFrame implements ActionListener {
 			this.playerName = newPlayer;
 			players.put(newPlayer, this);
 			playerNameLabel.setText(playerName);
-			playerNameLabel.setForeground(client.gameForegroundText);
-			
-			if(playerName.startsWith("Robot")) {
-				playerNameLabel.setIcon(robotIcon);
-			}
+
 			playerScoreLabel.setBorder(new EmptyBorder(0,30,0,0));
 			if(words.isEmpty() ) {
 				playerScoreLabel.setText("0");
 			}
-			playerNameLabel.setForeground(client.gameForegroundText);
-			playerScoreLabel.setForeground(client.gameForegroundText);			
 			isOccupied = true;
 			isAvailable = false;
+			setColors();
 		}
 		
 		/**
@@ -370,11 +408,10 @@ class GameWindow extends JFrame implements ActionListener {
 		
 		public void abandonSeat() {
 			isOccupied = false;
-			playerNameLabel.setForeground(Color.GRAY);
-			playerScoreLabel.setForeground(Color.GRAY);
 			if(words.isEmpty()) {
 				makeAvailable();
 			}
+			setColors();
 		}
 		
 		/**
@@ -382,13 +419,28 @@ class GameWindow extends JFrame implements ActionListener {
 		*/
 		
 		private void makeAvailable() {
-			System.out.println("make available");
 			isAvailable = true;
 			playerNameLabel.setText("");
+			playerNameLabel.setIcon(null);
 			playerScoreLabel.setText("");
 			players.remove(playerName);
 			playerName = null;
-
+		}
+		
+		/**
+		* Removes the occupant, as well as any words they may have, from this pane. 
+		* Used only during endgame analyss.
+		*/
+		
+		private void reset() {
+			for(WordLabel labelToRemove : words.values()) {
+				wordPane.remove(labelToRemove);
+			}
+			score = 0;
+			words = new LinkedHashMap<>();
+			abandonSeat();
+			makeBig();
+			
 		}
 		
 		/**
@@ -397,7 +449,7 @@ class GameWindow extends JFrame implements ActionListener {
 		* @param String word The word to be removed.		
 		*/
 		
-		void addWord(String newWord) {
+		WordLabel addWord(String newWord) {
 
 			WordLabel newWordLabel = new WordLabel(newWord);
 			words.put(newWord, newWordLabel);
@@ -407,21 +459,23 @@ class GameWindow extends JFrame implements ActionListener {
 			playerScoreLabel.setText(score + "");
 			
 			validate();
-//			System.out.println(newWordLabel.getLocation().y + tileHeight + " vs " + wordPane.getHeight());
 			
 			updateTileSize();
 
-			try {
-				InputStream audioSource = getClass().getResourceAsStream("steal sound.wav");
-				InputStream audioBuffer = new BufferedInputStream(audioSource);
-				AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
-				Clip clip = AudioSystem.getClip();
-				clip.open(audioStream);
-				clip.start();
+			if(!gameOver) {
+				try {
+					InputStream audioSource = getClass().getResourceAsStream("steal sound.wav");
+					InputStream audioBuffer = new BufferedInputStream(audioSource);
+					AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
+					Clip clip = AudioSystem.getClip();
+					clip.open(audioStream);
+					clip.start();
+				}
+				catch(Exception e) {
+					System.out.println(e.toString());
+				}
 			}
-			catch(Exception e) {
-				System.out.println(e.toString());
-			}
+			return newWordLabel;
 		}
 	
 		/**
@@ -434,11 +488,11 @@ class GameWindow extends JFrame implements ActionListener {
 		
 		void removeWord(String wordToRemove) {
 			wordPane.remove(words.remove(wordToRemove));
-//			score -= weights[word.length() - minLength];
 			score -= wordToRemove.length()*wordToRemove.length();
 			playerScoreLabel.setText(score + "");
 
 			updateTileSize();
+			wordPane.repaint();
 
 		}
 		
@@ -457,7 +511,6 @@ class GameWindow extends JFrame implements ActionListener {
 				}
 
 				if(newestWord != null) {
-//					System.out.println(newestWord.getLocation().y + tileHeight + " vs " + wordPane.getHeight());
 					if(newestWord.getLocation().y + tileHeight > wordPane.getHeight()) {
 						makeSmall();
 					}
@@ -474,7 +527,6 @@ class GameWindow extends JFrame implements ActionListener {
 						newLength = -16;
 					}
 				}
-//				System.out.println("max height = " + newHeight +", window height = " + wordPane.getHeight());
 				if(newHeight < wordPane.getHeight()) {
 					makeBig();
 				}
@@ -496,6 +548,7 @@ class GameWindow extends JFrame implements ActionListener {
 			for(WordLabel wordLabel : words.values()) {
 				wordLabel.resize();
 			}
+			wordPane.repaint();
 		}
 		
 		/**
@@ -663,21 +716,38 @@ class GameWindow extends JFrame implements ActionListener {
 
 	public void addPlayer(String playerName) {
 		
-		if(players.containsKey(playerName))	{
-			if(!players.get(playerName).isOccupied) {
-				players.get(playerName).takeSeat(playerName);
+		//current player reenters game after leaving
+		if(playerName.equals(username)) {
+			if(!homePanel.isOccupied) {
+				homePanel.takeSeat(playerName);
 			}
 		}
 
 		else {
+			//the current player is informed of other players in the game
 			for(GamePanel panel : gamePanels) {
-				if(panel.isAvailable) {
+				//the other player is assigned the first available seat
+				if(panel.isAvailable && panel != homePanel) {
 					panel.takeSeat(playerName);
 					return;
 				}
 			}
 		}
 	}
+
+	/**
+	* Removes the named player from their current seat. Their words, if any, remain to be
+	* reclaimed if the player returns.
+	*
+	* @param String playerToRemove The name of the player to remove.
+	*/
+	
+	public void removePlayer(String playerToRemove) {
+		if(players.containsKey(playerToRemove)) {
+			players.get(playerToRemove).abandonSeat();
+		}
+	}
+
 	
 	/**
 	* Places the given word in the panel occupied by the given player.
@@ -687,6 +757,7 @@ class GameWindow extends JFrame implements ActionListener {
 	*/
 	
 	public void addWord(String playerName, String wordToAdd) {
+
 		players.get(playerName).addWord(wordToAdd);
 	}
 	
@@ -703,18 +774,6 @@ class GameWindow extends JFrame implements ActionListener {
 		repaint();
 	}
 	
-	/**
-	* Removes the named player from their current seat. Their words, if any, remain to be
-	* reclaimed if the player returns.
-	*
-	* @param String playerToRemove The name of the player to remove.
-	*/
-	
-	public void removePlayer(String playerToRemove) {
-		if(players.containsKey(playerToRemove)) {
-			players.get(playerToRemove).abandonSeat();
-		}
-	}
 
 	/**
 	* Displays the new chat message (and sender) in the chat box and automatically scrolls to view
@@ -730,6 +789,204 @@ class GameWindow extends JFrame implements ActionListener {
 			}
 		});
 	}
+	
+	/**
+	*
+	*/
+	
+	public void endGame() {
+		gameOver = true;
+
+		maxPosition = gameLog.size() - 1;
+		position = maxPosition;	
+		
+		controlPanel.remove(infoPane);
+		if(!isWatcher) {
+			controlPanel.remove(textField);
+		}
+		
+		controlPanel.add(backToStartButton);
+		backToStartButton.addActionListener(this);
+		controlPanel.add(backTenButton);
+		backTenButton.addActionListener(this);
+		controlPanel.add(backButton);
+		backButton.addActionListener(this);
+		controlPanel.add(showPlaysButton);
+		showPlaysButton.addActionListener(this);
+		controlPanel.add(forwardButton);
+		forwardButton.addActionListener(this);
+		controlPanel.add(forwardTenButton);
+		forwardTenButton.addActionListener(this);
+		controlPanel.add(forwardToEndButton);
+		forwardToEndButton.addActionListener(this);
+		
+		controlPanel.add(infoPane);
+		for(GamePanel gamePanel : gamePanels) {
+			gamePanel.setColors();
+		}
+		showPosition(maxPosition);
+		revalidate();
+		controlPanel.revalidate() ;
+	}
+
+	/**
+	*
+	*/
+	
+	void showPosition(int position) {
+		
+		if(!gameOver) {
+			return;
+		}
+		
+		allWords = new HashSet<>();
+		for(GamePanel panel : gamePanels) {
+			panel.reset();
+		}
+
+		String[] tokens = gameLog.get(position);
+		
+		notificationArea.setText("Time remaining " + tokens[0]);
+		setTiles(tokens[1]);
+		
+		if(tokens.length > 2) {
+			for(int i = 2; i < tokens.length; i += 2) {
+
+				String playerName = tokens[i];
+				addPlayer(playerName);
+				
+				for(String word : tokens[i+1].substring(1, tokens[i+1].length()-1).split(",")) {
+					if(!word.isEmpty()) {
+						addWord(playerName, word);
+						allWords.add(word);
+					}
+				}
+			}
+		}
+		
+		if(wordDisplay.isVisible()) {
+			findPlays();
+		}
+	}
+	
+	/**
+	*
+	*/
+	
+	void findPlays() {
+
+		LinkedHashSet<String> wordsInPool = wordFinder.findWordsInPool(tilePool);
+		LinkedHashSet<String[]> possibleSteals = wordFinder.searchForSteals(allWords);
+		wordDisplay.setWords(wordsInPool, possibleSteals);	
+		wordDisplay.setVisible(true);
+
+	}
+	
+	/**
+	*
+	*/
+
+	public class WordDisplay extends JDialog {
+		
+		private GamePanel poolPanel = new GamePanel();
+		private GamePanel stealsPanel = new GamePanel();
+		private TitledBorder poolBorder = new TitledBorder("Pool");
+		private TitledBorder stealsBorder = new TitledBorder("Steals");
+			
+		/**
+		*
+		*/
+		
+		public WordDisplay() {
+
+			setSize(480, 380);
+			setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+
+			poolBorder.setTitleFont(new Font("SansSerif", Font.PLAIN, 18));				
+			poolPanel.setBorder(BorderFactory.createCompoundBorder(
+				poolBorder, new EmptyBorder(5, 5, 5, 5))
+			);
+			
+			stealsBorder.setTitleFont(new Font("SansSerif", Font.PLAIN, 18));
+			stealsPanel.setBorder(BorderFactory.createCompoundBorder(
+				stealsBorder, new EmptyBorder(5, 5, 5, 5))
+			);
+
+			addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					showPlaysButton.doClick();
+				}
+			});
+
+			addComponentListener(new ComponentAdapter() {
+				public void componentResized(ComponentEvent componentEvent) {
+					if(!poolPanel.words.isEmpty()) {
+						poolPanel.updateTileSize();
+					}
+
+					if(!stealsPanel.words.isEmpty()) {
+						stealsPanel.updateTileSize();
+					}					
+					revalidate();
+				}
+			});
+			
+			setColors();
+			
+			poolPanel.remove(poolPanel.infoPane);
+			stealsPanel.remove(stealsPanel.infoPane);
+			add(poolPanel);
+			add(stealsPanel);
+			
+			setLocation((client.getLocation().x + client.getWidth() - this.getWidth())/2, (client.getLocation().y + client.getHeight() - this.getHeight())/2);		
+			setModal(false);
+			setAlwaysOnTop(true);
+			setVisible(false);
+		}
+		
+		/**
+		*
+		*/
+		
+		void setColors() {
+			setBackground(client.gameBackgroundColor);
+
+			poolPanel.setBackground(client.gameForegroundColor);
+			poolPanel.setForeground(client.gameForegroundText);
+			stealsPanel.setBackground(client.gameForegroundColor);
+			stealsPanel.setForeground(client.gameForegroundText);
+			
+			poolBorder.setTitleColor(client.gameForegroundText);
+			stealsBorder.setTitleColor(client.gameForegroundText);
+		}
+		
+		/**
+		*
+		*/
+		
+		public void setWords(LinkedHashSet<String> wordsInPool, LinkedHashSet<String[]> possibleSteals) {
+		
+			poolPanel.reset();
+			stealsPanel.reset();
+
+			//pool
+			if(!wordsInPool.isEmpty()) {	
+				for(String word : wordsInPool) {
+					poolPanel.addWord(word);
+				}
+			}
+			
+			//steals
+			if(!possibleSteals.isEmpty()) {
+				for(String[] steal : possibleSteals) {
+					GamePanel.WordLabel shortWord = stealsPanel.new WordLabel(steal[0]);
+
+					stealsPanel.addWord(steal[2]).setToolTipText(steal[0] + " + " + steal[1]);
+				}
+			}
+		}
+	}
+	
 
 	/**
 	* Responds to button clicks and textField entries
@@ -739,14 +996,8 @@ class GameWindow extends JFrame implements ActionListener {
 	
 	public void actionPerformed(ActionEvent evt) {
 
-		if (evt.getSource() == exitGameButton) {
-			client.exitGame(gameID, isWatcher, homePanel.words.isEmpty());
-			explorer.setVisible(false);
-			dispose();
-		}
-
 		//attempt to make a play
-		else if (evt.getSource() == textField && gameOver == false) {
+		if (evt.getSource() == textField) {
 			String input = textField.getText().toUpperCase();
 			boolean stolen = false;
 			
@@ -764,8 +1015,8 @@ class GameWindow extends JFrame implements ActionListener {
 					
 					for(Map.Entry<String, GamePanel> entry : players.entrySet()) {
 						String player = entry.getKey();
-						for(String shortWord : entry.getValue().getWords()) {					
-							if(input.length() > shortWord.length()) {	
+						for(String shortWord : entry.getValue().getWords()) {
+							if(input.length() > shortWord.length()) {
 								if(attemptSteal(player, shortWord, input)) {
 									stolen = true;
 									break;
@@ -780,7 +1031,45 @@ class GameWindow extends JFrame implements ActionListener {
 			}
 			textField.setText("");
 		}
+		
+		else if (evt.getSource() == exitGameButton) {
+			client.exitGame(gameID, isWatcher);
+			explorer.setVisible(false);
+			wordDisplay.setVisible(false);
+			dispose();
+		}
+		else if(evt.getSource() == backToStartButton) {
+			position = 0; showPosition(position);
+		}		
+		else if(evt.getSource() == backTenButton) {
+			position = Math.max(position - 10, 0); showPosition(position);
+		}
+		else if(evt.getSource() == backButton) {
+			position = Math.max(position - 1, 0); showPosition(position);
+		}
+		else if(evt.getSource() == forwardButton) {
+			position = Math.min(position + 1, maxPosition); showPosition(position);
+		}
+		else if(evt.getSource() == forwardTenButton) {
+			position = Math.min(position + 10, maxPosition); showPosition(position);
+		}		
+		else if(evt.getSource() == forwardToEndButton) {
+			position = maxPosition; showPosition(position);
+		}
+		
+		else if(evt.getSource() == showPlaysButton) {
+			if(wordDisplay.isVisible()) {
+				wordDisplay.setVisible(false);
+				showPlaysButton.setText("Show plays");
+			}
+			else {
+				wordDisplay.setVisible(true);
+				showPlaysButton.setText("Hide plays");
+			}
+			showPosition(position);
+		}
 	}
+
 
 
 	/**
@@ -900,7 +1189,6 @@ class GameWindow extends JFrame implements ActionListener {
 		String longString = longWord;
 		
 		while(longString.length() >= shortString.length() && shortString.length() > 0) {
-
 			if(shortString.charAt(0) != longString.charAt(0)) {
 				longString = longString.substring(1);
 			}
@@ -910,7 +1198,7 @@ class GameWindow extends JFrame implements ActionListener {
 			}
 		}
 		
-		if(shortString.length() > longString.length()) 
+		if(shortString.length() > longString.length())
 			return true;
 		else 
 			return false;
