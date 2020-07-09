@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
  * Same as the default Swing TextAction except that it doesn't make that annoying
  * beep sound when the backspace key is typed and the textField is empty.
  *
+ * Adapted from camickr's answer on StackOverflow: https://stackoverflow.com/a/24536736/3736508
+ *
  */
  
 class CustomDeletePrevCharAction extends TextAction {
@@ -34,7 +36,7 @@ class CustomDeletePrevCharAction extends TextAction {
                 if (dot != mark) {
                     doc.remove(Math.min(dot, mark), Math.abs(dot - mark));
                 }
-                else if (dot > 0) {
+				else if (dot > 0) {
                     int delChars = 1;
 
                     if (dot > 1) {
