@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.lang.Integer;
 import java.io.*;
+import java.util.ArrayList;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
@@ -48,8 +49,10 @@ class GameMenu extends JDialog implements ActionListener {
 	private String[] speedChoices = {"slow", "medium", "fast"};
 	private String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
 
+
 	private HashMap<String, String> gamePreferences = new HashMap<String, String>();
 	private HashMap<String, String> newGamePreferences = new HashMap<String, String>();
+	private String gamePreferencesPath;
 
 	private JButton startButton = new JButton("Start");
 
@@ -65,6 +68,7 @@ class GameMenu extends JDialog implements ActionListener {
 	GameMenu(AnagramsClient client, int x, int y) {
 
 		this.client = client;
+		gamePreferencesPath = client.workingDirectory + File.separator + "Anagrams" + File.separator + "gamePreferences.ser";
 		lexiconChoices = client.lexicons;
 		getRootPane().registerKeyboardAction(ae -> {startButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_FOCUSED);
 
@@ -211,7 +215,7 @@ class GameMenu extends JDialog implements ActionListener {
 				saveDefaultsToFile();
 			}
 
-			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat, dictionary));
+			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat, dictionary, new ArrayList<String[]>(), false));
 
 			skillLevel = (skillLevelSelector.getSelectedIndex() + 1) + "";
 
@@ -226,10 +230,9 @@ class GameMenu extends JDialog implements ActionListener {
 	*/
 	
 	public HashMap<String, String> loadGamePreferences() {
-
 		
 		try {
-			ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("gamePreferences.ser"));
+			ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(gamePreferencesPath));
 			@SuppressWarnings("unchecked")
 			HashMap<String, String> input = (HashMap<String, String>)inputStream.readObject();
 			gamePreferences = input;
@@ -278,7 +281,9 @@ class GameMenu extends JDialog implements ActionListener {
 		gamePreferences = newGamePreferences;
 
 		try {
-			FileOutputStream fileOut = new FileOutputStream("gamePreferences.ser");
+			File gamePreferencesFile = new File(gamePreferencesPath);
+			gamePreferencesFile.getParentFile().mkdirs();
+			FileOutputStream fileOut = new FileOutputStream(gamePreferencesFile);
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 			out.writeObject(gamePreferences);
 			out.close();
@@ -286,7 +291,10 @@ class GameMenu extends JDialog implements ActionListener {
 		}
 		catch (IOException e) {
 			e.printStackTrace();
-		}		
+		}
+		catch (SecurityException se) {
+			System.out.println("Permission to write to " + gamePreferencesPath + " denied.");
+		}
 	}	
 
 }
