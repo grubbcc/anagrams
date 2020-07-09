@@ -14,7 +14,6 @@ public class AlphagramTrie {
 	public Node rootNode = new Node();
 	public String lexicon;
 	private String currentWord;	
-	private String currentDefinition;
 	
 	/**
 	* Creates a root node to serve as the base of the trie.
@@ -31,10 +30,8 @@ public class AlphagramTrie {
 			InputStream stream = getClass().getResourceAsStream("/wordlists/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			for(String stringRead = reader.readLine(); stringRead != null; stringRead = reader.readLine()) {
-				String[] entry = stringRead.split("\\s+", 2);
-				currentWord = entry[0].toUpperCase();
-				if(entry.length > 1) 
-					currentDefinition = entry[1];
+				currentWord = stringRead;
+
 				insertWord(alphabetize(currentWord), rootNode);
 			}
 		}
@@ -69,14 +66,13 @@ public class AlphagramTrie {
 			node.children.put(subalphagram.charAt(0), nextChild);
 		}
 
-		//This node is the end of a word. Store the original word and its definition here.
+		//This node is the end of a word. Store the original word here.
 		if (subalphagram.length() == 1) {
 			nextChild.anagrams.add(currentWord);
-			nextChild.definitions.put(currentWord, currentDefinition);
 			return;
 		}
 		else {
-		//This node is not the end of a word. Remove the first letter and 
+		//This node is not the end of a word. Remove the first letter and continue.
 			insertWord(subalphagram.substring(1), nextChild);
 		}
 	}
@@ -137,5 +133,4 @@ public class AlphagramTrie {
         return new String(chars);
 	
 	}
-
 }
