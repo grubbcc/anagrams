@@ -1,4 +1,4 @@
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
@@ -7,11 +7,11 @@ import java.util.Collection;
 
 public class Server extends Thread {
 	
-	private final int serverPort;	
+	private final int serverPort;
 	private String[] lexicons = {"NWL18", "CSW19", "LONG"};
-	private HashMap<String, ServerWorker> workerList = new HashMap<>();
-	private HashMap<String, Game> gameList = new HashMap<>();
-	private HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
+	private Hashtable<String, ServerWorker> workerList = new Hashtable<>();
+	private Hashtable<String, Game> gameList = new Hashtable<>();
+	private Hashtable<String, AlphagramTrie> dictionaries = new Hashtable<>();
 	
 	
 	/**
@@ -115,8 +115,11 @@ public class Server extends Thread {
 	*/
 	
 	synchronized void broadcast(String msg) {
-		for(ServerWorker worker : workerList.values()) {
-			worker.send(msg);
+		
+		synchronized(workerList) {
+			for(ServerWorker worker : workerList.values()) {
+				worker.send(msg);
+			}
 		}
 	}
 
