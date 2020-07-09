@@ -53,13 +53,6 @@ public class WordExplorer extends JDialog implements ActionListener {
 		
 	public WordExplorer(AlphagramTrie trie) {
 	
-		//Create list of lexicons from wordlist directory
-/**		File folder = new File("wordlists");
-		String[] wordLists = folder.list();
-		for(String wordList : wordLists)
-			if(wordList.endsWith(".txt"))8
-				lexicons.add(wordList.substring(0, wordList.length() - 4));*/
-
 		//Create the WordTree
 		this.lexicon = trie.lexicon;
 		tries.put(lexicon, trie);
