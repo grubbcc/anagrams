@@ -1,19 +1,30 @@
 Update log
 
-0.9.5
+Version 0.9.6 - July 6, 2020
 
-* You can now the names of players in a game from the home screen.
-* Capped the number of windows you can have open at a time at 4.
-* Enabled instantaneous Robot loading.
-*
+* Added buttons to click through previous game positions.
+* Added a panel that shows all playable words during analysis mode.
+* Word explorer displays probabilities of steals.
+* Game grays out players who have abandoned words on the table. (They can still return to them.)
+* Server keeps track of most commonly missed words.
 
-0.9.4 - June 12, 2020
+
+Version 0.9.5 - June 21, 2020
+
+* Robot opponents and dictionaries load instantaneously.
+* Customizable appearance and game settings load automatically on startup.
+* Added informative tooltips to the main screen game panels.
+* Names of active players in games are visible from the home screen.
+*  Maximum number of windows you can have open at a time is set to 4.
+
+Version 0.9.4 - June 12, 2020
 
 * Game window can now be maximized and minimized.
-* Game window now displays game parameters.
 * Added informative tooltips to game menu.
+* Game window now displays game parameters.
+* Game notifications are now displayed in the main screen.
 * Tile size automatically adjusts according when panel is full.
-* 
+
 
 0.9.3 - June 10, 2020
 
