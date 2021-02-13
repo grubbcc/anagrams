@@ -1,4 +1,6 @@
-/**
+package server;
+
+/*
 * A node representing a unique alphagram, i.e. an alphabetized list of letters, containing:
 *  • a number of anagram Strings coorresponding to this alphagram, each each of which 
 *    represents a valid dictionary word

@@ -1,3 +1,5 @@
+package server;
+
 import java.io.*;
 
 public class Logger extends Game {
@@ -5,12 +7,12 @@ public class Logger extends Game {
 	FileOutputStream logStream;
 	PrintStream logPrinter;
 
-	public Logger(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowsWatchers) {
+	public Logger(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers) {
 		
-		super(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowsWatchers);
+		super(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowsWatchers);
 
 		try {
-			logStream = new FileOutputStream("game logs/log" + gameID + ".txt");
+			logStream = new FileOutputStream("/game logs/log" + gameID + ".txt");
 			logPrinter = new PrintStream(logStream, true);
 		}
 		catch (Exception e){

@@ -1,5 +1,5 @@
-import javax.swing.tree.*;
-import java.util.Enumeration;
+package server;
+
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -14,18 +14,18 @@ import java.util.Collections;
 
 class Robot {
 
-	private Game game;
+	private final Game game;
 	public final String robotName;
 	public final int skillLevel;
 	private final int blankPenalty;
 	private final int minLength;
 	int blanksAvailable;
 	
-	private HashMap<String, WordTree> trees = new HashMap<>();
-	private AlphagramTrie dictionary;
+	private final HashMap<String, WordTree> trees = new HashMap<>();
+	private final AlphagramTrie dictionary;
 	
 	public boolean found = false;
-	private Random rgen = new Random();	
+	private final Random rgen = new Random();
 	
 	/**
 	*
@@ -57,7 +57,7 @@ class Robot {
 	*
 	* @param key: the character address of the node being searched
 	* @param rest: the characters
-	* @param charsToTake
+	* @param charsToTake tiles not yet found in the pool
 	*/
 
 	void makeWord(String key, String pool, String rest, int charsToTake) {
@@ -77,7 +77,7 @@ class Robot {
 		for(int i = 0; i < rest.length() && i <= charsToTake; i++) {
 			if(found)
 				return;
-			makeWord(key + rest.substring(0,i), pool + rest.substring(i, i+1), rest.substring(i+1, rest.length()), charsToTake-i);
+			makeWord(key + rest.substring(0,i), pool + rest.charAt(i), rest.substring(i+1), charsToTake-i);
 		}
 	}
 	
@@ -118,7 +118,7 @@ class Robot {
 	*/
 	
 	void makeTree(String shortWord) {
-		trees.put(shortWord, new WordTree(new DefaultMutableTreeNode(new UserObject(shortWord.replaceAll("[a-z]",""), "")), dictionary));
+		trees.put(shortWord, new WordTree(shortWord.replaceAll("[a-z]",""), dictionary));
 	}
 	
 	/**
@@ -139,11 +139,9 @@ class Robot {
 		for(String player : players) {
 			for(String shortWord : words.get(player)) {
 				if(trees.containsKey(shortWord)) {
-					Enumeration e = trees.get(shortWord).root.children();
+					for (TreeNode child : trees.get(shortWord).root.getChildren()) {
 
-					while(e.hasMoreElements()) {
-						DefaultMutableTreeNode child = (DefaultMutableTreeNode)e.nextElement();
-						String longWord = child.getUserObject().toString();
+						String longWord = child.toString();
 						
 						if(rgen.nextInt(4) < skillLevel) {
 							if(game.doSteal(player, shortWord, robotName, longWord)) {

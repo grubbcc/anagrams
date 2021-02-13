@@ -1,6 +1,6 @@
-import java.util.Iterator;
+package server;
+
 import java.net.Socket;
-import java.net.SocketException;
 import java.io.*;
 
 /**
@@ -11,7 +11,7 @@ public class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final Server server;
-	private final int[] latestVersion = {0, 9, 6};
+	private final int[] latestVersion = {0, 9, 7};
 	private String username = null;
 	private OutputStream outputStream;
 	private InputStream inputStream;
@@ -38,40 +38,161 @@ public class ServerWorker extends Thread {
 		}
 		catch (IOException e) {
 			
-			System.out.println(username + " has unexpectedly disconnected.");
-			e.printStackTrace();
-			//attempt to reconnect
+			System.out.println(username + " has disconnected.");
+		/*	e.printStackTrace();
+			
 			try {				
-				server.removeWorker(username);
-				
-				for(Game game : server.getGames()) {
-					game.removePlayer(username);
-					game.removeWatcher(username);
-				}
-
-				outputStream.flush();
-				reader.close();
-
-				inputStream.close();
-				outputStream.close();
-				clientSocket.close();
-				System.out.println("Completed disconnect procedure");
+				handleLogoff();
 			}
 			catch (IOException e2) {
 				e2.printStackTrace();
-			}
-		}
-		catch (InterruptedException e) {
-			System.out.println(username + " is experiencing connection interruptions.");
-			//attempt to reconnect
+			}*/
 		}
 	}
 
+
+
 	/**
-	* Listens for commands from this worker's client and responds appropriately.
+	* Checks to see if the client is using an "outdated" and/or "unsupported" version of Anagrams.
+	*
+	* 
+	*
+	* @param version the latest version of this software
 	*/
 	
-	private void handleClientSocket() throws IOException, InterruptedException, SocketException {
+	private void checkVersion(String version) {
+		String[] subversions = version.split("\\.");
+		for(int i = 0; i < 3; i++) {
+			if(Integer.parseInt(subversions[i]) < latestVersion[i]) {
+//				send("outdated");
+				send("unsupported");
+				return;
+			}
+		}
+		send("ok version");
+	}
+
+	/**
+	* Checks to see whether the user has entered a valid username
+	* (And in future versions, a valid password)
+	*/
+	
+	private void handleLogin(String username) {
+
+		if(server.getUsernames().contains(username) || username.startsWith("Robot")) {
+			send("Sorry, that username is already taken. Please try again.");
+			System.out.println("Login failed for " + username);
+		}
+		else {
+			send("ok login");
+
+			//use this space to send alert messages or chat messages upon login
+			
+			send("chat Server says: Welcome to Anagrams version 0.9.7!");
+
+			this.username = username;
+
+			System.out.println("User logged in successfully: " + username);
+
+			//notify new player of other players
+			synchronized(server.getUsernames()) {
+				for(String playerName : server.getUsernames()) {
+					send("loginplayer " + playerName);
+				}
+			}
+
+			//notify new player of games
+			synchronized(server.getGames()) {
+				for(Game game : server.getGames()) {
+					send("addgame " + game.getGameParams());
+					for(String playerName : game.getPlayerList()) {
+						send("takeseat " + game.gameID + " " + playerName);
+					}
+					for(String inactivePlayer : game.getInactivePlayers()) {
+						send("abandonseat " + game.gameID + " " + inactivePlayer);
+					}
+					if(game.gameOver) {
+						for(String gameState : game.gameLog) {
+							send("gamelog " + game.gameID + " " + gameState);
+						}
+						send("note " + game.gameID + " @" + "Game over");
+						send("endgame " + game.gameID);
+					}
+				}
+			}
+
+			//notify other players of the new player
+			server.addWorker(username, this);
+			server.broadcast("loginplayer " + username);
+		}
+	}
+
+
+	/**
+	*
+	*/
+	
+	private void handleLogoff() throws IOException {
+		
+		if(username != null) {
+			server.removeWorker(username);
+		}
+
+		outputStream.flush();
+		reader.close();
+
+		inputStream.close();
+		outputStream.close();
+		clientSocket.close();
+		
+		System.out.println(username + " has just logged off");
+		
+	}
+	
+	/**
+	*
+	*/
+	
+	private void handleCreateGame(String[] params) {
+	
+		String gameID = params[1];
+		int maxPlayers = Integer.parseInt(params[2]);
+		int minLength = Integer.parseInt(params[3]);
+		int numSets = Integer.parseInt(params[4]);
+		int blankPenalty = Integer.parseInt(params[5]);
+		String lexicon = params[6];
+		String speed = params[7];
+		boolean allowChat = Boolean.parseBoolean(params[8]);
+		boolean allowWatchers = Boolean.parseBoolean(params[9]);
+		boolean hasRobot = Boolean.parseBoolean(params[10]);
+		int skillLevel = Integer.parseInt(params[11]);
+		
+		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers);
+		
+		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
+
+		newGame.addPlayer(this);
+
+		if(hasRobot) {
+			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon)));
+		}
+		server.addGame(gameID, newGame);
+
+	}
+
+	/**
+	*
+	*/
+	
+	public String getUsername() {
+		return username;
+	}
+
+	/**
+	 * Listens for commands from this worker's client and responds appropriately.
+	 */
+
+	private void handleClientSocket() throws IOException {
 
 		inputStream = clientSocket.getInputStream();
 		this.outputStream = clientSocket.getOutputStream();
@@ -82,9 +203,9 @@ public class ServerWorker extends Thread {
 			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
-			if (tokens != null && tokens.length > 0) {
+			if (tokens.length > 0) {
 				String cmd = tokens[0];
-				
+
 				if (cmd.equals("login")) {
 					handleLogin(tokens[1]);
 				}
@@ -93,18 +214,14 @@ public class ServerWorker extends Thread {
 				}
 				else if(cmd.equals("logoff")) {
 					handleLogoff();
-					break;
 				}
 				else if(cmd.equals("chat")) {
 					server.broadcast(line);
 				}
 				else if(cmd.equals("newgame")) {
-					handleCreateGame(tokens);			
+					handleCreateGame(tokens);
 				}
-/*				else if(cmd.equals("requestgamelog")) {
-					fetchGameData(tokens[1]);
-				}*/
-				
+
 				//game related commands
 				else if(cmd.equals("makeword")) {
 					if(server.getGame(tokens[1]) != null) {
@@ -142,193 +259,17 @@ public class ServerWorker extends Thread {
 					}
 				}
 
-				else {	
+				else {
 					System.out.println("Error: Command not recognized: " + line);
 				}
 			}
 		}
-		
-	//		System.out.println("socket closing");
-	//		clientSocket.close();
-
 	}
-
-	/**
-	* Checks to see if the client is using an "outdated" and/or "unsupported" version of Anagrams.
-	*
-	* 
-	*
-	* @param version the latest version of this software
-	*/
-	
-	private void checkVersion(String version) {
-		String[] subversions = version.split("\\.");
-		for(int i = 0; i < 3; i++) {
-			if(Integer.parseInt(subversions[i]) < latestVersion[i]) {
-//				send("outdated");
-				send("unsupported");
-				return;
-			}
-		}
-		send("ok version");
-	}
-
-	/**
-	* Checks to see whether the user has entered a valid username
-	* (And in future versions, a valid password)
-	*/
-	
-	private void handleLogin(String username) throws IOException {
-
-		if(server.getUsernames().contains(username) || username.startsWith("Robot")) {
-			send("Sorry, that username is already taken. Please try again.");
-			System.out.println("Login failed for " + username);
-		}
-		else {
-			send("ok login");
-
-			//use this space to send alert messages or chat messages upon login
-			
-			send("chat Server says: Welcome to Anagrams version 0.9.6!");
-
-			this.username = username;
-
-			System.out.println("User logged in successfully: " + username);
-
-			//notify new player of other players
-			synchronized(server.getUsernames()) {
-				for(String playerName : server.getUsernames()) {
-					send("loginplayer " + playerName);
-				}
-			}
-
-			//notify new player of games
-			synchronized(server.getGames()) {
-				for(Game game : server.getGames()) {
-					send("addgame " + game.getGameParams());
-					for(String playerName : game.getPlayerList()) {
-						send("takeseat " + game.gameID + " " + playerName);
-					}
-					for(String inactivePlayer : game.getInactivePlayers()) {
-						send("abandonseat " + game.gameID + " " + inactivePlayer);
-					}
-					if(game.gameOver) {
-						for(String gameState : game.gameLog) {
-							send("gamelog " + game.gameID + " " + gameState.toString());
-						}
-						send("note " + game.gameID + " @" + "Game over");
-						send("endgame " + game.gameID);
-					}
-				}
-			}
-
-			//notify other players of new player
-			server.addWorker(username, this);
-			server.broadcast("loginplayer " + username);
-		}
-	}
-
-	/**
-	*
-	*/
-
-	
-	private void handleLogoff() throws IOException {
-
-		for(Game game : server.getGames()) {
-			game.removePlayer(username);
-			game.removeWatcher(username);
-		}
-		send("logoff");
-		outputStream.flush();
-		reader.close();
-
-		server.removeWorker(username);
-
-		inputStream.close();
-		outputStream.close();
-		clientSocket.close();
-		
-		System.out.println(username + " has just logged off");
-		
-	}
-	
-	/**
-	*
-	*/
-	
-	private void handleCreateGame(String[] params) throws IOException {
-	
-		String gameID = params[1];
-		int maxPlayers = Integer.parseInt(params[2]);
-		int minLength = Integer.parseInt(params[3]);
-		int numSets = Integer.parseInt(params[4]);
-		int blankPenalty = Integer.parseInt(params[5]);
-		String lexicon = params[6];
-		String speed = params[7];
-		boolean allowChat = Boolean.parseBoolean(params[8]);
-		boolean allowWatchers = Boolean.parseBoolean(params[9]);
-		boolean hasRobot = Boolean.parseBoolean(params[10]);
-		int skillLevel = Integer.parseInt(params[11]);
-		
-		Game newGame = new Logger(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowWatchers);
-		
-		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
-
-		newGame.addPlayer(this);
-
-		if(hasRobot) {
-			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon)));
-		}
-		server.addGame(gameID, newGame);
-		newGame.startGame();
-	}
-
-	/**
-	*
-	*/
-	
-/*	void fetchGameData(String gameID) {
-		Game game = server.getGame(gameID);
-		if(game != null) {
-			if(game.gameOver) {
-				for(String gameState : game.gameLog) {
-					send("gamelog " + gameID + " " + gameState);
-				}
-			}
-		}
-	}*/
-	
-/*	void fetchGameData(String gameID) {
-		String newLine;
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader("game logs/anno" + gameID + ".txt"));
-			for(newLine = reader.readLine(); newLine != null; newLine = reader.readLine()) {
-				if(!newLine.trim().isEmpty()) {
-					if(newLine.charAt(0) >= '0' && newLine.charAt(0) <= '9') {
-						send("gamelog " + gameID + " " + newLine);
-					}
-				}
-			}
-		}
-		catch(IOException e) {
-			System.out.println(e);
-		}
-	}*/
-
-	/**
-	*
-	*/
-	
-	public String getUsername() {
-		return username;
-	}
-
 	
 	/**
 	* Inform the player about events happening on the server
 	*
-	* @param String msg The message to be sent.
+	* @param msg The message to be sent.
 	*/
 	
 
@@ -340,22 +281,8 @@ public class ServerWorker extends Thread {
 		}
 		catch (IOException e) {
 			System.out.println(username + " has unexpectedly disconnected");
-			//attempt to reconnect
 			try {
-				server.removeWorker(username);
-				
-				for(Game game : server.getGames()) {
-					game.removePlayer(username);
-					game.removeWatcher(username);
-				}
-
-				outputStream.flush();
-				reader.close();
-
-				inputStream.close();
-				outputStream.close();
-				clientSocket.close();
-
+				handleLogoff();
 			}
 			catch (IOException e2) {
 				e2.printStackTrace();

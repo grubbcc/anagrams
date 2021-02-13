@@ -1,116 +1,64 @@
-/**
-* Given a lexicon and a rootWord, creates a hierarchial tree structure graphically depicting
-* how the word can be "stolen" according to the rules of Anagrams.
-*
-* For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALPUA
-* with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
-* However, PROMENADE is not a steal of POMADE because the latter can be formed from the former by
-* insertion of letters without rearrangement.
-*
-* TO DO: add an asterisk next to words that are not in the dictionary.
-*/
+package server;
 
+/*
+ * Given a lexicon and a rootWord, creates a hierarchical tree structure graphically depicting
+ * how the word can be "stolen" according to the rules of Anagrams.
+ *
+ * For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALUPA
+ * with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
+ *
+ * On the other hand, PROMENADE is not a steal of POMADE because the latter can be formed from the
+ * former by insertion of letters without rearrangement.
+ *
+ */
 
-import java.io.*;
-import java.util.Scanner;
-import javax.swing.*;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.tree.*;
-import java.awt.FlowLayout;
-import java.awt.BorderLayout;
-import java.util.Map;
-import java.awt.Color;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.TreeMap;
-import java.util.Enumeration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.TreeSet;
-import java.util.Iterator;
+import java.util.*;
 
-public class WordTree extends JTree {
-	
-	private TreeSet<DefaultMutableTreeNode> treeNodeList;
-	private String rootWord;
-	public AlphagramTrie trie;
-	public DefaultMutableTreeNode root;
+public class WordTree {
+
+	public final AlphagramTrie trie;
+	public TreeNode root;
+	private final String rootWord;
+	private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
+
 
 	/**
-	* Creates an empty WordTree object which serves only as a container for a trie
-	*/
-	
-	public WordTree(String lexicon) {
-		this.trie = new AlphagramTrie(lexicon);
-	}
-	
-    /**
-     * Generates a tree from a newly created trie of the given lexicon
-     */
-	
-	public WordTree(DefaultMutableTreeNode root, String lexicon) {
-		this(root, new AlphagramTrie(lexicon));
-	}
+	 * Generates a tree from a existing trie
+	 */
 
-    /**
-     * Generates a tree from a existing trie
-     */
-	
-	public WordTree(DefaultMutableTreeNode root, AlphagramTrie trie) {
-
-		super(root);		
-		this.root = root;	
+	public WordTree(String rootWord, AlphagramTrie trie) {
+		this.rootWord = rootWord.toUpperCase();
+		root = new TreeNode(rootWord, "");
 		this.trie = trie;
-				
-		treeNodeList = new TreeSet<DefaultMutableTreeNode>(new TreeNodeComparator());
-		treeNodeList.add(this.root);
 
-		rootWord = root.toString();		
+		treeNodeList.add(root);
+
 		char[] rootChars = rootWord.toCharArray();
 		Arrays.sort(rootChars);
 		find(trie.rootNode, rootChars, "");
-		
+
 		while(treeNodeList.size() > 1)
 			buildTree();
 
-		sortChildren();
-
-	}
-	
-	
-	/**
-	* A tool for sorting tree nodes (1) according to length, and in case of ties, (2) in alphabetical order.
-	*/
-	
-	static class TreeNodeComparator implements Comparator<TreeNode> {
-		@Override
-		public int compare(TreeNode node1, TreeNode node2) {
-			int result = (node2.toString()).length() - (node1.toString()).length();
-			if(result == 0) {
-				result = (node2.toString()).compareTo(node1.toString());
-			}
-			return result;
-		}
+		root.getChildren().sort(new TreeNodeComparator().reversed());
 	}
 
 
 	/**
-	* Recursively searches the children of a given node for words containing the given list of characters.
-	*
-	* @param Node node : a node in the trie
-	* @param char[] charsToFind : characters that a descendent of the given node's path must contain to be considered a steal of the rootWord
-	*/
-	
+	 * Recursively searches the children of a given node for words containing the given list of characters.
+	 *
+	 * @param node : a node in the trie
+	 * @param charsToFind : characters that a descendant of the given node's path must contain to be considered a steal of the rootWord
+	 */
+
 	private void find(Node node, char[] charsToFind, String otherCharsFound) {
-	
+
 		if(charsToFind.length > 0) {
-			Character firstChar = Character.valueOf(charsToFind[0]);
-			
+			Character firstChar = charsToFind[0];
+
 			for(Map.Entry<Character,Node> child : node.children.headMap(firstChar, true).entrySet()) {
 				if(child.getKey().equals(firstChar))
 					find(child.getValue(), Arrays.copyOfRange(charsToFind, 1, charsToFind.length), otherCharsFound);
-				
 				else
 					find(child.getValue(), charsToFind, otherCharsFound + child.getKey());
 			}
@@ -118,10 +66,9 @@ public class WordTree extends JTree {
 
 		//If the node's path already contains all characters to be found, then automatically add its descendants to the node list
 		else {
-			
 			for(String anagram : node.anagrams) {
 				if(anagram.length() > rootWord.length()) {	 //This prevents the node list from including the node of the search key itself
-					treeNodeList.add(new DefaultMutableTreeNode(new UserObject(anagram, otherCharsFound)));
+					treeNodeList.add(new TreeNode(anagram, otherCharsFound));
 				}
 			}
 			for(Map.Entry<Character,Node> child : node.children.entrySet())
@@ -130,142 +77,125 @@ public class WordTree extends JTree {
 	}
 
 	/**
-	* Given the class's list of DefaultMutableTreeNodes, each representing a single word,
-	* 	 sort them into a hierarchical structure such that:
-	* 		(1) each word becomes a child of the longest word whose letters are a strict subset of that word's letters
-	*		(2) provided that at least two letters of the shorter word must be rearranged to form the longer word
-	*		(3) any word whose letters cannot be formed from a shorter word by rearrangement is eliminated
-	*		(4) the shortest word is the rootWord entered by the user.
-	*/
-	
+	 * Given the class's list of DefaultMutableTreeNodes, each representing a single word,
+	 * 	 sort them into a hierarchical structure such that:
+	 * 		(1) each word becomes a child of the longest word whose letters are a strict subset of that word's letters
+	 *		(2) provided that at least two letters of the shorter word must be rearranged to form the longer word
+	 *		(3) any word whose letters cannot be formed from a shorter word by rearrangement is eliminated
+	 *		(4) the shortest word is the rootWord entered by the user.
+	 */
+
 	private void buildTree() {
 
-		DefaultMutableTreeNode currentNode = treeNodeList.pollFirst();
+		TreeNode currentNode = treeNodeList.pollFirst();
 		String currentWord = currentNode.toString();
 
-		Iterator<DefaultMutableTreeNode> iterator = treeNodeList.iterator();
-
-		while(iterator.hasNext()) {
-			DefaultMutableTreeNode nextNode = iterator.next();
+		for (TreeNode nextNode : treeNodeList) {
 			String nextWord = nextNode.toString();
-			
-			if(isSteal(nextWord, currentWord)) {
-				nextNode.insert(currentNode, 0);
+
+			if (isSteal(nextWord, currentWord)) {
+				nextNode.addChild(currentNode);
 				return;
 			}
 		}
-		
+
 		//If a word is not a steal of any shorter word, that word is eliminated and its children are returned to the front of the queue
-		Enumeration e = currentNode.children();
-		while(e.hasMoreElements()) {
-			DefaultMutableTreeNode orphanNode = (DefaultMutableTreeNode)e.nextElement();
-			treeNodeList.add(orphanNode);
+		treeNodeList.addAll(currentNode.getChildren());
+	}
+
+	/**
+	 * A tool for sorting tree nodes (1) according to length, and in case of ties, (2) in alphabetical order.
+	 */
+
+	static class TreeNodeComparator implements Comparator<TreeNode> {
+		@Override
+		public int compare(TreeNode node1, TreeNode node2) {
+			int result = node2.toString().length() - node1.toString().length();
+			if(result == 0) {
+				result = (node2.toString()).compareTo(node1.toString());
+			}
+			return result;
 		}
 	}
 
 	/**
-	* Make sure the children of the root node are listed in order from shortest to longest.
-	*/
+	 * Given two words, determines whether one's letters are a strict subset of the other's.
+	 *
+	 * @param shortWord a shorter word
+	 * @param longWord a longer word
+	 */
 
-	private void sortChildren() {
-
-		ArrayList<TreeNode> children = Collections.list(root.children());
-	
-		Collections.sort(children, new TreeNodeComparator());
-
-		root.removeAllChildren();
-
-		for (TreeNode child : children)
-			root.insert((DefaultMutableTreeNode)child, 0);
-	}
-	
-	/**
-	* Given two words, determines whether one's letters are a strict subset of the other's.
-	*
-	* @param String shortWord
-	* @param String longWord
-	*/
-	
 	public static boolean isSubset(String shortWord, String longWord) {
 
 		if(shortWord.length() >= longWord.length()) {
 			return false;
 		}
-	
+
 		String shortString = alphabetize(shortWord);
 		String longString = alphabetize(longWord);
-		
+
 		while(shortString.length() > 0) {
 
 			if(longString.length() == 0 ) {
 				return false;
 			}
-		
+
 			else if(shortString.charAt(0) < longString.charAt(0)) {
 				return false;
 			}
 			else if(shortString.charAt(0) > longString.charAt(0)) {
 				longString = longString.substring(1);
-				continue;
 			}
 			else if(shortString.charAt(0) == longString.charAt(0)) {
 				shortString = shortString.substring(1);
 				longString = longString.substring(1);
-				continue;
 			}
 		}
 		return true;
 	}
-	
+
 	/**
-	* Given two words, determines whether one's letters can be rearranged, with the addition of at least
-	* one letter not found in the word, to form the second word.
-	*
-	* @param String shortWord
-	* @param String longWord
-	*/
-	
+	 * Given two words, determines whether one's letters can be rearranged, with the addition of at least
+	 * one letter not found in the word, to form the second word.
+	 *
+	 * @param shortWord a shorter word
+	 * @param longWord a longer word
+	 */
+
 	public static boolean isSteal(String shortWord, String longWord) {
-	
+
 		String shortString = shortWord;
 		String longString = longWord;
-		
-		if(!isSubset(shortString, longString)) 
+
+		if(!isSubset(shortString, longString))
 			return false;
 		else {
 			while(longString.length() >= shortString.length() && shortString.length() > 0) {
 
 				if(shortString.charAt(0) != longString.charAt(0)) {
 					longString = longString.substring(1);
-					continue;
 				}
 				else {
 					shortString = shortString.substring(1);
 					longString = longString.substring(1);
-					continue;
 				}
 			}
-			
-			if(shortString.length() > longString.length()) 
-				return true;
-			else 
-				return false;
+
+			return shortString.length() > longString.length();
 		}
 	}
 
 
-	
 	/**
-	* Given a String, returns an "alphagram" consisting of its letters arranged in alphabetical order.
-	* 
-	* @param String entry: the letters to be rearranged
-	*/
-	public static String alphabetize(String entry) {
+	 * Given a String, returns an "alphagram" consisting of its letters arranged in alphabetical order.
+	 *
+	 * @param entry: the letters to be rearranged
+	 */
 
-	    char[] chars = entry.toCharArray();
-        Arrays.sort(chars);
-        return new String(chars);
-	
+	public static String alphabetize(String entry) {
+		char[] chars = entry.toCharArray();
+		Arrays.sort(chars);
+		return new String(chars);
 	}
 
 }

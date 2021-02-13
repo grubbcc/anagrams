@@ -1,3 +1,5 @@
+package server;
+
 import java.io.*;
 import java.util.Arrays;
 
@@ -19,7 +21,7 @@ public class AlphagramTrie {
 	* Creates a root node to serve as the base of the trie.
 	* Reads the words from the file, formats them, and adds them to the trie.
 	* 
-	* @param the name of the word list
+	* @param lexicon the name of the word list
 	*/
 	
 	public AlphagramTrie(String lexicon) {
@@ -27,7 +29,7 @@ public class AlphagramTrie {
 		this.lexicon = lexicon;
 		
 		try {
-			InputStream stream = getClass().getResourceAsStream("/wordlists/" + lexicon + ".txt");
+			InputStream stream = getClass().getResourceAsStream("wordlists/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			for(String stringRead = reader.readLine(); stringRead != null; stringRead = reader.readLine()) {
 				currentWord = stringRead;
@@ -48,8 +50,8 @@ public class AlphagramTrie {
 	* Adds a new alphagram to the trie, one letter at a time, recursively. (An alphagram is a unique
 	* alphabetical ordering of the letters in a word.)
 	* 
-	* @param String subalphagram: the suffix letters of the current alphagram which have not been added to the trie
-	* @param Node node: the node whose path represents the prefix letters which have already been added
+	* @param subalphagram: the suffix letters of the current alphagram which have not been added to the trie
+	* @param node: the node whose path represents the prefix letters which have already been added
 	*/
 	
 	private void insertWord(String subalphagram, Node node) {
@@ -123,7 +125,7 @@ public class AlphagramTrie {
 	/**
 	* Given a String, creates an "alphagram" consisting of its letters arranged in alphabetical order.
 	* 
-	* @param String entry: the letters to be rearranged
+	* @param entry the letters to be rearranged
 	*/
 	
 	synchronized public static String alphabetize(String entry) {
