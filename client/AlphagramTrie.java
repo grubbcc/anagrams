@@ -1,3 +1,5 @@
+package client;
+
 import java.io.*;
 import java.util.Arrays;
 
@@ -21,7 +23,7 @@ public class AlphagramTrie {
 	* Creates a root node to serve as the base of the trie.
 	* Reads the words from the file, formats them, and adds them to the trie.
 	* 
-	* @param the name of the word list
+	* @param lexicon the name of the word list
 	*/
 	
 	public AlphagramTrie(String lexicon) {
@@ -54,8 +56,8 @@ public class AlphagramTrie {
 	* Adds a new alphagram to the trie, one letter at a time, recursively. (An alphagram is a unique
 	* alphabetical ordering of the letters in a word.)
 	* 
-	* @param String subalphagram: the suffix letters of the current alphagram which have not been added to the trie
-	* @param Node node: the node whose path represents the prefix letters which have already been added
+	* @param subalphagram: the suffix letters of the current alphagram which have not been added to the trie
+	* @param node: the node whose path represents the prefix letters which have already been added
 	*/
 	
 	private void insertWord(String subalphagram, Node node) {
@@ -87,7 +89,7 @@ public class AlphagramTrie {
 	/**
 	* Checks whether the given entry is a valid word in this trie's lexicon
 	*
-	* @param String searchKey the String to be searched for
+	* @param searchKey the String to be searched for
 	*/	
 	
 	public boolean contains(String searchKey) {
@@ -109,7 +111,7 @@ public class AlphagramTrie {
 	* Given a series of letters, not necessarily ordered, returns the corresponding node in
 	* the trie. If the node does not exist, returns null.
 	*
-	* @param String searchKey the sequence of letters corresponding to the address of the searched-for node
+	* @param searchKey the sequence of letters corresponding to the address of the searched-for node
 	*/
 	
 	public Node getNode(String searchKey) {
@@ -145,7 +147,7 @@ public class AlphagramTrie {
 	/**
 	* Given a String, creates an "alphagram" consisting of its letters arranged in alphabetical order.
 	* 
-	* @param String entry: the letters to be rearranged
+	* @param entry: the letters to be rearranged
 	*/
 	
 	public static String alphabetize(String entry) {

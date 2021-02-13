@@ -1,357 +1,388 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Arrays;
+package client;
 
 import java.io.*;
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
-import javax.sound.sampled.*;
-import java.net.Socket;
-import javax.swing.border.EmptyBorder;
-import javax.swing.text.DefaultEditorKit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.net.*;
+import java.util.*;
+import com.jpro.webapi.JProApplication;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.media.AudioClip;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+import java.util.prefs.Preferences;
 
-import java.net.BindException;
-import java.net.ServerSocket;
-import java.net.InetAddress;
 /**
-*
-*
-*/
+ *
+ *
+ */
 
-public class AnagramsClient extends JFrame implements ActionListener {
+public class AnagramsClient extends JProApplication {
 
-	private final String serverName = "127.0.0.1"; //connect to this computer
-	private final static int port = 8118;
-	private final static int testPort = 8117;
-	public final String version = "0.9.6";
-	
-	private Socket socket;
-	private static ServerSocket lockSock;    	
+	//	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
+	//	private final String serverName = "192.168.0.17"; //connect over home network
+	    private final String serverName = "127.0.0.1"; //connect to this computer
+
+	private int port;
+	public final String version = "0.9.7";
+
+	boolean connected;
 	private InputStream serverIn;
 	private OutputStream serverOut;
 	private BufferedReader bufferedIn;
-	
+
+	Stage stage;
+	private Thread messageLoop;
+
 	private LoginWindow loginWindow;
-	
-	private JPanel controlPanel = new JPanel(new BorderLayout());
-	private JButton createGameButton = new JButton("Create Game");
-	private ImageIcon settingsIcon = new ImageIcon(getClass().getResource("settings.png"));	
-	private JButton settingsButton = new JButton("Settings   ", settingsIcon);
+	private final FlowPane gamesPanel = new FlowPane();
+	private final ScrollPane gamesScrollPane = new ScrollPane();
 
-	public String[] lexicons = {"CSW19", "NWL18", "LONG"};		
-	private JPanel gamesPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
-	private JPanel playersPanel = new JPanel(new BorderLayout());
-	private JLabel playersHeader = new JLabel("Players logged in");
-	private JTextArea playersTextArea = new JTextArea();
-	private JPanel chatPanel = new JPanel(new BorderLayout());
-	private JScrollPane chatScrollPane = new JScrollPane(chatPanel);
-	private JTextArea chatBox = new JTextArea(5, 70);
-	private JTextField chatField = new JTextField("Type here to chat", 70);
+	private final Label playersHeader = new Label("Players logged in");
+	private final VBox playersListPane = new VBox();
+	final BorderPane borderPane = new BorderPane();
+	private final BorderPane playersPanel = new BorderPane();
+	private final ScrollPane playersScrollPane = new ScrollPane();
 
-	Color mainScreenBackgroundColor;
-	Color mainScreenBackgroundText; //unused
-	Color chatAreaColor;
-	Color chatAreaText;
-	Color playersPanelColor;
-	Color playersPanelText;
-	Color gameForegroundColor;
-	Color gameForegroundText;
-	Color gameBackgroundColor;
-	Color gameBackgroundText;
-	
-	private FocusListener fl = new FocusListener() {
-		public void focusGained(FocusEvent e) {
-			chatField.setText("");
-			chatField.setForeground(Color.BLACK);
-		}
-		public void focusLost(FocusEvent e) {
-		}
-	};
+	final AnchorPane anchor = new AnchorPane(borderPane);
+	final StackPane stack = new StackPane(anchor);
 
-	String workingDirectory;
-	String OS = (System.getProperty("os.name")).toUpperCase();
-	HashMap<String, String> settings = new HashMap<String, String>();
-	String settingsPath;
+	private final TextArea chatBox = new TextArea();
+	private final BorderPane chatPanel = new BorderPane();
+	private final ScrollPane chatScrollPane = new ScrollPane();
 
-	private HashMap<String, GameWindow> gameWindows = new HashMap<String, GameWindow>();
-	private HashMap<String, GamePane> gamePanes = new HashMap<String, GamePane>();
-	private LinkedHashMap<JPanel, ArrayList<String>> addresses = new LinkedHashMap<JPanel, ArrayList<String>>();
-	
+	private SettingsMenu settingsMenu;
+	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
+	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
+	private final HashSet<String> playersList = new HashSet<>();
 	public String username;
-	private HashSet<String> playersList = new HashSet<String>();
-	public HashMap<String, AlphagramTrie> dictionaries = new HashMap<String, AlphagramTrie>();
 
+	public static final String[] lexicons = {"CSW19", "NWL18", "LONG"};
+	public final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 
-	
+	//load settings
+	Preferences prefs = Preferences.userNodeForPackage(getClass());
+	EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
+
 	/**
-	* 
-	*/
+	 *
+	 */
 
-	public AnagramsClient(int port) {
+	public enum Colors {
 
+		MAIN_SCREEN ("-main-screen", "mainScreen", "Main Screen", "#F5DEB3"),
+		PLAYERS_LIST ("-players-list", "playersList", "Players List", "#B36318"),
+		GAME_FOREGROUND ("-game-foreground", "gameForeground", "Game Foreground", "#2080AA"),
+		GAME_BACKGROUND ("-game-background", "gameBackground", "Game Background", "#F5DEB3"),
+		CHAT_AREA ("-chat-area", "chatArea", "Chat Area", "#00FFFF"),
+		;
+
+		final String css;
+		final String camel;
+		final String display;
+		final String defaultCode;
+
+		Colors(String css, String camel, String display, String defaultCode) {
+			this.css = css;
+			this.camel = camel;
+			this.display = display;
+			this.defaultCode = defaultCode;
+		}
+	}
+
+	/**
+	 *
+	 */
+
+	public static void main(String[] args) {
+		launch(args);
+	}
+
+	/**
+	 * Is this necessary?
+	 */
+
+	@Override
+	public void init() {
+		port = 8117;
+	}
+
+	/**
+	 *
+	 */
+
+	@Override
+	public void start(Stage stage) {
+		this.stage = stage;
 		System.out.println("Welcome to Anagrams!");
-		setSize(792, 500);
-		setMinimumSize(new Dimension(792,400));
-		if(port == 8117) setTitle("Anagrams (testing mode)");
-		else setTitle("Anagrams");
-		
-		//default settings
-		if (OS.contains("WIN")) {
-			workingDirectory = System.getenv("AppData");
-		}	
-		else {
-			workingDirectory = System.getProperty("user.home");
-			workingDirectory += "/Library/Application Support";
+
+		String lexicon = prefs.get("LEXICON", "CSW19");
+		dictionaries.put(lexicon, new AlphagramTrie(lexicon));
+
+		for(Colors color : Colors.values()) {
+			colors.put(color, prefs.get(color.toString(), color.defaultCode));
 		}
-		settingsPath = workingDirectory + File.separator + "Anagrams" + File.separator + "settings.ser";
-		settings = loadSettings();
 
-		for(String lexicon : lexicons) {
-			dictionaries.put(lexicon, null);
+
+
+		createAndShowGUI();
+		if(connect() ) {
+			System.out.println("Connected to server on port " + port);
+			loginWindow = new LoginWindow(this);
+			loginWindow.show(true);
+
 		}
-		dictionaries.put(settings.get("lexicon"), new AlphagramTrie(settings.get("lexicon")));
+	}
 
-		//exit the program when the user presses ESC or CTRL + W
-		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
-		getRootPane().registerKeyboardAction(ae -> {send("logoff");}, KeyStroke.getKeyStroke("control W"), JComponent.WHEN_IN_FOCUSED_WINDOW);
+	/**
+	 *
+	 */
 
+	private void createAndShowGUI() {
 		//control panel
-		createGameButton.addActionListener(this);
-		settingsButton.addActionListener(this);
-		settingsButton.setPreferredSize(new Dimension(143, 33));
-		settingsButton.setHorizontalTextPosition(SwingConstants.LEFT);
-		controlPanel.add(settingsButton, BorderLayout.EAST);
-		controlPanel.add(createGameButton, BorderLayout.CENTER);
+		Button createGameButton = new Button("Create Game");
+		createGameButton.setPrefHeight(36);
 
-		
+		createGameButton.setOnAction(e -> new GameMenu(this));
+		Image settingsImage = new Image(getClass().getResourceAsStream("/settings.png"), 30, 30, true ,true);
+		Button settingsButton = new Button("Settings", new ImageView(settingsImage));
+		settingsButton.setPrefSize(143, 33);
+		settingsMenu = new SettingsMenu(this);
+		settingsButton.setOnAction(e -> settingsMenu.show(false));
+		HBox controlPanel = new HBox();
+		controlPanel.setFillHeight(true);
+        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(143));
+		controlPanel.getChildren().addAll(createGameButton, settingsButton);
+
 		//games panel
-		JScrollPane gamesScrollPane = new JScrollPane(gamesPanel);
-		gamesPanel.setLayout(new BoxLayout(gamesPanel, BoxLayout.Y_AXIS));
-		JPanel firstRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
-		gamesScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		gamesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
+		gamesPanel.setId("games-panel");
+		gamesScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+		gamesScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		gamesScrollPane.setFitToHeight(true);
+		gamesScrollPane.setFitToWidth(true);
+		gamesScrollPane.setContent(gamesPanel);
 
 		//players panel
-		JScrollPane playersScrollPane = new JScrollPane(playersPanel);
-		playersScrollPane.setPreferredSize(new Dimension(143, 1000));
+		playersHeader.setFont(new Font("Arial Bold", 16));
+		playersPanel.setPrefWidth(143);
+		playersPanel.setId("players-panel");
+		playersScrollPane.setFitToHeight(true);
+		playersScrollPane.setFitToWidth(true);
+		playersScrollPane.setContent(playersListPane);
+		playersPanel.setTop(playersHeader);
+		playersPanel.setCenter(playersScrollPane);
 
-		playersHeader.setFont(new Font("SansSerif", Font.BOLD, 16));
-		playersHeader.setBorder(new EmptyBorder(3, 3, 3, 3));
-		playersHeader.setOpaque(false);
-
-		playersTextArea.setEditable(false);
-		playersTextArea.setOpaque(false);
-		playersPanel.add(playersHeader, BorderLayout.NORTH);
-		playersPanel.add(playersTextArea);
-		
-		//chat pane
-		chatScrollPane.setPreferredSize(new Dimension(600, 100));
-		chatBox.setLineWrap(true);
+		//chat panel
 		chatBox.setEditable(false);
-		chatField.setForeground(Color.GRAY);
-		chatField.addFocusListener(fl);
-		chatField.addActionListener(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.setText("");});
-		chatField.getActionMap().put(DefaultEditorKit.deletePrevCharAction, new CustomDeletePrevCharAction());
-		chatField.setBorder(new EmptyBorder(1,1,1,1));
-		chatField.setBackground(Color.LIGHT_GRAY);
-		chatPanel.add(chatBox);
-		chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());		
-		chatPanel.add(chatField, BorderLayout.SOUTH);
+		TextField chatField = new TextField();
+		chatField.setPromptText("Type here to chat");
+		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
+		chatPanel.setBottom(chatField);
+		chatPanel.setPrefHeight(100);
+		chatScrollPane.setFitToHeight(true);
+		chatScrollPane.setFitToWidth(true);
+		chatScrollPane.setContent(chatBox);
+		chatPanel.setCenter(chatScrollPane);
 
-		//main panel
+		//main layout
+		borderPane.setTop(controlPanel);
+		borderPane.setCenter(gamesScrollPane);
+		borderPane.setRight(playersPanel);
+		borderPane.setBottom(chatPanel);
+        borderPane.setDisable(true);
+
+        anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
+		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        AnchorPane.setTopAnchor(borderPane, 0.0);
+		AnchorPane.setRightAnchor(borderPane, 0.0);
+		AnchorPane.setBottomAnchor(borderPane, 0.0);
+		AnchorPane.setLeftAnchor(borderPane, 0.0);
+
+		Scene scene = new Scene(stack);
+		scene.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
+
+		//main stage
+		if(port == 8117) stage.setTitle("Anagrams (testing mode)");
+		else stage.setTitle("Anagrams");
+		stage.setMinWidth(792);
+		stage.setMinHeight(400);
+		stage.setScene(scene);
 		setColors();
-		getContentPane().add(controlPanel, BorderLayout.NORTH);
-		getContentPane().add(gamesScrollPane, BorderLayout.CENTER);
-		getContentPane().add(playersScrollPane, BorderLayout.EAST);
-		getContentPane().add(chatScrollPane, BorderLayout.SOUTH);
-        
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				send("logoff");
-			}
-		});
+		stage.show();
 
-		setVisible(true);
-		
-		connect(serverName, port);
-		checkVersion();
-		loginWindow = new LoginWindow(this, getLocation().x, getLocation().y);
-		startMessageReader();
+		getWebAPI().addInstanceCloseListener(this::logOut);
+	//	stage.setOnHiding(windowEvent -> {System.out.println("window hiding"); if(connected) logOut();});
 
 	}
 
 	/**
-	*
-	*/
-	
-	public static void main(String args[]) {
-		
-		java.awt.EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				if(args.length == 0) {
-					checkIfRunning();
-					new AnagramsClient(port).setVisible(true);
-				}
-				else if(args[0].equals("test")) {
-					new AnagramsClient(testPort).setVisible(true);
-				}
-			}
-		});
-	}
-	
-	/**
-	* Prevents multiple connections from the same computer
-	*/
-	
-	private static void checkIfRunning() {
-		try {
-			//Bind to localhost adapter with a zero connection queue 
-			lockSock = new ServerSocket(8119, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
-		}
-		catch (BindException e) {
-			System.out.println("Already running.");
-			JOptionPane.showMessageDialog(new JFrame(), "It appears you already have an instance of this application running.", "Anagrams already running", JOptionPane.INFORMATION_MESSAGE);
-			System.exit(1);
-		}
-		catch (IOException e) {
-
-			e.printStackTrace();
-			System.exit(2);
-		}
-	}	
-	
-	/**
-	*
-	*/
+	 *
+	 */
 
 	public void setColors() {
 
-		mainScreenBackgroundColor = Color.decode(settings.get("Main screen"));
-		mainScreenBackgroundText = Color.decode(settings.get("Main screen text")); //unused
-		playersPanelColor = Color.decode(settings.get("Players list"));
-		playersPanelText = Color.decode(settings.get("Players list text"));
-		chatAreaColor = Color.decode(settings.get("Chat area"));
-		chatAreaText = Color.decode(settings.get("Chat area text"));
-		gameForegroundColor = Color.decode(settings.get("Game foreground"));
-		gameForegroundText = Color.decode(settings.get("Game foreground text"));
-		gameBackgroundColor = Color.decode(settings.get("Game background"));
-		gameBackgroundText = Color.decode(settings.get("Game background text"));
-		
-		gamesPanel.setBackground(mainScreenBackgroundColor);
-		chatBox.setBackground(chatAreaColor);
-		chatBox.setForeground(chatAreaText);
-		playersPanel.setBackground(playersPanelColor);
-		playersHeader.setForeground(playersPanelText);
-		playersTextArea.setForeground(playersPanelText);
-
-		for(GamePane gamePane : gamePanes.values()) {
-			gamePane.setBackground(gameForegroundColor);
+		String newStyle = "";
+		for(Colors color : colors.keySet()) {
+			newStyle += color.css + ": " + colors.get(color) + "; ";
+			newStyle += color.css + "-text: " + getTextColor(colors.get(color)) + "; ";
 		}
-		
+
+		stage.getScene().getRoot().setStyle(newStyle);
 		for(GameWindow gameWindow : gameWindows.values()) {
-			gameWindow.setColors();
+			gameWindow.setStyle(newStyle);
+			gameWindow.setDark(getTextColor(colors.get(Colors.GAME_FOREGROUND)).equals("white"));
 		}
 	}
 
-	/**
-	* 
-	*/
-	
-	public void addGameWindow(String id, GameWindow g) {
-		gameWindows.put(id, g);
-	}
-	
-	/**
-	*
-	*/
+    /**
+     * Sets the text color to white or black as appropriate for text readability.
+     *
+     * @param colorCode a hexadecimal String representing the background color of a container node
+     * @return a String representing the color "black" if the luminance of the background color > 40
+     *         and a String representing the color "white" otherwise.
+     */
 
-	public void actionPerformed(ActionEvent evt) {
-		if (evt.getSource() == createGameButton) {
-			if(gameWindows.size() < 4) { //maximum of 4 windows open at a time
-				new GameMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);
+    static String getTextColor(String colorCode) {
+        int R = Integer.valueOf(colorCode.substring(1, 3), 16);
+        int G = Integer.valueOf(colorCode.substring(3, 5), 16);
+        int B = Integer.valueOf(colorCode.substring(5, 7), 16);
+
+        double luminance = 0.2126*R + 0.7152*G + 0.0722*B;
+
+        return luminance > 40 ? "black" : "white";
+    }
+
+	/**
+	 *
+	 */
+
+	public boolean connect() {
+		try {
+			Socket socket = new Socket(serverName, port);
+			this.serverOut = socket.getOutputStream();
+			this.serverIn = socket.getInputStream();
+			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
+			connected = true;
+			return true;
+		}
+		catch (IOException ioe) {
+			System.out.println("Unable to connect to server on port " + port);
+
+			MessageDialog dialog = new MessageDialog(this, "Connection issues");
+			dialog.setText("The program is having trouble connecting to the host server.");
+			dialog.addOkayButton();
+			dialog.show(true);
+			return false;
+		}
+	}
+
+
+	/**
+	 *
+	 */
+
+	public boolean login(String username) throws IOException {
+		this.username = username;
+		send("login " + username);
+		String response = "";
+		try {
+			response = this.bufferedIn.readLine();
+		}
+		catch(IOException ioe) {
+			System.out.println("response not received");
+			MessageDialog dialog = new MessageDialog(this, "Connection error");
+			dialog.setText("The connection to the server has been lost. Exiting program.");
+			dialog.addOkayButton();
+			dialog.show(true);
+		}
+
+		//successful login
+		if ("ok login".equals(response)) {
+			System.out.println(username + " has just logged in.");
+			messageLoop = new Thread(this::readMessageLoop);
+			messageLoop.start();
+			if (Thread.currentThread().isInterrupted()) {
+				messageLoop = null;
+				System.out.println("Thread + " + Thread.currentThread().toString() + " interrupted!");
+				if(connected) logOut();
 			}
+			loginWindow.hide();
+            borderPane.setDisable(false); //is this necessary?
+			return true;
 		}
-		else if(evt.getSource() == settingsButton) {
-			new SettingsMenu(this, getLocation().x + getWidth()/2, getLocation().y + getHeight()/2);		
+
+		//login was unsuccessful
+		else {
+			MessageDialog dialog = new MessageDialog(this, "Login unsuccessful");
+			dialog.setText(response);
+			dialog.addOkayButton();
+			dialog.show(true);
+			return false;
 		}
 	}
-	
-	/**
-	* Displays information about games and tools for joining
-	*/
 
-	class GamePane extends JPanel {
-		
+
+	/**
+	 * Displays information about games and tools for joining
+	 */
+
+	class GamePane extends GridPane {
+
 		String gameID;
 		int maxPlayers;
 		boolean allowWatchers;
+		boolean allowChat;
 		boolean gameOver;
-		
-		JLabel lexiconLabel = new JLabel();
-		JLabel minLengthLabel = new JLabel();
-		JLabel numSetsLabel = new JLabel();
-		JLabel blankPenaltyLabel = new JLabel();
-		JLabel speedLabel = new JLabel();
-		JLabel notificationLabel = new JLabel();
-		JLabel playersLabel = new JLabel();
-		
-		ArrayList<String[]> gameLog = new ArrayList<String[]>();
-		HashMap<String, Boolean> players = new HashMap<String, Boolean>();
-		HashSet<String> watchers = new HashSet<String>();
+
+		Label lexiconLabel = new Label();
+		Label minLengthLabel = new Label();
+		Label numSetsLabel = new Label();
+		Label blankPenaltyLabel = new Label();
+		Label speedLabel = new Label();
+		Label notificationLabel = new Label();
+		Label playersLabel = new Label();
+
+		ArrayList<String[]> gameLog = new ArrayList<>();
+		HashMap<String, Boolean> players = new HashMap<>();
+		HashSet<String> watchers = new HashSet<>();
 		String toolTipText = "";
 		AlphagramTrie dictionary = null;
-		
+
 		/**
-		*
-		*/
-		
+		 *
+		 */
+
 		GamePane(String gameID, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
 
 			this.gameID = gameID;
+            gamePanes.put(gameID, this);
 			gameOver = Boolean.parseBoolean(isOver);
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
+			allowChat = Boolean.parseBoolean(allowsChat);
 			maxPlayers = Integer.parseInt(playerMax);
-			setBackground(gameForegroundColor);
 
+			//labels
 			lexiconLabel.setText("Lexicon: " + lexicon);
-			lexiconLabel.setForeground(gameForegroundText);
-			if(lexicon.equals("CSW19")) 
-				lexiconLabel.setToolTipText("Collins Official Scrabble Words \u00a9 2019");
-			else if(lexicon.equals("NWL18")) 
-				lexiconLabel.setToolTipText("NASPA Word List \u00a9 2018");
-			
+			if(lexicon.equals("CSW19"))
+				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words \u00a9 2019"));
+			else if(lexicon.equals("NWL18"))
+				lexiconLabel.setTooltip(new Tooltip("NASPA Word List \u00a9 2018"));
 			minLengthLabel.setText("Minimum word length: " + minLength);
-			minLengthLabel.setForeground(gameForegroundText);
-
 			numSetsLabel.setText("Number of sets: " + numSets);
-			numSetsLabel.setForeground(gameForegroundText);
-			numSetsLabel.setToolTipText(100*Integer.parseInt(numSets) + " total tiles");			
-
-			blankPenaltyLabel.setText("Blank Penalty: " + blankPenalty);	
-			blankPenaltyLabel.setForeground(gameForegroundText);
-			blankPenaltyLabel.setToolTipText("<html>To use a blank, you must<br>take " + blankPenalty + " additional tiles</html>");
-			
+			numSetsLabel.setTooltip(new Tooltip(100*Integer.parseInt(numSets) + " total tiles"));
+			blankPenaltyLabel.setText("Blank Penalty: " + blankPenalty);
+			blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must\ntake " + blankPenalty + " additional tiles"));
 			speedLabel.setText("Speed: " + speed);
-			speedLabel.setForeground(gameForegroundText);
 			if(speed.equals("slow"))
-				speedLabel.setToolTipText("9 seconds per tile");
+				speedLabel.setTooltip(new Tooltip("9 seconds per tile"));
 			else if(speed.equals("medium"))
-				speedLabel.setToolTipText("6 seconds per tile");
+				speedLabel.setTooltip(new Tooltip("6 seconds per tile"));
 			else
-				speedLabel.setToolTipText("3 seconds per tile");
-			
-			notificationLabel.setForeground(gameForegroundText);
-
+				speedLabel.setTooltip(new Tooltip("3 seconds per tile"));
 			playersLabel.setText("Players: 0/" + maxPlayers);
-			playersLabel.setForeground(gameForegroundText);
-			
 
 			for(String key : dictionaries.keySet()) {
 				if(key.equals(lexicon)) {
@@ -363,550 +394,352 @@ public class AnagramsClient extends JFrame implements ActionListener {
 				}
 			}
 
-			setLayout(new GridLayout(5, 2, 10, 7));
-			setPreferredSize(new Dimension(300, 140));
-			setBorder(new EmptyBorder(2, 3, 2, 3));
-		
 			//join button
-			JButton joinButton = new JButton("Join game");
-			joinButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent evt) {
-					if(!gameWindows.containsKey(gameID) && gameWindows.size() < 4) {
-						if(players.size() < maxPlayers || gameOver && allowWatchers) {
-							
-							GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowsChat, dictionary, gameLog, gameOver);
-							gameWindows.put(gameID, newGame);
-							if(gameOver) {
-								send("watchgame " + gameID);
-							}
-							else {
-								send("joingame " + gameID);		
-							}
-						}
-					}
-				}
+			Button joinButton = new Button("Join game");
+			joinButton.setOnAction(e -> {
+                if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+                    if(players.size() < maxPlayers || gameOver && allowWatchers) {
+
+                        GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, dictionary, gameLog, gameOver);
+                        gameWindows.put(gameID, newGame);
+                        if(gameOver) {
+                            send("watchgame " + gameID);
+                        }
+                        else {
+                            send("joingame " + gameID);
+                        }
+                    }
+                }
 			});
-			add(joinButton);	
-			
+
 			//watch button
-			JButton watchButton = new JButton("Watch");
-			watchButton.setEnabled(allowWatchers);
+			Button watchButton = new Button("Watch");
+			watchButton.setDisable(!allowWatchers);
 			if(allowWatchers) {
-				watchButton.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent evt) {
-						if(!gameWindows.containsKey(gameID) && gameWindows.size() < 4) {
-							if(!players.containsKey(username) || gameOver) {
+				watchButton.setOnAction(e -> {
+                    if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+                        if(!players.containsKey(username) || gameOver) {
 
-								GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowsChat, dictionary, gameLog, true);
-								gameWindows.put(gameID, newGame);
+                            GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, dictionary, gameLog, true);
+                            gameWindows.put(gameID, newGame);
 
-								send("watchgame " + gameID);
-							}
-						}
-					}
+                            send("watchgame " + gameID);
+                        }
+                    }
 				});
 			}
-			add(watchButton);
 
-			add(lexiconLabel);
-			add(minLengthLabel);
-			add(numSetsLabel);
-			add(blankPenaltyLabel);
-			add(speedLabel);
-			add(playersLabel);
-			add(notificationLabel);
+			add(joinButton, 0, 0);
+            add(watchButton, 1, 0);
+			add(lexiconLabel, 0, 1);
+            add(minLengthLabel, 1,1 );
+            add(numSetsLabel, 0, 2);
+            add(blankPenaltyLabel, 1, 2);
+            add(speedLabel, 0, 3);
+            add(playersLabel, 1, 3);
+            add(notificationLabel, 0, 4, 2,1);
+            gamesPanel.getChildren().add(this);
 		}
-		
+
 		/**
-		*
-		*/
-		
+		 *
+		 */
+
 		void addPlayer(String newPlayer) {
 			players.put(newPlayer, true);
 			setPlayersToolTip();
 		}
-		
+
 		/**
-		*
-		*/
-		
+		 *
+		 */
+
 		void removePlayer(String playerToRemove) {
 			players.remove(playerToRemove);
 			setPlayersToolTip();
 		}
-		
+
 		/**
-		*
-		*/
-		
+		 *
+		 */
+
 		void setPlayersToolTip() {
 			playersLabel.setText("Players: " + players.size() + "/" + maxPlayers);
 			toolTipText = "";
-			playersLabel.setToolTipText(null);
-			
+			playersLabel.setTooltip(null);
+
 			if(!players.isEmpty()) {
 				for(String player : players.keySet()) {
-					toolTipText = toolTipText.concat("<br>" + player);
+					toolTipText = toolTipText.concat("\n" + player);
 				}
-				toolTipText = toolTipText.replaceFirst("<br>", "");
-				playersLabel.setToolTipText("<html>" + toolTipText + "</html>");
-			}			
+				toolTipText = toolTipText.replaceFirst("\n", "");
+				playersLabel.setTooltip(new Tooltip(toolTipText));
+			}
 		}
-		
-		
+
+
 		/**
-		* not currently used
-		*/
-		
+		 * not currently used
+		 */
+
 		void addWatcher(String newWatcher) {
 			watchers.add(newWatcher);
 		}
-		
-		/*
-		* not currently used
-		*/
-		
+
+		/**
+		 * not currently used
+		 */
+
 		void removeWatcher(String watcherToRemove) {
 			watchers.remove(watcherToRemove);
 		}
-		
+
 		/**
-		* 
-		*/
-		
+		 *
+		 */
+
 		void endGame() {
 			gameOver = true;
 			if(gameWindows.get(gameID) != null) {
 				gameWindows.get(gameID).gameLog = gameLog;
 				gameWindows.get(gameID).endGame();
-			}	
-		}
-	}
-	
-	
-	/**
-	* Adds a new game to the gamePanel 
-	* #This is probably way more convoluted than it needs to be
-	* 
-	* @param String newGameID 
-	* @param GamePane newGamePane
-	*/
-
-	void addGame(String newGameID, GamePane newGamePane) {
-		
-		gamePanes.put(newGameID, newGamePane);
-		
-		boolean placed = false;
-		
-		//tries to place the newGamePane in an existing row
-		for(JPanel row : addresses.keySet()) {
-			if(addresses.get(row).size() < 2) {
-				row.add(newGamePane);
-				addresses.get(row).add(newGameID);
-				placed = true;
-				break;
 			}
 		}
-		//creates a new row and puts the newGamePane in the first position
-		if(!placed) {
-		
-			JPanel nextRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
-			nextRow.setOpaque(false);
-			addresses.put(nextRow, new ArrayList<String>(2));
-			addresses.get(nextRow).add(newGameID);
-
-			nextRow.add(newGamePane);
-			gamesPanel.add(nextRow);
-		}
-		
-		revalidate();
 	}
 
 	/**
-	* Adds a player to the playerList, updates the textArea, and plays a notification sound
-	*
-	* @param String newPlayerName The name of the new player
-	*/
+	 * Adds a player to the playerList, updates the textArea, and plays a notification sound
+	 *
+	 * @param newPlayerName The name of the new player
+	 */
 
 	void addPlayer(String newPlayerName) {
 		playersList.add(newPlayerName);
-		String players = " ";
-		for(String player : playersList)
-			players += player + "\n ";
-		playersTextArea.setText(players);
-		if(isFocused()) {
-			try {
-				InputStream audioSource = getClass().getResourceAsStream("new player sound.wav");
-				InputStream audioBuffer = new BufferedInputStream(audioSource);
-				AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioBuffer);
-				Clip clip = AudioSystem.getClip();
-				clip.open(audioStream);
-				clip.start();
-			}
-			catch(Exception e) {
-				System.out.println(e.toString());
-			}
+		playersListPane.getChildren().clear();
+		for(String player : playersList) {
+			playersListPane.getChildren().add(new Label(player));
+		}
+		if(prefs.getBoolean("PLAY_SOUNDS", true)) {
+			new AudioClip(this.getClass().getResource("/new player sound.wav").toExternalForm()).play();
 		}
 	}
-	
+
 	/**
-	* Inform the server that the player is no longer an active part of the specified game.
-	*
-	* @param String gameID the game to exit
-	* @param boolean isWatcher whether the player is watching
-	*/
-	
+	 * Inform the server that the player is no longer an active part of the specified game.
+	 *
+	 * @param gameID the game to exit
+	 * @param isWatcher whether the player is watching
+	 */
+
 	void exitGame(String gameID, boolean isWatcher) {
 
 		gameWindows.remove(gameID);
-
-		if(isWatcher) {
+		if(isWatcher)
 			send("stopwatching " + gameID);
-		}
-		else {
+		else
 			send("stopplaying " + gameID);
-		}
-		
-		getRootPane().requestFocus();
+
 	}
-	
-	/**
-	*
-	*/
-	
-	public HashMap<String, String> loadSettings() {
-
-		try {
-			ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(settingsPath));
-
-			@SuppressWarnings("unchecked")
-			HashMap<String, String> input = (HashMap<String, String>)inputStream.readObject();
-			settings = input;
-		}
-		catch (Exception e) {
-			System.out.println("Settings file missing or damaged; using defaults.");
-
-			settings.put("lexicon", "CSW19");
-			settings.put("play sounds", "true");
-			settings.put("Main screen", "#F5DEB3");
-			settings.put("Main screen text", "#000000");
-			settings.put("Players list", "#B36318");
-			settings.put("Players list text", "#000000");
-			settings.put("Game foreground", "#2080AA");
-			settings.put("Game foreground text", "#000000");
-			settings.put("Game background", "#F5DEB3");
-			settings.put("Game background text", "#000000");
-			settings.put("Chat area", "#00FFFF");
-			settings.put("Chat area text", "#000000");
-		}
-		return settings;
-    }
 
 
 	/**
-	*
-	*/
-	
-	public boolean connect(String serverName, int serverPort) {
-		try {
-			Socket socket = new Socket(serverName, serverPort);
-			this.serverOut = socket.getOutputStream();
-			this.serverIn = socket.getInputStream();
-			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
-			return true;
+	 * Respond to commands from the server
+	 */
 
-		}
-		catch (IOException e) {
-
-			if (JOptionPane.showConfirmDialog(this, "The program is having trouble connecting to the host server. Try again?", "Connection issues", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-				connect(serverName, serverPort);
-			}
-			else {
-				System.exit(0);
-			}
-		}
-		
-		return false;
-	}
-	
-	/**
-	* Verifies that the user is using a up-to-date version of the client software.
-	* Directs the user to the project homepage if they are not.
-	*/
-	
-	public void checkVersion() {
-		try {
-			send("version " + version);
-			String response = this.bufferedIn.readLine();
-			
-			if("ok version".equalsIgnoreCase(response)) {
-				return;
-			}
-			else if("outdated".equalsIgnoreCase(response)) {
-				JOptionPane.showMessageDialog(this, new HypertextMessage("An updated version of Anagrams available. <br> Please visit <a href=\"https://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to get the latest features."), "Warning", JOptionPane.INFORMATION_MESSAGE);
-			}				
-			else if("unsupported".equalsIgnoreCase(response)) {
-				JOptionPane.showMessageDialog(this, new HypertextMessage("You are using an out-of-date version of Anagrams which is no longer supported. <br> Please visit <a href=\"https://www.seattlephysicstutor.com/anagrams.html\">the project home page</a> to download the latest version."), "Warning", JOptionPane.WARNING_MESSAGE);
-
-				System.exit(0);
-			}
-		}
-		catch (IOException e) {
-
-			if (JOptionPane.showConfirmDialog(this, "The program is having trouble connecting to the host server. Try again?", "Connection issues", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-				connect(serverName, port);
-			}
-			else {
-				System.exit(0);
-			}
-		}		
-	}
-	
-	/**
-	*
-	*/
-
-	public boolean login(String username) throws IOException {
-
-		this.username = username;
-		send("login " + username);
-		String response = this.bufferedIn.readLine();
-		
-		//successful login
-		if("ok login".equals(response)) {
-			System.out.println(username + " has just logged in.");
-			return true;
-		}
-
-		//login was unsuccessful
-		else {
-			JOptionPane.showMessageDialog(this, response);
-			return false;
-		}
-	}
-	
-	/**
-	*
-	*/
-	
-	private void startMessageReader() {
-		Thread t = new Thread() {
-			@Override
-			public void run() {
-				readMessageLoop();
-			}
-		};
-		t.start();
-	}
-	
-	/**
-	* Respond to commands from the server
-	*/
-	
 	private void readMessageLoop() {
+		System.out.println("reading messages");
 		try {
 			String line;
-			while( (line = this.bufferedIn.readLine()) != null) {
+			while((line = this.bufferedIn.readLine()) != null) {
 
 				String[] tokens = line.split(" ");
-				if (tokens != null && tokens.length > 0) {
+				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-					if(!cmd.equals("note")) {
+					if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
 						System.out.println("command received: " + line);
 					}
-					if(cmd.equals("note")) {
-						if(gamePanes.get(tokens[1]) != null) {
-							gamePanes.get(tokens[1]).notificationLabel.setText(line.split("@")[1]);
-						}
-						if(gameWindows.get(tokens[1]) != null) {
-							gameWindows.get(tokens[1]).setNotificationArea(line.split("@")[1]);
-						}
-					}
-					else if(cmd.equals("alert")) {
+					String finalLine = line;
+					Platform.runLater(() -> {
+						switch (cmd) {
+							case "note":
+								String note = finalLine.split("@")[1];
+								if (gamePanes.get(tokens[1]) != null)
+									gamePanes.get(tokens[1]).notificationLabel.setText(note);
 
-						JOptionPane.showMessageDialog(this, new HypertextMessage(line.split("@")[1]), "Warning", JOptionPane.WARNING_MESSAGE);
-					}
-					else if(cmd.equals("loginplayer")) {
-						addPlayer(tokens[1]);
-					}
-					else if(cmd.equals("logoffplayer")) {
-						playersList.remove(tokens[1]);
-						String players = " ";
-						for(String player : playersList)
-							players += player + "\n ";
-						playersTextArea.setText(players);
-						getContentPane().revalidate();
-					}
-					else if(cmd.equals("chat")) {
-						handleChat(line.replaceFirst("chat ", ""));
-					}
-					else if(cmd.equals("addgame")) {
-						addGame(tokens[1], new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens[7], tokens[8], tokens[9], tokens[10]));
-					}
-					else if (cmd.equals("logoff")) {
-						bufferedIn.close();
-						break;
-					}	
-					else if(cmd.equals("removegame")) {
-						outerloop:
-						for(JPanel row : addresses.keySet()) {
-							for(String gameID : addresses.get(row)) {
-								if(gameID.equals(tokens[1])) {
-									addresses.get(row).remove(gameID);
-									row.remove(gamePanes.remove(tokens[1]));
-									if(addresses.get(row).isEmpty()) {
-										gamesPanel.remove(row);
-										addresses.remove(row);
-									}
-									break outerloop;
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).setNotificationArea(note);
+								break;
+
+							case "alert":
+								MessageDialog dialog = new MessageDialog(this, "Alert");
+								dialog.setText(finalLine.split("@")[1]);
+								dialog.addOkayButton();
+								dialog.show(true);
+								break;
+
+							case "loginplayer":
+								addPlayer(tokens[1]);
+								break;
+
+							case "logoffplayer":
+								playersList.remove(tokens[1]);
+								playersListPane.getChildren().clear();
+								for (String player : playersList)
+									playersListPane.getChildren().add(new Label(player));
+								break;
+
+							case "chat":
+								String msg = finalLine.replaceFirst("chat ", "");
+								if(chatBox.getText().isEmpty()) chatBox.appendText(msg);
+								else chatBox.appendText("\n" + msg);
+								break;
+
+							case "addgame":
+								new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
+										tokens[7],tokens[8], tokens[9], tokens[10]);
+								break;
+
+							case "removegame":
+								gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
+								break;
+
+							//gamePane commands
+							case "takeseat":
+								if (gamePanes.containsKey(tokens[1]))
+									gamePanes.get(tokens[1]).addPlayer(tokens[2]);
+								if (gameWindows.get(tokens[1]) != null)
+									if (!gameWindows.get(tokens[1]).gameOver)
+										gameWindows.get(tokens[1]).addPlayer(tokens[2]);
+								break;
+
+							case "removeplayer":
+								if (gamePanes.containsKey(tokens[1]))
+									if (!gamePanes.get(tokens[1]).gameOver)
+										gamePanes.get(tokens[1]).removePlayer(tokens[2]);
+								if (gameWindows.get(tokens[1]) != null)
+									if (!gameWindows.get(tokens[1]).gameOver)
+										gameWindows.get(tokens[1]).removePlayer(tokens[2]);
+								break;
+
+							case "watchgame":
+								if (gamePanes.get(tokens[1]) != null)
+									gamePanes.get(tokens[1]).addWatcher(tokens[2]);
+								break;
+
+							case "unwatchgame":
+								if (gamePanes.get(tokens[1]) != null)
+									gamePanes.get(tokens[1]).removeWatcher(tokens[2]);
+								break;
+
+							case "endgame":
+								if (gamePanes.get(tokens[1]) != null)
+									gamePanes.get(tokens[1]).endGame();
+								break;
+
+							case "gamestate":
+								if (gameWindows.get(tokens[1]) != null) {
+								//	String[] gameState = Arrays.copyOfRange(tokens, 2, tokens.length);
+									gameWindows.get(tokens[1]).showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
+
 								}
-							}
-						}
-						gamesPanel.repaint();
-					}
-					
-					//gamePane commands
-					else if(cmd.equals("takeseat")) {
-						if(gamePanes.containsKey(tokens[1])) {
-							gamePanes.get(tokens[1]).addPlayer(tokens[2]);
-						}
-						if(gameWindows.get(tokens[1]) != null) {
-							if(!gameWindows.get(tokens[1]).gameOver) {
-								gameWindows.get(tokens[1]).addPlayer(tokens[2]);
-							}
-						}
-					}
-					else if(cmd.equals("removeplayer")) {
-						if(gamePanes.containsKey(tokens[1])) {
-							if(!gamePanes.get(tokens[1]).gameOver) {
-								gamePanes.get(tokens[1]).removePlayer(tokens[2]);
-							}
-						}
-						if(gameWindows.get(tokens[1]) != null) {
-							if(!gameWindows.get(tokens[1]).gameOver) {
-								gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-							}
-						}
-					}
-					else if(cmd.equals("watchgame")) {
-						if(gamePanes.get(tokens[1]) != null) {
-							gamePanes.get(tokens[1]).addWatcher(tokens[2]);
-						}
-					}
-					else if(cmd.equals("unwatchgame")) {
-						if(gamePanes.get(tokens[1]) != null) {
-							gamePanes.get(tokens[1]).removeWatcher(tokens[2]);
-						}
-					}
-					else if(cmd.equals("endgame")) {
-						if(gamePanes.get(tokens[1]) != null) {
-							gamePanes.get(tokens[1]).endGame();
-						}
-					}
-					else if(cmd.equals("gamelog")) {
-						if(gamePanes.get(tokens[1]) != null) {
-							gamePanes.get(tokens[1]).gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
-						}
-					}
+								break;
 
-					//gameWindow commands
-					else if(cmd.equals("nexttiles")) {
-						if(gameWindows.get(tokens[1]) != null) {
-							gameWindows.get(tokens[1]).setTiles(tokens[2]);
+							case "gamelog":
+								if (gamePanes.get(tokens[1]) != null)
+									gamePanes.get(tokens[1]).gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
+								break;
+
+							//gameWindow commands
+							case "nexttiles":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).setTiles(tokens[2]);
+								break;
+
+							case "addword":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
+								break;
+
+							case "makeword":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).makeWord(tokens[2], tokens[3], tokens[4]);
+								break;
+
+							case "steal":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
+								break;
+
+							case "abandonseat":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).removePlayer(tokens[2]);
+								break;
+
+							case "gamechat":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).handleChat((finalLine.split(tokens[1]))[1]);
+								break;
+
+							case "removeword":
+								if (gameWindows.get(tokens[1]) != null)
+									gameWindows.get(tokens[1]).removeWord(tokens[2], tokens[3]);
+								break;
+
+							default:
+								System.out.println("Command " + cmd + " not recognized");
+								break;
 						}
-					}
-					else if(cmd.equals("addword")) {
-						if(gameWindows.get(tokens[1]) != null) {
-							gameWindows.get(tokens[1]).addWord(tokens[2], tokens[3]);
-						}
-					}
-					else if(cmd.equals("removeword")) {
-						if(gameWindows.get(tokens[1]) != null) {
-							gameWindows.get(tokens[1]).removeWord(tokens[2], tokens[3]);
-						}
-					}
-					else if (cmd.equals("abandonseat")) {
-						if(gameWindows.get(tokens[1]) != null) {
-							gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-						}
-					}
-					else if(cmd.equals("gamechat")) {
-						if(gameWindows.get(tokens[1]) != null) {							
-							gameWindows.get(tokens[1]).handleChat((line.split(tokens[1]))[1]);
-						}
-					}
-					else {
-						System.out.println("Command " + cmd + " not recognized");
-					}
+					});
 				}
 			}
 		}
 		catch (Exception ex) {
-			System.out.println("The connection between client and host has been lost. Now logging out.");
-			JOptionPane.showMessageDialog(this, "The connection to the server has been lost. Exiting program.", "Connection error", JOptionPane.INFORMATION_MESSAGE);
-			ex.printStackTrace();
-			System.exit(0);
-		}
-		finally {
-			logOut();
+     //       ex.printStackTrace();
+			System.out.println("The connection between client and host has been lost.");
+			if(stage.isShowing()) {
+				if(connected) {
+					logOut();
+				}
+				MessageDialog dialog = new MessageDialog(this, "Connection error");
+				dialog.setText("The connection to the server has been lost. Exiting program.");
+				dialog.addOkayButton();
+				Platform.runLater(() -> dialog.show(true));
+			}
 		}
 	}
-	
-	/**
-	* Closes the connection to the server and terminates the program.
-	*/
-	
-	public void logOut() {
-		
-		try {
-			serverIn.close();
-			serverOut.close();
 
+
+	/**
+	 * Closes the connection to the server and terminates the program.
+	 */
+
+	public void logOut() {
+
+		try {
+			if(messageLoop != null) messageLoop.interrupt();
+			send("logoff");
 			System.out.println(username + " has just logged out.");
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
 
-		dispose();
-		System.exit(0);
-	}
-	
+
 	/**
-	* Displays the new chat message (and sender) in the chat box and automatically scrolls to view
-	*
-	* @param String msg The chat message to display
-	*/
-	
-	public void handleChat(String msg) {
-		chatBox.append("\n" + msg);
-		if(chatField.hasFocus()) {
-			chatField.removeFocusListener(fl);
-		}	
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
-			}
-		});
-	}
-	
-	
-	/**
-	* Transmit a command to the server
-	*
-	* @param String cmd The command to send
-	*/
-	
+	 * Transmit a command to the server
+	 *
+	 * @param cmd The command to send
+	 */
+
 	void send(String cmd) {
 		try {
 			serverOut.write((cmd + "\n").getBytes());
 		}
 		catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Command " + cmd + " not transmitted.");
 		}
 	}
-}
 
+}

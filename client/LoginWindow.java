@@ -1,130 +1,88 @@
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
+package client;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.*;
 import java.io.IOException;
 
 /**
-*
-*
-*/
+ *
+ *
+ */
 
-public class LoginWindow extends JDialog implements ActionListener, KeyListener {
+public class LoginWindow extends PopWindow {
 
-	private JButton loginButton = new JButton("Login");
-	private boolean loginButtonClicked = false;
-	private JTextField usernameField = new JTextField("", 35);
-	private GridBagLayout menuLayout = new GridBagLayout();
-	private GridBagConstraints constraints;
-	private AnagramsClient client;
-	private String username;
-	
+	private final AnagramsClient client;
+	private final Button loginButton = new Button("Login");
+	private final TextField usernameField = new TextField();
+
 	/**
-	*
-	*/
+	 *
+	 */
 	
-	public LoginWindow(AnagramsClient client, int x, int y) {
+	public LoginWindow(AnagramsClient client) {
+		super(client.stack);
 		this.client = client;
 
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				System.exit(0);
-			}
-		});
-	
-		setTitle("Login");
-		setModal(true);
-		loginButton.setEnabled(false);
-		loginButton.addActionListener(this);
-		loginButton.addKeyListener(this);
-		usernameField.addKeyListener(this);
-		setLayout(menuLayout);
-		
-		makeComponent(0, 0, new JLabel("Enter a username"));
-		makeComponent(0, 1, usernameField);
-		makeComponent(1, 0, loginButton);
+		Label loginLabel = new Label("Enter a username");
 
-		pack();
-		setLocation(x + 700/2 - getWidth()/2, y + 500/2 - getHeight()/2);		
-		setVisible(true);
+		usernameField.setPrefWidth(275);
+		usernameField.textProperty().addListener((observable, oldValue, newValue) ->
+			loginButton.setDisable(newValue.isBlank() || newValue.length() > 21)
+		);
+
+		loginButton.setDisable(true);
+		loginButton.setOnAction(e -> doLogin(usernameField.getText()));
+
+		GridPane grid = new GridPane();
+		grid.setPadding(new Insets(5));
+		grid.setHgap(5);
+		grid.setVgap(5);
+
+		GridPane.setConstraints(loginLabel, 0, 0);
+		GridPane.setConstraints(usernameField, 0, 1);
+		GridPane.setConstraints(loginButton, 1, 1);
+		grid.getChildren().addAll(loginLabel, loginButton, usernameField);
+
+		titleBar.getChildren().remove(closeButton);
+
+		grid.setOnKeyPressed(this::handleKeystroke);
+		setMaxSize(350, 115);
+		setTitle("Log in");
+		setContents(grid);
 	}
 
 	/**
-	*
-	*/
+	 * Responds to a user pressing ENTER by firing the loginButton.
+	 *
+	 * @param event any key being pressed
+	 */
 
-
-	public void makeComponent(int x, int y, JComponent c) {
-		constraints = new GridBagConstraints();
-		constraints.gridx = x;
-		constraints.gridy = y;
-		if (x == 1) {	
-			constraints.fill = GridBagConstraints.HORIZONTAL;
+	public void handleKeystroke(KeyEvent event) {
+		if (event.getCode() == KeyCode.ENTER) {
+			loginButton.fire();
 		}
-		constraints.insets = new Insets(3, 3, 3, 3);
-		constraints.anchor = GridBagConstraints.WEST;
-		menuLayout.setConstraints(c, constraints);
-		add(c);
 	}
-	
-	/**
-	*
-	*/
-	
-	public void actionPerformed(ActionEvent evt) {
-		doLogin();
-	}
-	
-	
-	/**
-	*
-	*/
 
-	private void doLogin() {
-		setVisible(false);
+	/**
+	 * Asks the client to attempt login with this username.
+	 *
+	 * @param username Contents of the textField
+	 */
+
+	private void doLogin(String username) {
 		try {
-			if(client.login(username)) {
-				//login successful
-
-				dispose();
-			}
-			else {
-				setVisible(true);
-			}
+			client.login(username.replace(" ", "_"));
 		}
-		catch (IOException e) {
-
-			e.printStackTrace();
+		catch (IOException ioException) {
+	//		ioException.printStackTrace();
+			MessageDialog dialog = new MessageDialog(client, "Connection error");
+			dialog.setText("The connection to the server has been lost. Exiting program.");
+			dialog.addOkayButton();
+			dialog.show(true);
+	//		client.logOut();
 		}
-	}
-	
-	/**
-	*
-	*/
-	
-	public void keyPressed(KeyEvent evt) {
-		if(evt.getKeyChar() == evt.VK_ENTER) {
-			loginButton.doClick();
-		}
-	}
-	
-	/**
-	*
-	*/
-
-	public void keyTyped(KeyEvent e) {
-	}
-	
-	/**
-	*
-	*/
-
-	public void keyReleased(KeyEvent e) {
-		username = usernameField.getText().replace(" ","_");
-		if (username.length() > 0 && username.length() < 21) {
-			loginButton.setEnabled(true);
-		}
-		else {
-			loginButton.setEnabled(false);
-		}		
 	}
 }

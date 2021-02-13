@@ -1,300 +1,174 @@
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
-import java.lang.Integer;
-import java.io.*;
-import java.util.ArrayList;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Date;
+package client;
+
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.*;
 
 /**
-* A menu for choosing options whilst creating a new game
-*
-*/
+ * A menu for choosing setting game options and saving them for future use
+ *
+ */
 
-class GameMenu extends JDialog implements ActionListener {
-	
-	private String maxPlayers;
-	private String minLength;
-	private String numSets;
-	private String blankPenalty;
-	private String lexicon;
-	private String speed;
-	private String skillLevel;
-	private String allowChat;
-	private String allowWatchers;
-	private String addRobot;
-	
-	private JComboBox<String> playersSelector;
-	private JComboBox<String> lengthsSelector;
-	private JComboBox<String> setsSelector;
-	private JComboBox<String> blanksSelector;
-	private JComboBox<String> lexiconSelector;
-	private JComboBox<String> speedSelector;
-	private JComboBox<String> skillLevelSelector;
-	
-	private JCheckBox chatChooser = new JCheckBox("Allow chatting");
-	private JCheckBox watchersChooser = new JCheckBox("Allow watchers");
-	private JCheckBox robotChooser = new JCheckBox("Add robot player");
-	private JCheckBox defaultChooser = new JCheckBox("Save as default");
-	
-	private String[] numPlayersChoices = {"1", "2", "3", "4", "5", "6"};
-	private String[] minLengthChoices = {"4", "5", "6", "7", "8", "9", "10"};
-	private String[] numSetsChoices = {"1", "2", "3"};
-	private String[] blankPenaltyChoices = {"1", "2"};
-	private String[] lexiconChoices;
-	private String[] speedChoices = {"slow", "medium", "fast"};
-	private String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
+class GameMenu extends PopWindow {
 
+    private final AnagramsClient client;
 
-	private HashMap<String, String> gamePreferences = new HashMap<String, String>();
-	private HashMap<String, String> newGamePreferences = new HashMap<String, String>();
-	private String gamePreferencesPath;
+    private final String[] numPlayersChoices = {"1", "2", "3", "4", "5", "6"};
+    private final String[] minLengthChoices = {"4", "5", "6", "7", "8", "9", "10"};
+    private final String[] numSetsChoices = {"1", "2", "3"};
+    private final String[] blankPenaltyChoices = {"1", "2"};
+    private final String[] speedChoices = {"slow", "medium", "fast"};
+    private final String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
 
-	private JButton startButton = new JButton("Start");
+    private final ComboBox<String> playersSelector = new ComboBox<>(FXCollections.observableArrayList(numPlayersChoices));
+    private final ComboBox<String> lengthsSelector = new ComboBox<>(FXCollections.observableArrayList(minLengthChoices));
+    private final ComboBox<String> setsSelector = new ComboBox<>(FXCollections.observableArrayList(numSetsChoices));
+    private final ComboBox<String> blanksSelector = new ComboBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
+    private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
+    private final ComboBox<String> speedSelector = new ComboBox<>(FXCollections.observableArrayList(speedChoices));
+    private final ComboBox<String> skillLevelSelector = new ComboBox<>(FXCollections.observableArrayList(skillLevelChoices));
 
-	private GridBagLayout menuLayout = new GridBagLayout();
-	private GridBagConstraints constraints;
-	
-	private AnagramsClient client;
+    private final CheckBox chatChooser = new CheckBox("Allow chatting");
+    private final CheckBox watchersChooser = new CheckBox("Allow watchers");
+    private final CheckBox robotChooser = new CheckBox("Add robot player");
+    private final CheckBox defaultChooser = new CheckBox("Save as default");
 
-	/**
-	*
-	*/
-	
-	GameMenu(AnagramsClient client, int x, int y) {
+    private Button startButton = new Button("Start");
 
-		this.client = client;
-		gamePreferencesPath = client.workingDirectory + File.separator + "Anagrams" + File.separator + "gamePreferences.ser";
-		lexiconChoices = client.lexicons;
-		getRootPane().registerKeyboardAction(ae -> {startButton.doClick();}, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_FOCUSED);
+    /**
+     *
+     */
 
+    public GameMenu(AnagramsClient client) {
+        super(client.stack);
+        this.client = client;
 
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				client.getRootPane().requestFocus();		
-				dispose();
-			}
-		});
+        GridPane grid = new GridPane();
+        ColumnConstraints cc = new ColumnConstraints();
+        cc.setHgrow(Priority.ALWAYS);
+        cc.setFillWidth(true);
+        grid.getColumnConstraints().add(cc);
+        grid.setPadding(new Insets(3));
+        grid.setHgap(3);
+        grid.setVgap(6);
 
-		//labels
-		JLabel tileSetsLabel = new JLabel("Number of tile sets");
-		tileSetsLabel.setToolTipText("<html>100 tiles per set</html>");
-		JLabel blankPenaltyLabel = new JLabel("Blank penalty");
-		blankPenaltyLabel.setToolTipText("<html>To use a blank, you must take<br> this many additional tiles</html>");
-		JLabel wordListLabel = new JLabel("Word list");
-		wordListLabel.setToolTipText("<html>NWL18 = North American<br>CSW19 = International</html>");
-		JLabel speedLabel = new JLabel("Speed");
-		speedLabel.setToolTipText("<html>Slow: 9 seconds per tile<br>Medium: 6 seconds per tile<br>Fast: 3 seconds per tile</html>");
-		
-		//selectors
-		playersSelector = new JComboBox<String>(numPlayersChoices);
-		lengthsSelector = new JComboBox<String>(minLengthChoices);
-		setsSelector = new JComboBox<String>(numSetsChoices);
-		blanksSelector = new JComboBox<String>(blankPenaltyChoices);
-		lexiconSelector = new JComboBox<String>(lexiconChoices);
-		speedSelector = new JComboBox<String>(speedChoices);
-		skillLevelSelector = new JComboBox<String>(skillLevelChoices);
-		
-		//load default settings
-		gamePreferences = loadGamePreferences();		
-		playersSelector.setSelectedItem(gamePreferences.get("maxPlayers"));
-		lengthsSelector.setSelectedItem(gamePreferences.get("minLength"));
-		setsSelector.setSelectedItem(gamePreferences.get("numSets"));
-		blanksSelector.setSelectedItem(gamePreferences.get("blankPenalty"));
-		lexiconSelector.setSelectedItem(gamePreferences.get("lexicon"));
-		speedSelector.setSelectedItem(gamePreferences.get("speed"));
-		skillLevelSelector.setSelectedItem(gamePreferences.get("skillLevel"));
-		robotChooser.setSelected(Boolean.parseBoolean(gamePreferences.get("addRobot")));
-		chatChooser.setSelected(Boolean.parseBoolean(gamePreferences.get("allowChat")));
-		watchersChooser.setSelected(Boolean.parseBoolean(gamePreferences.get("allowWatchers")));
-		defaultChooser.setSelected(false);
-		
-		if(playersSelector.getSelectedItem() != "1" && robotChooser.isSelected())
-			skillLevelSelector.setEnabled(true);
-		else 
-			skillLevelSelector.setEnabled(false);
-		
-		setTitle("New Game");
-		setModal(true);
-		setResizable(false);
-		startButton.addActionListener(this);
-		playersSelector.addActionListener(this);
-		robotChooser.addActionListener(this);
-		
-		setLayout(menuLayout);
+        //labels
+        Label tileSetsLabel = new Label("Number of tile sets");
+        tileSetsLabel.setTooltip(new Tooltip("100 tiles per set"));
+        Label blankPenaltyLabel = new Label("Blank penalty");
+        blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must take\n this many additional tiles"));
+        Label wordListLabel = new Label("Word list");
+        wordListLabel.setTooltip(new Tooltip("NWL18 = North American\nCSW19 = International"));
+        Label speedLabel = new Label("Speed");
+        speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
 
-		makeComponent(0, 0, new JLabel("Maximum number of players"));
-		makeComponent(1, 0, playersSelector);
-		makeComponent(0, 1, new JLabel("Minimum word length"));
-		makeComponent(1, 1, lengthsSelector);
-		makeComponent(0, 2, tileSetsLabel);
-		makeComponent(1, 2, setsSelector);
-		makeComponent(0, 3, blankPenaltyLabel);
-		makeComponent(1, 3, blanksSelector);
-		makeComponent(0, 4, wordListLabel);
-		makeComponent(1, 4, lexiconSelector);
-		makeComponent(0, 5, speedLabel);
-		makeComponent(1, 5, speedSelector);
-		makeComponent(0, 6, chatChooser);
-		makeComponent(1, 6, watchersChooser);
-		makeComponent(0, 7, robotChooser);
-		makeComponent(1, 7, skillLevelSelector);
-		makeComponent(0, 8, startButton);
-		makeComponent(1, 8, defaultChooser);
+        //selectors
+        playersSelector.getSelectionModel().select(client.prefs.get("MAX_PLAYERS", "6"));
+        lengthsSelector.getSelectionModel().select(client.prefs.get("MIN_LENGTH", "7"));
+        setsSelector.getSelectionModel().select(client.prefs.get("NUM_SETS", "1"));
+        blanksSelector.getSelectionModel().select(client.prefs.get("BLANK_PENALTY", "2"));
+        lexiconSelector.getSelectionModel().select(client.prefs.get("LEXICON", "CSW19"));
+        speedSelector.getSelectionModel().select(client.prefs.get("SPEED", "medium"));
+        skillLevelSelector.getSelectionModel().select(client.prefs.get("ROBOT_SKILL", "standard"));
+        skillLevelSelector.disableProperty().bind(robotChooser.selectedProperty().not());
 
-		pack();
-		setLocation(x - getWidth()/2, y - getHeight()/2);
-		setVisible(true);
+        //choosers
+        chatChooser.setSelected(client.prefs.getBoolean("ALLOW_CHAT",true));
+        watchersChooser.setSelected(client.prefs.getBoolean("ALLOW_WATCHERS", true));
+        robotChooser.setSelected(client.prefs.getBoolean("ADD_ROBOT", false));
 
-	}
-	
-	/**
-	*
-	*/
+        grid.add(new Label("Maximum number of players"), 0, 0);
+        grid.add(playersSelector, 1, 0);
+        grid.add(new Label("Minimum word length"), 0, 1);
+        grid.add(lengthsSelector, 1, 1);
+        grid.add(tileSetsLabel, 0, 2);
+        grid.add(setsSelector, 1, 2);
+        grid.add(blankPenaltyLabel, 0, 3);
+        grid.add(blanksSelector, 1, 3);
+        grid.add(wordListLabel, 0, 4);
+        grid.add(lexiconSelector, 1, 4);
+        grid.add(speedLabel, 0, 5);
+        grid.add(speedSelector, 1, 5);
+        grid.add(chatChooser, 0, 6);
+        grid.add(watchersChooser, 1, 6);
+        grid.add(robotChooser, 0, 7);
+        grid.add(skillLevelSelector, 1, 7);
+        grid.add(startButton, 0, 8);
+        grid.add(defaultChooser, 1, 8);
 
-	public void makeComponent(int x, int y, JComponent c) {
-		constraints = new GridBagConstraints();
-		constraints.gridx = x;
-		constraints.gridy = y;
-		if (x == 1) {
-			constraints.fill = GridBagConstraints.HORIZONTAL;
-		}
-		constraints.insets = new Insets(3, 3, 3, 3);
-		constraints.anchor = GridBagConstraints.WEST;
-		menuLayout.setConstraints(c, constraints);
-		add(c);
-	}
-	
-	/**
-	*
-	*/
+        setTitle("Game Options");
+        setContents(grid);
+        setMaxSize(320, 350);
 
-	public void actionPerformed(ActionEvent evt) {
+        startButton.setOnAction(e -> {
+            if(defaultChooser.isSelected())
+                savePreferences();
+            createGame();
+            hide();
+        });
 
-		if(!playersSelector.getSelectedItem().equals("1") && robotChooser.isSelected())
-			skillLevelSelector.setEnabled(true);
-		else 
-			skillLevelSelector.setEnabled(false);
-		
-		if(evt.getSource() == startButton) {
-			Date now = new Date();
-			SimpleDateFormat ft = new SimpleDateFormat("hhmmssMs");
-			String gameID = ft.format(now);	//generates a unique gameID based on the current time
-		
-			maxPlayers = playersSelector.getSelectedItem() + "";
-			minLength = lengthsSelector.getSelectedItem() + "";
-			numSets = setsSelector.getSelectedItem() + "";
-			blankPenalty = blanksSelector.getSelectedItem() + "";
-			lexicon = lexiconSelector.getSelectedItem() + "";
-			speed = speedSelector.getSelectedItem() + "";
-			skillLevel = skillLevelSelector.getSelectedItem() + "";
-			allowChat = chatChooser.isSelected() + "";
-			allowWatchers = watchersChooser.isSelected() + "";
-			addRobot = robotChooser.isSelected() + "";
-			
-			setVisible(false);
-			
-			AlphagramTrie dictionary = null; //later make this default dictionary
-			for(String key : client.dictionaries.keySet()) {
-				if(key.equals(lexicon)) {
-					dictionary = client.dictionaries.get(key);
-					if(dictionary == null) {
-						dictionary = new AlphagramTrie(key);
-						client.dictionaries.put(key, dictionary);
-					}
-				}
-			}
+        setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER)
+                startButton.fire();
+        });
 
-			updatePreferences();
-			
-			if(defaultChooser.isSelected()) {				
-				saveDefaultsToFile();
-			}
-
-			client.addGameWindow(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, allowChat, dictionary, new ArrayList<String[]>(), false));
-
-			skillLevel = (skillLevelSelector.getSelectedIndex() + 1) + "";
-
-			String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
-			client.send(cmd);
-		}
-	}
-
-	
-	/**
-	*
-	*/
-	
-	public HashMap<String, String> loadGamePreferences() {
-		
-		try {
-			ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(gamePreferencesPath));
-			@SuppressWarnings("unchecked")
-			HashMap<String, String> input = (HashMap<String, String>)inputStream.readObject();
-			gamePreferences = input;
-		}
-		catch (Exception e) {
-			System.out.println("Game settings file not found or damaged; using defaults.");
-
-			gamePreferences.put("maxPlayers", "6");
-			gamePreferences.put("minLength", "7");
-			gamePreferences.put("numSets", "1");
-			gamePreferences.put("blankPenalty", "2");
-			gamePreferences.put("lexicon", "NWL18");
-			gamePreferences.put("speed", "medium");
-			gamePreferences.put("allowChat", "true");
-			gamePreferences.put("allowWatchers", "true");
-			gamePreferences.put("addRobot", "false");
-			gamePreferences.put("skillLevel", "standard");
-
-		}
-		return gamePreferences;
+        show(true);
+        startButton.requestFocus();
     }
 
-	/**
-	*
-	*/
-	
-	private void updatePreferences() {
-		newGamePreferences.put("maxPlayers", maxPlayers);
-		newGamePreferences.put("minLength", minLength);
-		newGamePreferences.put("numSets", numSets);
-		newGamePreferences.put("blankPenalty", blankPenalty);
-		newGamePreferences.put("lexicon", lexicon);
-		newGamePreferences.put("speed", speed);
-		newGamePreferences.put("allowChat", allowChat);
-		newGamePreferences.put("allowWatchers", allowWatchers);
-		newGamePreferences.put("addRobot", addRobot);
-		newGamePreferences.put("skillLevel", skillLevel);	
-	}
-	
-	/**
-	*
-	*/
+    /**
+     *
+     */
 
-	void saveDefaultsToFile() {
-		
-		gamePreferences = newGamePreferences;
+    private void savePreferences() {
+        client.prefs.put("MAX_PLAYERS", playersSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("MIN_LENGTH", lengthsSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("NUM_SETS", setsSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("BLANK_PENALTY", blanksSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("LEXICON", lexiconSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("SPEED", speedSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("ROBOT_SKILL", skillLevelSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.putBoolean("ALLOW_CHAT", chatChooser.isSelected());
+        client.prefs.putBoolean("ALLOW_WATCHERS", watchersChooser.isSelected());
+        client.prefs.putBoolean("ADD_ROBOT", robotChooser.isSelected());
+    }
 
-		try {
-			File gamePreferencesFile = new File(gamePreferencesPath);
-			gamePreferencesFile.getParentFile().mkdirs();
-			FileOutputStream fileOut = new FileOutputStream(gamePreferencesFile);
-			ObjectOutputStream out = new ObjectOutputStream(fileOut);
-			out.writeObject(gamePreferences);
-			out.close();
-			fileOut.close();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		catch (SecurityException se) {
-			System.out.println("Permission to write to " + gamePreferencesPath + " denied.");
-		}
-	}	
+    /**
+     *
+     */
 
+    public void createGame() {
+
+        Date now = new Date();
+        SimpleDateFormat ft = new SimpleDateFormat("hhmmssMs");
+        String gameID = ft.format(now);	//generates a unique gameID based on the current time
+
+        String maxPlayers = playersSelector.getSelectionModel().getSelectedItem() + "";
+        String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
+        String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
+        String blankPenalty = blanksSelector.getSelectionModel().getSelectedItem() + "";
+        String lexicon = lexiconSelector.getSelectionModel().getSelectedItem() + "";
+        String speed = speedSelector.getSelectionModel().getSelectedItem() + "";
+        String skillLevel = (skillLevelSelector.getSelectionModel().getSelectedIndex() + 1) + "";
+        String allowChat = chatChooser.isSelected() + "";
+        String allowWatchers = watchersChooser.isSelected() + "";
+        String addRobot = robotChooser.isSelected() + "";
+
+        AlphagramTrie dictionary = client.dictionaries.get(lexicon);
+        if(dictionary == null) {
+            dictionary = new AlphagramTrie(lexicon);
+            client.dictionaries.put(lexicon, dictionary);
+        }
+        new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), dictionary, new ArrayList<>(), false);
+
+        String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
+        client.send(cmd);
+    }
 }

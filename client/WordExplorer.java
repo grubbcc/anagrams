@@ -1,485 +1,300 @@
-import java.awt.Point;
-import javax.swing.*;
-import javax.swing.tree.*;
-import javax.swing.SwingUtilities;
-import java.awt.event.*;
-import java.awt.Font;
-import java.awt.Component;
-import javax.swing.event.*;
-import javax.swing.JTree;
-import java.util.Vector;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Color;
-import java.util.HashMap;
+package client;
+
+import javafx.animation.PauseTransition;
+import javafx.collections.FXCollections;
+import javafx.event.Event;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
+import com.jpro.webapi.WebAPI;
+import java.util.Objects;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Enumeration;
-import java.io.*;
 
 /**
-*
-* A utility allowing the user to create new WordTrees and read definitions
-*
-* TO DO: make it so the scrollbar appears only on the TreePanel
-*		 put everything in a package, make jar file, etc
-*
-* 2) scroll to top when new wordlist created
-* 3) allow user to choose between extensions or steals
-* 4) make messagepane scrollable when number of steals is large
-*
-*/
+ *
+ * A utility allowing the user to display WordTrees and analysis tools
+ *
+ */
 
-public class WordExplorer extends JDialog implements ActionListener {
+public class WordExplorer extends PopWindow {
 
-	private String lexicon;
-	private JTextField textField = new JTextField("", 15);
-	private JButton goButton = new JButton("Go");
-	private JComboBox<String> lexiconSelector;
-	private String[] lexicons = {"CSW19", "NWL18", "LONG"};	
-	private TreeMap<String, AlphagramTrie> tries = new TreeMap<String, AlphagramTrie>();
-	private WordTree tree;
-	private JTextArea messagePane = new JTextArea();
-	private JPanel controlPanel = new JPanel();
-	private JPanel treePanel = new JPanel();
-	private JPanel messagePanel = new JPanel();
-	private TreeSet<DefaultMutableTreeNode> nodeList;
+    private String lexicon;
+    private final TextField textField = new TextField();
+    private final Button goButton = new Button("Go");
+    private final String[] lexicons = {"CSW19", "NWL18", "LONG"};
+    private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
+    private final TreeMap<String, AlphagramTrie> tries = new TreeMap<>();
+    private WordTree tree;
+    private final TextArea messagePane = new TextArea();
+    private final HBox controlPanel = new HBox();
+    private final StackPane treePanel = new StackPane();
+    private final BorderPane messagePanel = new BorderPane();
+    private final ScrollPane treeSummaryScrollPane = new ScrollPane();
+    private final ContextMenu contextMenu = new ContextMenu();
 
-	
-	/**
-	* Create a WordExplorer using the given lexicon
-	*/
-		
-	public WordExplorer(AlphagramTrie trie) {
-	
-		//Create the WordTree
-		this.lexicon = trie.lexicon;
-		tries.put(lexicon, trie);
-		tree = new WordTree(trie);
+    /**
+     *
+     */
 
-		//Set frame parameters
-		JPanel mainPanel = new JPanel();
-		mainPanel.setLayout(new BorderLayout());
-		setSize(400, 550);
-		setMinimumSize(new Dimension(350, 200));
-        setContentPane(mainPanel);
-		setLayout(new BorderLayout());
-		setAlwaysOnTop(true);
-		setVisible(false);
-		
-		//Top panel
-		controlPanel.setBackground(Color.BLUE);
-		textField.addActionListener(ae -> {goButton.doClick();});
-		controlPanel.add(textField);
-		goButton.addActionListener(this);
-		controlPanel.add(goButton);					
-		lexiconSelector = new JComboBox<String>(lexicons);	
-		lexiconSelector.addActionListener(this);
-		lexiconSelector.setSelectedItem(lexicon);
-		controlPanel.add(lexiconSelector);
-		
+    public WordExplorer(AlphagramTrie trie, AnchorPane anchor) {
+        super(anchor);
+        setViewOrder(Double.NEGATIVE_INFINITY);
 
-		//Middle panel
-		treePanel.setBackground(Color.WHITE);
-		treePanel.setLayout(new BorderLayout());
-        JScrollPane scrollPane = new JScrollPane(treePanel);
-//		setUpTree();
-		
-		//Bottom panel
-		messagePanel.setBackground(Color.GREEN);
-		messagePanel.setLayout(new BorderLayout());		
-		setUpMessagePane();
+        AnchorPane.setLeftAnchor(this, 50.0);
+        AnchorPane.setTopAnchor(this, 200.0);
 
-		//Main panel
-		mainPanel.add(controlPanel, BorderLayout.PAGE_START);
-        mainPanel.add(scrollPane);
-		mainPanel.add(messagePanel, BorderLayout.PAGE_END);
-	
-		revalidate();
-	}
-	
-	/**
-	* Responds to clicks, double-clicks, and keystrokes
-	*/
+        this.lexicon = trie.lexicon;
+        tries.put(lexicon, trie);
 
-	public void actionPerformed(ActionEvent evt) {
+        //Top panel
+        textField.setOnAction(e -> {
+            goButton.arm();
+            goButton.fire();
+            PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+            pause.setOnFinished(ef -> goButton.disarm());
+            pause.play();
+        });
+        textField.setPrefSize(170, 20);
 
-		if(evt.getSource() == lexiconSelector) {
-			lexicon = (String)lexiconSelector.getSelectedItem();
-	
-			if(!tries.containsKey(lexicon)) {
-				WordTree newTree = new WordTree(lexicon);
-				//catch file not found errors
-				tries.put(lexicon, newTree.trie);
-			}
-			messagePanel.revalidate();
-		}
-		
-		else if (evt.getSource() == goButton) {
-			
-			if(textField.getText().length() < 4) {
-				messagePane.setText("You must enter a word of 4 or more letters.");
-				messagePanel.revalidate();
-			}
-			else {
-				lookUp(textField.getText());
-			}
-		}
-	}
-	
-	/**
-	*
-	*/
+        goButton.setPrefSize(55, 20);
+        goButton.setOnAction(e -> {
+            if (textField.getText().length() < 4)
+                messagePane.setText("You must enter a word of 4 or more letters.");
+            else
+                lookUp(textField.getText());
+        });
 
-	public void lookUp(String query) {
-		textField.setText("");
-		treePanel.removeAll();
-		tree = new WordTree(new DefaultMutableTreeNode(new UserObject(query.toUpperCase(), "")), tries.get(lexicon));
-		setUpTree();
-		
-		messagePanel.removeAll();
+        lexiconSelector.setPrefSize(75, 20);
+        lexiconSelector.setValue(lexicon);
+        lexiconSelector.setOnAction(e -> {
+            lexicon = lexiconSelector.getValue();
+            if(!tries.containsKey(lexicon)) {
+                WordTree newTree = new WordTree(lexicon);
+                tries.put(lexicon, newTree.trie);
+            }
+        });
+        controlPanel.setId("control-panel");
+        controlPanel.getChildren().addAll(textField, goButton, lexiconSelector);
 
-		if(tree.root.getChildCount() > 0) {
-			messagePane.setText("");
-			messagePanel.add(tree.treeSummary(), BorderLayout.LINE_END);
-			doProbabilities(tree.root);
-		}
-		else {
-			messagePane.setText("This word cannot be stolen.");
+        //Tree panel
+        treePanel.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+        treePanel.setMinHeight(70);
+        MenuItem textOption = new MenuItem("Save List to File");
+        textOption.setOnAction(e-> saveListToFile());
+        MenuItem imageOption = new MenuItem("View List as Image");
+        imageOption.setOnAction(e -> viewListAsImage());
 
-		}
-		messagePanel.revalidate();
-		setUpMessagePane();
-	}
-	
-	/**
-	*
-	*/
+        contextMenu.getItems().addAll(textOption, imageOption);
 
-	public class CustomTreeRenderer extends DefaultTreeCellRenderer  {	
-	
-		@Override
-		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-			
-			final Component rc = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);		
+        //Message panel
+        messagePanel.setCenter(messagePane);
+        messagePanel.setId("message-area");
+        treeSummaryScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        treeSummaryScrollPane.setPrefWidth(125);
+        messagePanel.setPrefHeight(110);
+        messagePanel.setStyle("-fx-background-color: rgb(20,250,20)");
+        messagePane.setStyle("-fx-background-color: rgb(20,250,20);" +
+                "-fx-text-fill: black");
+        messagePane.setEditable(false);
+        messagePane.setWrapText(true);
 
-			if ((value != null) && (value instanceof DefaultMutableTreeNode)) {
-				Object object = ((DefaultMutableTreeNode) value).getUserObject();
-				if (object instanceof UserObject) {
-					UserObject uo = (UserObject) object;
-					if(!uo.getToolTip().isEmpty()) {
+        //Prevent messagePane from capturing drag events
+        messagePanel.addEventFilter(MouseEvent.ANY, event -> {
+            if(event.getTarget() instanceof GridPane) {
+                Event.fireEvent(this, event);
+                event.consume();
+            }
+        });
 
-						this.setToolTipText(uo.getToolTip() + "   " + round(100*uo.getProb(), 1) + "%");
-						this.setOpaque(true);
+        //Window
+        BorderPane mainPanel = new BorderPane();
+        mainPanel.setTop(controlPanel);
+        mainPanel.setCenter(treePanel);
+        mainPanel.setBottom(messagePanel);
+        String explorerStyle = getClass().getResource("/explorer.css").toExternalForm();
+        getStylesheets().add(explorerStyle);
+        setStyle(explorerStyle);
+        setContents(mainPanel);
+        setVisible(false);
+        setResizable(true);
+        setPrefSize(345, 415);
 
-						this.setBackground(Color.getHSBColor(0.0f, (float)uo.getProb(), 1.0f));
-					}
-					else {
-						this.setToolTipText(null);
-					}
-					if(hasFocus) {
-						this.setFont(getFont().deriveFont(Font.PLAIN + Font.BOLD));
-					}
-					else {
-						this.setFont(getFont().deriveFont(Font.PLAIN));
-					}
-					if(row == 0) {
-						setOpaque(false);
-					}
-				}
-			}
- 			
-			return rc;
-		}
-		
-		/**
-		*
-		*/
+    }
 
-		private double round (double value, int precision) {
-			int scale = (int) Math.pow(10, precision);
-			return (double) Math.round(value * scale) / scale;
-		}		
+    /**
+     *
+     */
 
-	}	
-	
-	
-	
-	/**
-	* Performs routine actions whenever a new WordTree is created.
-	*/
-	
-	private void setUpTree() {
-		treePanel.add(tree, BorderLayout.LINE_START);
-		tree.setRootVisible(true);
-		tree.expandRow(0);
+    public void lookUp(String query) {
+        textField.clear();
+        treePanel.getChildren().clear();
+        tree = new WordTree(query.toUpperCase(), tries.get(lexicon));
+        TreeItem<TreeNode> root = new TreeItem<>(tree.root);
+        TreeView<TreeNode> treeView = new TreeView<>(root);
+        setUpTree(root);
+        treePanel.getChildren().add(treeView);
+        root.setExpanded(true);
 
-		//add tool tips
-		tree.setCellRenderer(new CustomTreeRenderer());
-		javax.swing.ToolTipManager.sharedInstance().registerComponent(tree);
+        treeView.setContextMenu(contextMenu);
+        treeView.setCellFactory(tv -> new CustomTreeCell());
 
-		//find steals of selected node when user pressers enter
-		KeyListener keyListener = new KeyAdapter() {
-			public void keyPressed(KeyEvent event) {
-				if (event.getKeyCode() == KeyEvent.VK_ENTER && tree.getSelectionCount() == 1) {
-					
-					DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
-					String selectedWord = selectedNode.toString();
-					textField.setText(selectedWord);
-					goButton.doClick();
-				}
-			}
-		};
-		
-		//display definition when node is selected
-		TreeSelectionListener selectionListener = new TreeSelectionListener() {
-			public void valueChanged(TreeSelectionEvent e) {
-				DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+        //Prevent treeView from capturing drag events
+        treePanel.addEventFilter(MouseEvent.ANY, event -> {
+            if(event.getTarget() instanceof CustomTreeCell) {
+                Event.fireEvent(this, event);
+            }
+        });
 
-				if (selectedNode == null) {
-					return;
-				}
+        String definition = tree.trie.getDefinition(query);
+        messagePane.setText(Objects.requireNonNullElse(definition, "Definition not available"));
 
-				String selectedWord = selectedNode.toString();
-				String definition = tree.trie.getDefinition(selectedWord);
-				if(definition != null)
-					messagePane.setText(tree.trie.getDefinition(selectedWord));
-				else {
-					messagePane.setText("Definition not available");
-					messagePanel.revalidate();
-				}
-			}
-		};
+        if(!tree.root.getChildren().isEmpty()) {
+            treeSummaryScrollPane.setContent(tree.treeSummary());
+            messagePanel.setRight(treeSummaryScrollPane);
+        }
+        else
+            messagePanel.setRight(null);
+    }
 
-		//respond to mouse actions
-		MouseListener mouseListener = new MouseAdapter() {
-			public void mousePressed(MouseEvent e) {
-				int selRow = tree.getRowForLocation(e.getX(), e.getY());
-				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-				if(selRow != -1) {
-					String selectedWord = selPath.getLastPathComponent().toString();
+    /**
+     *
+     */
 
-					//allow user to save list on right click
-					if (SwingUtilities.isRightMouseButton(e)) {
-						doPop(e);
-					}
-					
-					//find steals of selected node on double-click
-					else if(e.getClickCount() == 2) {
-						textField.setText(selectedWord);
-						goButton.doClick();
-					}			
-				}					
-			}		
-		};
+    private class CustomTreeCell extends TreeCell<TreeNode> {
 
-		//
-		TreeWillExpandListener treeWillExpandListener = new TreeWillExpandListener() {
-			
-			public void treeWillCollapse(TreeExpansionEvent treeExpansionEvent) throws ExpandVetoException {
+        /**
+         *
+         */
 
-			}
-			public void treeWillExpand(TreeExpansionEvent treeExpansionEvent) throws ExpandVetoException {
-				TreePath path = treeExpansionEvent.getPath();
-				DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-				doProbabilities(node);
-			}
-		};
+        private CustomTreeCell () {
+            setPickOnBounds(false);
+            setOnMouseClicked(e -> {
+                if(e.getButton() == MouseButton.PRIMARY) {
+                    if (e.getClickCount() == 2 && !isEmpty()) {
+                        goButton.arm();
+                        PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+                        pause.setOnFinished(ef -> goButton.disarm());
+                        pause.play();
+                        lookUp(getText());
+                    }
+                    else if (!isEmpty()) {
+                        String definition = tree.trie.getDefinition(getText());
+                        messagePane.setText(Objects.requireNonNullElse(definition, "Definition not available"));
+                    }
+                }
+            });
+        }
 
+        /**
+         *
+         */
 
-		
-		tree.addKeyListener(keyListener);		
-		tree.addTreeSelectionListener(selectionListener);
-		tree.addMouseListener(mouseListener);
-		tree.addTreeWillExpandListener(treeWillExpandListener);
-		
-		treePanel.repaint();
-	}
-	
-	/**
-	*
-	*/
+        @Override
+        public void updateItem(TreeNode item, boolean empty) {
+            super.updateItem(item, empty);
 
-	private void doPop(MouseEvent e){
-		JPopupMenu menu = new JPopupMenu();
-		JMenuItem menuItem = new JMenuItem("Save List to File");
-		menu.add(menuItem);
-	
-		MouseListener mouseListener = new MouseAdapter() {
-			public void mousePressed(MouseEvent e) {
+            if(!empty) {
+                setText(item.toString());
+                doProbabilities(item);
+                Tooltip tooltip = new Tooltip(item.getTooltip() + "   " + round(100*item.getProb(), 1) + "%");
+                tooltip.setShowDelay(Duration.seconds(0.5));
+                setTooltip(tooltip);
 
-	/**			try {
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-				} 
-				catch (Exception ex) {
-					ex.printStackTrace();
-				*/
-	
-				JFileChooser chooser = new JFileChooser();
-				chooser.setCurrentDirectory(new File(System.getProperty("user.dir")+"/saved lists"));
-
-				JTextField fileChooserTextField = getFileChooserTextField(chooser);
-				fileChooserTextField.setText(tree.root.toString() + ".txt");			
-				int returnVal = chooser.showSaveDialog(treePanel);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-				
-					File file = chooser.getSelectedFile();
-					
-					if (!file.getName().toLowerCase().endsWith(".txt")) {
-						file = new File(file.getParentFile(), file.getName() + ".txt");
-					}
-					try {
-						nodeList = new TreeSet<DefaultMutableTreeNode>(new WordTree.TreeNodeComparator());
-						visitAllNodes(tree.root);
-						PrintStream out = new PrintStream(new FileOutputStream(file));
-						while(!nodeList.isEmpty()) {
-							out.print(nodeList.pollLast().toString() + "\n");
-						}
-						out.flush();
-						out.close();
-					}
-					catch (Exception ex) {
-						ex.printStackTrace();	
-					}			
-				}
-			}
-		};
-		
-		menuItem.addMouseListener(mouseListener);
-
-		menu.show(e.getComponent(), e.getX(), e.getY());
-	}
-	
-	/**
-	*
-	*/
-
-    private static JTextField getFileChooserTextField(JFileChooser chooser) {
-        JTextField f = null;
-        for (Component c : getComponents(chooser)) {
-            if (c instanceof JTextField){
-                f = (JTextField) c;
-                break;
+                setStyle("-cell-background: hsb(0, " + round(100*item.getProb(), 0) + "%, 100%);");
+                if(item.equals(tree.root)) {
+                    setText(tree.trie.contains(item.toString()) ? item.toString() : item.toString().toLowerCase());
+                    setTooltip(null);
+                }
+            }
+            else {
+                setText(null);
+                setTooltip(null);
+                setStyle("-cell-background: white;");
             }
         }
-
-        return f;
     }
-	
-	/**
-	*
-	*/
 
-    private static Vector<Component> getComponents(JComponent component) {
-        Vector<Component> list = new Vector<>();
-        for (Component c : component.getComponents()) {
-            if (c instanceof JPanel)
-                list.addAll(getComponents((JPanel) c));
-            else if (c instanceof JTextField)
-                list.add((JTextField) c);
+    /**
+     *
+     */
+
+    public void setUpTree(TreeItem<TreeNode> parentItem) {
+        for(TreeNode child : parentItem.getValue().getChildren()) {
+            TreeItem<TreeNode> childItem = new TreeItem<>(child);
+            parentItem.getChildren().add(childItem);
+            setUpTree(childItem);
         }
-        return list;
     }
-	
-	/**
-	* Recursively traverses the tree and adds each node to the nodeList for export to file
-	*/
-	
-	public void visitAllNodes(DefaultMutableTreeNode node) {
-		nodeList.add(node);
-		
-		if (node.getChildCount() >= 0) {
-			for (Enumeration e = node.children(); e.hasMoreElements();) {
-				DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
-				visitAllNodes(n);
-			}
-		}
-	}
 
-	/**
-	*
-	*/
-	
-/*	public void doProbabilities(DefaultMutableTreeNode parentNode) {
-		double norm = 0;
-		double parentProb;
-		if(parentNode.getLevel() > 0) {
-			parentProb = ((UserObject)parentNode.getUserObject()).getProb();
-		}
-		else {
-			parentProb = 1.0;
-		}
+    /**
+     * Assigns probabilities to possible steals assuming a full bag of three tile sets.
+     *
+     * @param parent the TreeNode containing the word whose steals are to be calculated
+     */
 
-		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
-			UserObject uo = (UserObject)child.getUserObject();
-			norm += ProbCalc.getProbability(uo.getToolTip());
+    public void doProbabilities(TreeNode parent) {
+        double norm = 0;
 
-		}
-		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
-			UserObject uo = (UserObject)child.getUserObject();
-			uo.setProb(parentProb*ProbCalc.getProbability(uo.getToolTip())/norm);
-		}
-	}*/
-	
-	public void doProbabilities(DefaultMutableTreeNode parentNode) {
-		double norm = 0;
-	
-		double parentProb;
-		if(parentNode.getLevel() > 0) {
-			parentProb = ((UserObject)parentNode.getUserObject()).getProb();
-		}
-		else {
-			parentProb = 1.0;
-		}
-		
-		WordTree parentTree = new WordTree(new DefaultMutableTreeNode(new UserObject(parentNode.toString(),"")), tries.get(lexicon));
-		DefaultMutableTreeNode parent = parentTree.root;
+        double parentProb;
+        if(parent.equals(tree.root)) {
+            parentProb = 1.0;
+        }
+        else {
+            parentProb = parent.getProb();
+        }
 
-		HashMap<String, Double> probs = new HashMap<>();
+        for(TreeNode child : parent.getChildren()) {
+            norm += ProbCalc.getProbability(child.getTooltip());
+        }
+        for(TreeNode child : parent.getChildren()) {
+            child.setProb(parentProb*ProbCalc.getProbability(child.getTooltip())/norm);
+        }
+    }
 
-		for(Enumeration e = parent.children(); e.hasMoreElements();) {
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode)e.nextElement();
-			UserObject uo = (UserObject)child.getUserObject();
-			norm += ProbCalc.getProbability(uo.getToolTip());
-		}
+    /**
+     *
+     */
 
-		for(Enumeration e = parent.children(); e.hasMoreElements();) {
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
-			UserObject uo = (UserObject)child.getUserObject();
-			probs.put(uo.toString(), parentProb*ProbCalc.getProbability(uo.getToolTip())/norm);
-		}
-	
-		for (Enumeration e = parentNode.children(); e.hasMoreElements();) {
-			DefaultMutableTreeNode child = (DefaultMutableTreeNode) e.nextElement();
-			UserObject uo = (UserObject)child.getUserObject();
-			uo.setProb(probs.get(uo.toString()));
-		}
-	}
+    private void saveListToFile() {
 
+        tree.generateWordList("", tree.root);
 
-	/**
-	* Performs routine actions whenever a new messagePane is created.
-	*/
-	
-	public void setUpMessagePane() {
-		messagePane.setEditable(false);
-		messagePane.setWrapStyleWord(true);	
-		messagePane.setLineWrap(true);		
-		messagePane.setBackground(Color.GREEN);		
-		messagePanel.add(messagePane, BorderLayout.CENTER);
-		messagePanel.revalidate();
-	}
-	
-	public static void main(String[] args) {
-		
-		WordExplorer explorer = new WordExplorer(new AlphagramTrie("CSW19"));
-		explorer.setVisible(true);
-		explorer.setAlwaysOnTop(false);
-		explorer.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-	}
-	
+        WebAPI.getWebAPI(getScene()).executeScript(
+       "var pom = document.createElement('a'); " +
+            "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + tree.wordList + "')); " +
+            "pom.setAttribute('download', '" + tree.root.toString() + ".txt'); " +
+            "if (document.createEvent) { " +
+                "var event = document.createEvent('MouseEvents'); " +
+                "event.initEvent('click', true, true); " +
+                "pom.dispatchEvent(event); " +
+            "}" +
+            "else { " +
+                "pom.click(); " +
+            "}"
+        );
+    }
+
+    /**
+     *
+     */
+
+    private void viewListAsImage() {
+        tree.generateCSVList(tree.root.toString(), "", tree.root);
+        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('CSV', '[" + tree.CSV.replaceAll(",$","") + "]');");
+        WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
+    }
+
+    /**
+     *
+     */
+
+    private static double round (double value, double precision) {
+        int scale = (int) Math.pow(10, precision);
+        return (double) Math.round(value * scale) / scale;
+    }
 }
