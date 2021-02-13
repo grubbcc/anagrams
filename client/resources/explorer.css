@@ -1,0 +1,104 @@
+/* universal */
+.root {
+    -cell-background: white;
+}
+
+.scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+/* control panel */
+#control-panel {
+    -fx-alignment: center;
+    -fx-padding: 4;
+    -fx-spacing: 3;
+    -fx-insets: 7;
+    -fx-background-color: blue;
+}
+
+.text-field {
+      -fx-background-color: rgb(230, 230, 230);
+      -fx-border-insets: 0;
+      -fx-padding: 1;
+      -fx-border-width: 1;
+      -fx-border-color: black lightgray lightgray black;
+}
+
+#control-panel .button {
+    -fx-background-color: linear-gradient(#aabbee 0%, #ffffff 24%, #ffffff 25%, #aabbee 100%);
+    -fx-background-insets: 0,1,2;
+    -fx-background-radius: 0;
+    -fx-border-color: black;
+    -fx-padding: 3 9 3 9;
+    -fx-font-size: 14px;
+    -fx-font-weight: 200;
+}
+
+#control-panel .button:hover {
+    -fx-background-color: linear-gradient(#aabbee 0%, #eeeeee 24%, #eeeeee 25%, #aabbee 100%);
+}
+
+#control-panel .button:armed {
+    -fx-background-color: #3c7fb1,
+       linear-gradient(#ffffff 0%, #aabbee 24%, #aabbee 25%, #ffffff 100%);
+}
+
+.combo-box {
+    -fx-background-color: rgb(230, 230, 230);
+    -fx-background-insets: 0, 1, 2;
+    -fx-background-radius: 0;
+    -fx-border-color: black;
+}
+.combo-box > .arrow-button {
+    -fx-background-color: #3c7fb1;
+    -fx-padding: 2;
+}
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: black;
+    -fx-background-insets: 0 0 -1 0, 0;
+    -fx-padding: 0.166667em 0.333333em 0.166667em 0.333333em; /* 2 4 2 4 */
+}
+.combo-box > .list-cell {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 2;
+    -fx-border-width: 0;
+}
+.combo-box-popup > .list-view {
+    -fx-background-color: rgb(100,100,100), rgb(255,255,255);
+    -fx-background-insets: 0, 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.6), 8, 0.0, 0, 0);
+}
+/*
+.combo-box-popup  > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:hover {
+    -fx-background-color: rgb(30,144,255);
+    -fx-text-fill: white;
+}*/
+.combo-box:hover {
+    -fx-background-color: #cccccc;
+}
+
+/* tree */
+.tree-cell {
+    -fx-padding: 0;
+    -fx-background-color: -cell-background;
+}
+.tree-cell:focused {
+    -fx-font-weight: bold;
+    -fx-text-background-color: black;
+}
+.tooltip {
+    -fx-padding: 2;
+    -fx-background-radius: 1;
+}
+
+/* message area */
+#message-area .label {
+    -fx-padding: -3;
+    -fx-font-family: 'sans-serif';
+    -fx-font-weight: normal;
+    -fx-alignment: center;
+}
+
+
+
