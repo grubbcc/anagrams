@@ -60,7 +60,7 @@ public class AnagramsClient extends JProApplication {
 	private final HashSet<String> playersList = new HashSet<>();
 	public String username;
 
-	public static final String[] lexicons = {"CSW19", "NWL18", "LONG"};
+	public static final String[] lexicons = {"CSW19", "NWL20"};
 	public final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 
 	//load settings
@@ -119,21 +119,15 @@ public class AnagramsClient extends JProApplication {
 		this.stage = stage;
 		System.out.println("Welcome to Anagrams!");
 
-		String lexicon = prefs.get("LEXICON", "CSW19");
-		dictionaries.put(lexicon, new AlphagramTrie(lexicon));
-
 		for(Colors color : Colors.values()) {
-			colors.put(color, prefs.get(color.toString(), color.defaultCode));
+			colors.put(color, color.defaultCode);
 		}
-
-
 
 		createAndShowGUI();
 		if(connect() ) {
 			System.out.println("Connected to server on port " + port);
 			loginWindow = new LoginWindow(this);
 			loginWindow.show(true);
-
 		}
 	}
 
@@ -150,7 +144,6 @@ public class AnagramsClient extends JProApplication {
 		Image settingsImage = new Image(getClass().getResourceAsStream("/settings.png"), 30, 30, true ,true);
 		Button settingsButton = new Button("Settings", new ImageView(settingsImage));
 		settingsButton.setPrefSize(143, 33);
-		settingsMenu = new SettingsMenu(this);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
@@ -210,11 +203,11 @@ public class AnagramsClient extends JProApplication {
 		stage.setMinWidth(792);
 		stage.setMinHeight(400);
 		stage.setScene(scene);
+
 		setColors();
 		stage.show();
 
-		getWebAPI().addInstanceCloseListener(this::logOut);
-	//	stage.setOnHiding(windowEvent -> {System.out.println("window hiding"); if(connected) logOut();});
+		getWebAPI().addInstanceCloseListener(() -> {System.out.println("closing instance");  logOut();});
 
 	}
 
@@ -302,6 +295,15 @@ public class AnagramsClient extends JProApplication {
 		//successful login
 		if ("ok login".equals(response)) {
 			System.out.println(username + " has just logged in.");
+
+			//set user preferences
+			String lexicon = prefs.get(username + "/LEXICON", "CSW19");
+			dictionaries.put(lexicon, new AlphagramTrie(lexicon));
+			for(Colors color : Colors.values())
+				colors.put(color, prefs.get(username + "/" + color.toString(), color.defaultCode));
+			setColors();
+			settingsMenu = new SettingsMenu(this);
+
 			messageLoop = new Thread(this::readMessageLoop);
 			messageLoop.start();
 			if (Thread.currentThread().isInterrupted()) {
@@ -368,8 +370,8 @@ public class AnagramsClient extends JProApplication {
 			lexiconLabel.setText("Lexicon: " + lexicon);
 			if(lexicon.equals("CSW19"))
 				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words \u00a9 2019"));
-			else if(lexicon.equals("NWL18"))
-				lexiconLabel.setTooltip(new Tooltip("NASPA Word List \u00a9 2018"));
+			else if(lexicon.equals("NWL20"))
+				lexiconLabel.setTooltip(new Tooltip("NASPA Word List \u00a9 2020"));
 			minLengthLabel.setText("Minimum word length: " + minLength);
 			numSetsLabel.setText("Number of sets: " + numSets);
 			numSetsLabel.setTooltip(new Tooltip(100*Integer.parseInt(numSets) + " total tiles"));
@@ -519,7 +521,7 @@ public class AnagramsClient extends JProApplication {
 		for(String player : playersList) {
 			playersListPane.getChildren().add(new Label(player));
 		}
-		if(prefs.getBoolean("PLAY_SOUNDS", true)) {
+		if(prefs.getBoolean(username + "/PLAY_SOUNDS", true)) {
 			new AudioClip(this.getClass().getResource("/new player sound.wav").toExternalForm()).play();
 		}
 	}

@@ -41,11 +41,11 @@ class SettingsMenu extends PopWindow {
 
         //labels
         Label lexiconLabel = new Label("Word list");
-        lexiconLabel.setTooltip(new Tooltip("NWL18 = North American\nCSW19 = International"));
+        lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW19 = International"));
 
         //selectors
-        lexiconChooser.getSelectionModel().select(client.prefs.get("LEXICON", "CSW19"));
-        soundChooser.setSelected(client.prefs.getBoolean("PLAY_SOUNDS", true));
+        lexiconChooser.getSelectionModel().select(client.prefs.get(client.username + "/LEXICON", "CSW19"));
+        soundChooser.setSelected(client.prefs.getBoolean(client.username + "/PLAY_SOUNDS", true));
         soundChooser.setPadding(new Insets(0,9,0,7));
 
         //buttons
@@ -90,10 +90,10 @@ class SettingsMenu extends PopWindow {
      */
 
     private void savePreferences() {
-        client.prefs.put("LEXICON", lexiconChooser.getSelectionModel().getSelectedItem() + "");
-        client.prefs.putBoolean("PLAY_SOUNDS", soundChooser.isSelected());
+        client.prefs.put(client.username + "/LEXICON", lexiconChooser.getSelectionModel().getSelectedItem() + "");
+        client.prefs.putBoolean(client.username + "PLAY_SOUNDS", soundChooser.isSelected());
         for(AnagramsClient.Colors color : client.colors.keySet()) {
-            client.prefs.put(color.toString(), client.colors.get(color));
+            client.prefs.put(client.username + "/" + color.toString(), client.colors.get(color));
         }
     }
 

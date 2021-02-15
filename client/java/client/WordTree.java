@@ -22,7 +22,7 @@ public class WordTree {
 
     public final AlphagramTrie trie;
     public TreeNode root;
-    private String rootWord;
+    String rootWord;
     private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
     private final TreeMap<Integer, Integer> counts = new TreeMap<>();
     String wordList = "";
@@ -63,6 +63,9 @@ public class WordTree {
             buildTree();
 
         root.getChildren().sort(new TreeNodeComparator().reversed());
+        if(!trie.contains(rootWord)) {
+            this.rootWord = rootWord.toLowerCase();
+        }
     }
 
 
@@ -153,21 +156,7 @@ public class WordTree {
 
     /**
      *
-     *'[{"id":"grubb"},{"id":"grubb.BUGBEAR"}]'
-     * Recursively generates a CSV-formatted list for making a "flare" diagram
-     */
-
- /*   public void generateCSVList(String prefix, TreeNode node) {
-
-        CSV = CSV.concat("{\"id\": \"" + prefix + "\"},");
-        for(TreeNode child : node.getChildren()) {
-            generateCSVList(prefix + "." + child.toString(), child);
-        }
-    }*/
-
-    /**
-     *
-     *'[{"id":"grubb"},{"id":"grubb.AE"}]'
+     *'[{"id":"grubb", "tooltip": ""},{"id":"grubb.BUGBEAR", tooltip: "AE"}]'
      * Recursively generates a CSV-formatted list for making a "flare" diagram
      */
 

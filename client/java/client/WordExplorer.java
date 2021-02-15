@@ -25,7 +25,7 @@ public class WordExplorer extends PopWindow {
     private String lexicon;
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
-    private final String[] lexicons = {"CSW19", "NWL18", "LONG"};
+    private final String[] lexicons = {"CSW19", "NWL20"};
     private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
     private final TreeMap<String, AlphagramTrie> tries = new TreeMap<>();
@@ -63,7 +63,7 @@ public class WordExplorer extends PopWindow {
 
         goButton.setPrefSize(55, 20);
         goButton.setOnAction(e -> {
-            if (textField.getText().length() < 4)
+            if (textField.getText().replaceAll("\\s"," ").length() < 4)
                 messagePane.setText("You must enter a word of 4 or more letters.");
             else
                 lookUp(textField.getText());
@@ -207,7 +207,7 @@ public class WordExplorer extends PopWindow {
 
                 setStyle("-cell-background: hsb(0, " + round(100*item.getProb(), 0) + "%, 100%);");
                 if(item.equals(tree.root)) {
-                    setText(tree.trie.contains(item.toString()) ? item.toString() : item.toString().toLowerCase());
+                    setText(tree.rootWord);
                     setTooltip(null);
                 }
             }
@@ -267,7 +267,7 @@ public class WordExplorer extends PopWindow {
         WebAPI.getWebAPI(getScene()).executeScript(
        "var pom = document.createElement('a'); " +
             "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + tree.wordList + "')); " +
-            "pom.setAttribute('download', '" + tree.root.toString() + ".txt'); " +
+            "pom.setAttribute('download', '" + tree.rootWord + ".txt'); " +
             "if (document.createEvent) { " +
                 "var event = document.createEvent('MouseEvents'); " +
                 "event.initEvent('click', true, true); " +
@@ -284,7 +284,7 @@ public class WordExplorer extends PopWindow {
      */
 
     private void viewListAsImage() {
-        tree.generateCSVList(tree.root.toString(), "", tree.root);
+        tree.generateCSVList(tree.rootWord, "", tree.root);
         WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('CSV', '[" + tree.CSV.replaceAll(",$","") + "]');");
         WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
     }
