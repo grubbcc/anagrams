@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server extends Thread {
 	
 	private final int serverPort;
-	private static final String[] lexicons = {"NWL18", "CSW19", "LONG"};
+	private static final String[] lexicons = {"NWL20", "CSW19"};
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final Hashtable<String, Game> gameList = new Hashtable<>();
 	private final Hashtable<String, AlphagramTrie> dictionaries = new Hashtable<>();
