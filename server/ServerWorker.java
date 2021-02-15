@@ -39,14 +39,13 @@ public class ServerWorker extends Thread {
 		catch (IOException e) {
 			
 			System.out.println(username + " has disconnected.");
-		/*	e.printStackTrace();
-			
-			try {				
+			try {
 				handleLogoff();
 			}
-			catch (IOException e2) {
-				e2.printStackTrace();
-			}*/
+			catch (IOException ioException) {
+				ioException.printStackTrace();
+			}
+
 		}
 	}
 
