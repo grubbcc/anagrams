@@ -79,9 +79,20 @@ public class PopWindow extends BorderPane {
             }
             container.getChildren().add(this);
             setVisible(true);
-            this.setDisable(false);
+            setDisable(false);
         }
+    }
 
+    /**
+     *
+     */
+
+    public void hide() {
+        setVisible(false);
+        container.getChildren().remove(this);
+        for(Node child : container.getChildren()) {
+            child.setDisable(false);
+        }
     }
 
     /**
@@ -98,17 +109,7 @@ public class PopWindow extends BorderPane {
              setViewOrder(0);
          }
     }
-    /**
-     * 
-     */
 
-    public void hide() {
-        setVisible(false);
-        container.getChildren().remove(this);
-        for(Node child : container.getChildren()) {
-            child.setDisable(false);
-        }
-    }
 
     /**
      *

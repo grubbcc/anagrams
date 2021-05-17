@@ -160,12 +160,7 @@ class GameMenu extends PopWindow {
         String allowWatchers = watchersChooser.isSelected() + "";
         String addRobot = robotChooser.isSelected() + "";
 
-        AlphagramTrie dictionary = client.dictionaries.get(lexicon);
-        if(dictionary == null) {
-            dictionary = new AlphagramTrie(lexicon);
-            client.dictionaries.put(lexicon, dictionary);
-        }
-        new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), dictionary, new ArrayList<>(), false);
+        client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
         String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);

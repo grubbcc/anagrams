@@ -11,8 +11,11 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
-import java.util.Objects;
-import java.util.TreeMap;
+
+import java.util.*;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -22,14 +25,13 @@ import java.util.TreeMap;
 
 public class WordExplorer extends PopWindow {
 
+    private final AnagramsClient client;
     private String lexicon;
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
     private final String[] lexicons = {"CSW19", "NWL20"};
     private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
-    private final TreeMap<String, AlphagramTrie> tries = new TreeMap<>();
-    private WordTree tree;
     private final TextArea messagePane = new TextArea();
     private final HBox controlPanel = new HBox();
     private final StackPane treePanel = new StackPane();
@@ -37,19 +39,25 @@ public class WordExplorer extends PopWindow {
     private final ScrollPane treeSummaryScrollPane = new ScrollPane();
     private final ContextMenu contextMenu = new ContextMenu();
 
+    private final TreeMap<Integer, Integer> counts = new TreeMap<>();
+    TreeItem<TreeNode> root;
+    TreeNode rootNode;
+    String wordList = "";
+    String json = "";
+
     /**
      *
      */
 
-    public WordExplorer(AlphagramTrie trie, AnchorPane anchor) {
-        super(anchor);
+    public WordExplorer(String lexicon, AnagramsClient client) {
+        super(client.anchor);
+        this.client = client;
         setViewOrder(Double.NEGATIVE_INFINITY);
 
         AnchorPane.setLeftAnchor(this, 50.0);
         AnchorPane.setTopAnchor(this, 200.0);
 
-        this.lexicon = trie.lexicon;
-        tries.put(lexicon, trie);
+        setLexicon(lexicon);
 
         //Top panel
         textField.setOnAction(e -> {
@@ -63,20 +71,17 @@ public class WordExplorer extends PopWindow {
 
         goButton.setPrefSize(55, 20);
         goButton.setOnAction(e -> {
-            if (textField.getText().replaceAll("\\s"," ").length() < 4)
+            String query = textField.getText().replaceAll("[^A-Za-z]","");
+            if (query.length() < 4)
                 messagePane.setText("You must enter a word of 4 or more letters.");
             else
-                lookUp(textField.getText());
+                lookUp(query);
         });
 
         lexiconSelector.setPrefSize(75, 20);
         lexiconSelector.setValue(lexicon);
         lexiconSelector.setOnAction(e -> {
-            lexicon = lexiconSelector.getValue();
-            if(!tries.containsKey(lexicon)) {
-                WordTree newTree = new WordTree(lexicon);
-                tries.put(lexicon, newTree.trie);
-            }
+            this.lexicon = lexiconSelector.getValue();
         });
         controlPanel.setId("control-panel");
         controlPanel.getChildren().addAll(textField, goButton, lexiconSelector);
@@ -88,8 +93,14 @@ public class WordExplorer extends PopWindow {
         textOption.setOnAction(e-> saveListToFile());
         MenuItem imageOption = new MenuItem("View List as Image");
         imageOption.setOnAction(e -> viewListAsImage());
-
         contextMenu.getItems().addAll(textOption, imageOption);
+
+        //Prevent treeView from capturing drag events
+        treePanel.addEventFilter(MouseEvent.ANY, event -> {
+            if(event.getTarget() instanceof CustomTreeCell) {
+                Event.fireEvent(this, event);
+            }
+        });
 
         //Message panel
         messagePanel.setCenter(messagePane);
@@ -98,8 +109,7 @@ public class WordExplorer extends PopWindow {
         treeSummaryScrollPane.setPrefWidth(125);
         messagePanel.setPrefHeight(110);
         messagePanel.setStyle("-fx-background-color: rgb(20,250,20)");
-        messagePane.setStyle("-fx-background-color: rgb(20,250,20);" +
-                "-fx-text-fill: black");
+        messagePane.setStyle("-fx-background-color: rgb(20,250,20);" + "-fx-text-fill: black");
         messagePane.setEditable(false);
         messagePane.setWrapText(true);
 
@@ -130,35 +140,110 @@ public class WordExplorer extends PopWindow {
      *
      */
 
+    public void setLexicon(String lexicon) {
+        this.lexicon = lexicon;
+        lexiconSelector.getSelectionModel().select(lexicon);
+    }
+
+    /**
+     *
+     */
+
     public void lookUp(String query) {
         textField.clear();
         treePanel.getChildren().clear();
-        tree = new WordTree(query.toUpperCase(), tries.get(lexicon));
-        TreeItem<TreeNode> root = new TreeItem<>(tree.root);
-        TreeView<TreeNode> treeView = new TreeView<>(root);
-        setUpTree(root);
-        treePanel.getChildren().add(treeView);
-        root.setExpanded(true);
+        messagePane.clear();
+        client.send("lookup " + lexicon + " " + query.toUpperCase());
+        client.send("def " + lexicon + " " + query.toUpperCase());
+    }
 
+    /**
+     *
+     */
+
+    public void setUpTree(String json) {
+        this.json = json;
+
+        String[] nodes = json.split("},");
+
+        Matcher m = Pattern.compile("\"id\": \"([A-z]+)").matcher(nodes[0]);
+        m.find();
+        String rootWord = m.group(1);
+        rootNode = new TreeNode(rootWord, "");
+        rootNode.setProb(1);
+
+        for(int i = 1; i < nodes.length; i++) {
+            String[] matches = Pattern.compile("[.A-Z]+")
+                    .matcher(nodes[i])
+                    .results()
+                    .map(MatchResult::group)
+                    .toArray(String[]::new);
+            LinkedList<String> id = new LinkedList<>();
+
+            Collections.addAll(id, matches[0].split("\\."));
+            id.removeFirst();
+            String tooltip = matches[1];
+
+            TreeNode child = new TreeNode(id.removeLast(), tooltip);
+            addNode(rootNode, child, id);
+        }
+
+        root = new TreeItem<>(rootNode);
+        root.setExpanded(true);
+        addChildren(root);
+
+        TreeView<TreeNode> treeView = new TreeView<>(root);
+        treePanel.getChildren().add(treeView);
         treeView.setContextMenu(contextMenu);
         treeView.setCellFactory(tv -> new CustomTreeCell());
 
-        //Prevent treeView from capturing drag events
-        treePanel.addEventFilter(MouseEvent.ANY, event -> {
-            if(event.getTarget() instanceof CustomTreeCell) {
-                Event.fireEvent(this, event);
-            }
-        });
-
-        String definition = tree.trie.getDefinition(query);
-        messagePane.setText(Objects.requireNonNullElse(definition, "Definition not available"));
-
-        if(!tree.root.getChildren().isEmpty()) {
-            treeSummaryScrollPane.setContent(tree.treeSummary());
+        if(!rootNode.getChildren().isEmpty()) {
+            treeSummaryScrollPane.setContent(treeSummary());
             messagePanel.setRight(treeSummaryScrollPane);
         }
         else
             messagePanel.setRight(null);
+    }
+
+    /**
+     *
+     */
+
+    public void showDefinition(String definition) {
+        messagePane.setText(definition);
+    }
+
+    /**
+     * Recursively adds a TreeNode to a hierarchy according to its address
+     *
+     * @param parent A node of which the child is a descendant
+     * @param child The node being added to the tree
+     * @param address A list of Strings representing where in tree's hierarchy where the node should be added. If the
+     *                address is empty, the node will be placed immediately; otherwise it will be added as a descendant
+     *                of the first node referenced in the list.
+     */
+
+    private void addNode(TreeNode parent, TreeNode child, LinkedList<String>address) {
+        if(address.isEmpty()) {
+            parent.addChild(child.toString(), child);
+        }
+        else {
+            parent = parent.getChild(address.removeFirst());
+            addNode(parent, child, address);
+        }
+    }
+
+    /**
+     * Recursively builds the TreeView according to to the hierarchy of TreeNodes.
+     * @param parentItem The TreeItem whose children will be added next.
+     */
+
+    public void addChildren(TreeItem<TreeNode> parentItem) {
+        for(TreeNode child : parentItem.getValue().getChildren()) {
+            TreeItem<TreeNode> childItem = new TreeItem<>(child);
+            parentItem.getChildren().add(childItem);
+            addChildren(childItem);
+        }
     }
 
     /**
@@ -174,17 +259,16 @@ public class WordExplorer extends PopWindow {
         private CustomTreeCell () {
             setPickOnBounds(false);
             setOnMouseClicked(e -> {
-                if(e.getButton() == MouseButton.PRIMARY) {
-                    if (e.getClickCount() == 2 && !isEmpty()) {
+                if (!isEmpty()) {
+                    if(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                         goButton.arm();
                         PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
                         pause.setOnFinished(ef -> goButton.disarm());
                         pause.play();
                         lookUp(getText());
                     }
-                    else if (!isEmpty()) {
-                        String definition = tree.trie.getDefinition(getText());
-                        messagePane.setText(Objects.requireNonNullElse(definition, "Definition not available"));
+                    else {
+                        client.send("def " + lexicon + " " + getText());
                     }
                 }
             });
@@ -204,10 +288,9 @@ public class WordExplorer extends PopWindow {
                 Tooltip tooltip = new Tooltip(item.getTooltip() + "   " + round(100*item.getProb(), 1) + "%");
                 tooltip.setShowDelay(Duration.seconds(0.5));
                 setTooltip(tooltip);
-
                 setStyle("-cell-background: hsb(0, " + round(100*item.getProb(), 0) + "%, 100%);");
-                if(item.equals(tree.root)) {
-                    setText(tree.rootWord);
+
+                if(item.equals(rootNode)) {
                     setTooltip(null);
                 }
             }
@@ -220,15 +303,42 @@ public class WordExplorer extends PopWindow {
     }
 
     /**
-     *
+     * Recursively visits all nodes in the wordTree and stores their lengths in a HashMap.
      */
 
-    public void setUpTree(TreeItem<TreeNode> parentItem) {
-        for(TreeNode child : parentItem.getValue().getChildren()) {
-            TreeItem<TreeNode> childItem = new TreeItem<>(child);
-            parentItem.getChildren().add(childItem);
-            setUpTree(childItem);
+    private void countNodes(TreeNode node) {
+        for(TreeNode child: node.getChildren()) {
+            counts.computeIfPresent(child.toString().length(), (key, val) -> val + 1);
+            counts.putIfAbsent(child.toString().length(), 1);
+            countNodes(child);
         }
+    }
+
+    /**
+     * Creates a JTable showing the number of steals of the rootWord organized by word length
+     */
+
+    public VBox treeSummary() {
+
+        VBox summaryPane = new VBox();
+
+        counts.clear();
+        countNodes(rootNode);
+        if(!counts.isEmpty()) {
+            GridPane treeSummary = new GridPane();
+            treeSummary.getColumnConstraints().add(new ColumnConstraints(45));
+            treeSummary.getColumnConstraints().add(new ColumnConstraints(74));
+            treeSummary.addRow(0, new Label(" length"), new Label(" num words  "));
+
+            for (Integer key : counts.keySet()) {
+                treeSummary.addRow(key, new Label(" " + key), new Label(" " + counts.get(key)));
+            }
+            treeSummary.setGridLinesVisible(true);
+            treeSummary.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+            summaryPane.getChildren().add(treeSummary);
+
+        }
+        return summaryPane;
     }
 
     /**
@@ -240,19 +350,26 @@ public class WordExplorer extends PopWindow {
     public void doProbabilities(TreeNode parent) {
         double norm = 0;
 
-        double parentProb;
-        if(parent.equals(tree.root)) {
-            parentProb = 1.0;
-        }
-        else {
-            parentProb = parent.getProb();
-        }
-
         for(TreeNode child : parent.getChildren()) {
             norm += ProbCalc.getProbability(child.getTooltip());
         }
         for(TreeNode child : parent.getChildren()) {
-            child.setProb(parentProb*ProbCalc.getProbability(child.getTooltip())/norm);
+            child.setProb(parent.getProb()*ProbCalc.getProbability(child.getTooltip())/norm);
+        }
+    }
+
+    /**
+     * Recursively performs a depth-first search of the word tree, saving the
+     * words visited to a String.
+     *
+     * @param prefix Indentations indicating the depth of the node
+     * @param node The node currently being visited
+     */
+
+    public void generateWordList(String prefix, TreeNode node) {
+        for(TreeNode child : node.getChildren()) {
+            wordList = wordList.concat(prefix + child.toString() + "\\n");
+            generateWordList(prefix + "  ", child);
         }
     }
 
@@ -262,12 +379,12 @@ public class WordExplorer extends PopWindow {
 
     private void saveListToFile() {
 
-        tree.generateWordList("", tree.root);
+        generateWordList("", rootNode);
 
-        WebAPI.getWebAPI(getScene()).executeScript(
-       "var pom = document.createElement('a'); " +
-            "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + tree.wordList + "')); " +
-            "pom.setAttribute('download', '" + tree.rootWord + ".txt'); " +
+        client.getWebAPI().executeScript(
+          "var pom = document.createElement('a'); " +
+            "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + wordList + "')); " +
+            "pom.setAttribute('download', '" + rootNode.toString() + ".txt'); " +
             "if (document.createEvent) { " +
                 "var event = document.createEvent('MouseEvents'); " +
                 "event.initEvent('click', true, true); " +
@@ -284,8 +401,7 @@ public class WordExplorer extends PopWindow {
      */
 
     private void viewListAsImage() {
-        tree.generateCSVList(tree.rootWord, "", tree.root);
-        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('CSV', '[" + tree.CSV.replaceAll(",$","") + "]');");
+        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('JSON', '[" + json.replaceAll(",$","") + "]');");
         WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
     }
 

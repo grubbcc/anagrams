@@ -1,20 +1,21 @@
 package client;
 
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 
 public class TreeNode {
 
     private final String word;
     private final String tooltip;
     private double prob;
-    private final LinkedList<TreeNode> children = new LinkedList<>();
+    private final LinkedHashMap<String, TreeNode> children = new LinkedHashMap<>();
 
     /**
      *
      */
 
     public TreeNode(String word, String tooltip) {
-        this.word = word.toUpperCase();
+        this.word = word;
         this.tooltip = tooltip;
     }
 
@@ -53,18 +54,27 @@ public class TreeNode {
 
     /**
      *
+     * @param key
      * @param newChild another TreeNode whose word is a steal of this node according to the rules of Anagrams.
      */
 
-    public void addChild(TreeNode newChild) {
-        children.add(0, newChild);
+    public void addChild(String key, TreeNode newChild) {
+        children.put(key, newChild);
     }
 
     /**
      *
      */
 
-    public LinkedList<TreeNode> getChildren() {
-        return children;
+    public TreeNode getChild(String key) {
+        return children.get(key);
+    }
+
+    /**
+     *
+     */
+
+    public Collection<TreeNode> getChildren() {
+        return children.values();
     }
 }

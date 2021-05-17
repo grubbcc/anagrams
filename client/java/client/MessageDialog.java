@@ -1,6 +1,7 @@
 package client;
 
 import com.jpro.webapi.HTMLView;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -16,6 +17,9 @@ public class MessageDialog extends PopWindow {
     private final HTMLView htmlView = new HTMLView();
     private final HBox buttonPane = new HBox();
 
+    Button yesButton = new Button("Yes");
+    Button noButton = new Button("No");
+
     /**
      *
      */
@@ -25,6 +29,7 @@ public class MessageDialog extends PopWindow {
         htmlView.setPrefSize(500, 100);
 
         VBox mainPane = new VBox(htmlView, buttonPane);
+        buttonPane.setAlignment(Pos.BASELINE_CENTER);
         setContents(mainPane);
         setMaxSize(400, 120);
         setTitle(title);
@@ -56,13 +61,10 @@ public class MessageDialog extends PopWindow {
      */
 
     public void addYesNoButtons() {
-        Button yesButton = new Button("Yes");
-        Button noButton = new Button("No");
+
         yesButton.setPrefWidth(50);
         noButton.setPrefWidth(50);
         buttonPane.getChildren().addAll(yesButton, noButton);
-        yesButton.setOnAction(e -> {});
-        noButton.setOnAction(e -> {});
     }
 }
 
