@@ -1,13 +1,6 @@
 package server;
 
-import java.util.Random;
-import java.util.Vector;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Hashtable;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
+import java.util.*;
 
 /**
 * 
@@ -48,6 +41,8 @@ public class Game {
 	private Robot robotPlayer;
 
 	Vector<String> gameLog = new Vector<>();
+	HashMap<Integer, String> plays = new HashMap<>();
+	WordFinder wordFinder;
 	
 	/**
 	*
@@ -90,17 +85,7 @@ public class Game {
 	}
 	
 	/**
-	*
-	*/
-	
-	public void startGame() {
-		gameTimer.schedule(new GameTask(), 1000, 1000);
-
-		saveState();
-	}
-	
-	/**
-	* Destroys the game after one minute of inactivity.
+	* Destroys the game after three minutes of inactivity.
 	*/
 	
 	private class DeleteTask extends TimerTask {
@@ -132,7 +117,6 @@ public class Game {
 				if(tileCount < minLength) {
 					String message = "Game will begin in " + countdown + " seconds";
 					notifyEveryone("note " + gameID + " @" + message);
-
 				}
 				else if (timeRemaining > 0) {
 					String message = "Game will resume in " + countdown + " seconds";
@@ -164,7 +148,7 @@ public class Game {
 				if(tilePool.length() >= 30) {
 					think = 2; //robot starts thinking of a play
 				}
-				else if(!robotList.isEmpty() && rgen.nextInt(60) <= 2*robotPlayer.skillLevel + delay/3 + 7*(tilePool.length()/minLength - 1)) {
+				else if(!robotList.isEmpty() && rgen.nextInt(50) <= 2*robotPlayer.skillLevel + delay/3 + 7*(tilePool.length()/minLength - 1)) {
 					think = 2; //robot starts thinking of a play
 				}
 			}
@@ -178,7 +162,8 @@ public class Game {
 				
 				if(tilePool.length() >= 2*minLength) {
 					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
-				}								
+				}
+
 				else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
 					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
 				}
@@ -207,6 +192,8 @@ public class Game {
 			notifyRoom("gamelog " + gameID + " " + gameState);
 		}		
 		notifyEveryone("endgame " + gameID);
+
+		wordFinder = new WordFinder(minLength, blankPenalty, server.getDictionary(lexicon));
 	}
 	
 	/**
@@ -240,13 +227,6 @@ public class Game {
 				}
 			}
 
-			//inform newPlayer of watchers
-			synchronized (watcherList) {
-				for (String watcher : watcherList.keySet()) {
-					newPlayer.send("watchgame " + gameID + " " + watcher);
-				}
-			}
-
 			//add the newPlayer
 			playerList.put(newPlayer.getUsername(), newPlayer);
 			words.putIfAbsent(newPlayer.getUsername(), new Vector<>());
@@ -260,7 +240,6 @@ public class Game {
 			for(String gameState : gameLog) {
 				newPlayer.send("gamelog " + gameID + " " + gameState);
 			}
-			notifyEveryone("watchgame " + gameID + " " + newPlayer.getUsername());
 		}
 
 	}
@@ -276,16 +255,17 @@ public class Game {
 	synchronized void removePlayer(String playerToRemove) {
 		
 		playerList.remove(playerToRemove);
-		
-		notifyEveryone("abandonseat " + gameID + " " + playerToRemove);
-		
+
 		if(words.containsKey(playerToRemove)) {
-			
-			if(words.get(playerToRemove).isEmpty()) {
+			if (words.get(playerToRemove).isEmpty()) {
 				words.remove(playerToRemove);
 				notifyEveryone("removeplayer " + gameID + " " + playerToRemove);
 			}
+			else {
+				notifyRoom("abandonseat " + gameID + " " + playerToRemove);
+			}
 		}
+
 
 		saveState();
 
@@ -333,8 +313,6 @@ public class Game {
 			}
 		}
 
-		//inform other players of newWatcher
-		notifyRoom("watchgame " + gameID + " " + newWatcher.getUsername());
 		watcherList.put(newWatcher.getUsername(), newWatcher);
 
 	}
@@ -350,8 +328,6 @@ public class Game {
 	
 	synchronized void removeWatcher(String watcherToRemove) {
 		watcherList.remove(watcherToRemove);
-		
-		notifyRoom("unwatchgame " + gameID + " " + watcherToRemove);
 
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
 			deleteTimer.cancel();
@@ -532,7 +508,7 @@ public class Game {
 	*/
 	
 	synchronized boolean doMakeWord(String newWordPlayer, String entry) {
-		
+
 		String tiles = tilePool;
 		int blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 		int blanksRequired = 0;
@@ -580,8 +556,7 @@ public class Game {
 		saveState();	
 	
 		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + newWord + " " + tiles);
-//		notifyRoom("nexttiles " + gameID + " " + tiles);
-		
+
 		return true;
 	}
 	
@@ -621,6 +596,16 @@ public class Game {
 			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
 		}
 	}
+
+	/**
+	 * Computes what plays can be made at this position, or (if already computed) retrieves from memory.
+	 *
+	 * @param position the time corresponding to the position to be analyzed
+	 */
+
+	synchronized String findPlays(int position) {
+		return plays.computeIfAbsent(position, k -> wordFinder.findWords(gameLog.elementAt(position)));
+	}
 	
 	/**
 	*
@@ -655,17 +640,16 @@ public class Game {
 	private String getFormattedWordList() {
 		StringBuilder wordList = new StringBuilder();
 		Set<String> union = getPlayerList();
-		synchronized (union) {
 
-			for(String playerName : union) {
-				if(words.containsKey(playerName)) {
-					wordList.append(playerName).append(" ").append(words.get(playerName).toString().replace(", ", ",")).append(" ");
-				}
-				else {
-					wordList.append(playerName).append(" [] ");
-				}
+		for(String playerName : union) {
+			if(words.containsKey(playerName)) {
+				wordList.append(playerName).append(" ").append(words.get(playerName).toString().replace(", ", ",")).append(" ");
+			}
+			else {
+				wordList.append(playerName).append(" [] ");
 			}
 		}
+
 		return wordList.toString();
 	}
 	

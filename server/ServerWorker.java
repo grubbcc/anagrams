@@ -45,16 +45,12 @@ public class ServerWorker extends Thread {
 			catch (IOException ioException) {
 				ioException.printStackTrace();
 			}
-
 		}
 	}
 
 
-
 	/**
 	* Checks to see if the client is using an "outdated" and/or "unsupported" version of Anagrams.
-	*
-	* 
 	*
 	* @param version the latest version of this software
 	*/
@@ -84,13 +80,9 @@ public class ServerWorker extends Thread {
 		}
 		else {
 			send("ok login");
-
 			//use this space to send alert messages or chat messages upon login
-			
 			send("chat Server says: Welcome to Anagrams version 0.9.7!");
-
 			this.username = username;
-
 			System.out.println("User logged in successfully: " + username);
 
 			//notify new player of other players
@@ -143,9 +135,11 @@ public class ServerWorker extends Thread {
 		inputStream.close();
 		outputStream.close();
 		clientSocket.close();
+
+		interrupt(); //needs to be tested
 		
 		System.out.println(username + " has just logged off");
-		
+
 	}
 	
 	/**
@@ -167,16 +161,11 @@ public class ServerWorker extends Thread {
 		int skillLevel = Integer.parseInt(params[11]);
 		
 		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers);
-		
 		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
-
 		newGame.addPlayer(this);
-
-		if(hasRobot) {
+		if(hasRobot)
 			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon)));
-		}
 		server.addGame(gameID, newGame);
-
 	}
 
 	/**
@@ -204,63 +193,51 @@ public class ServerWorker extends Thread {
 
 			if (tokens.length > 0) {
 				String cmd = tokens[0];
+				Game game = tokens.length > 1 ? server.getGame(tokens[1]) : null;
 
-				if (cmd.equals("login")) {
-					handleLogin(tokens[1]);
-				}
-				else if(cmd.equals("version")) {
-					checkVersion(tokens[1]);
-				}
-				else if(cmd.equals("logoff")) {
-					handleLogoff();
-				}
-				else if(cmd.equals("chat")) {
-					server.broadcast(line);
-				}
-				else if(cmd.equals("newgame")) {
-					handleCreateGame(tokens);
-				}
-
-				//game related commands
-				else if(cmd.equals("makeword")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).doMakeWord(tokens[2], tokens[3]);
-					}
-				}
-				else if(cmd.equals("steal")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
-					}
-				}
-				else if(cmd.equals("gamechat")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).notifyRoom(line);
-					}
-				}
-				else if(cmd.equals("joingame")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).addPlayer(this);
-					}
-				}
-				else if(cmd.equals("watchgame")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).addWatcher(this);
-					}
-				}
-				else if(cmd.equals("stopplaying")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).removePlayer(this.username);
-					}
-				}
-				else if(cmd.equals("stopwatching")) {
-					if(server.getGame(tokens[1]) != null) {
-						server.getGame(tokens[1]).removeWatcher(this.username);
+				if(game == null) {
+					switch (cmd) {
+						case "login" -> handleLogin(tokens[1]);
+						case "version" -> checkVersion(tokens[1]);
+						case "logoff" -> handleLogoff();
+						case "chat" -> server.broadcast(line);
+						case "newgame" -> handleCreateGame(tokens);
+						case "lookup" -> {
+							WordTree tree = new WordTree(tokens[2], server.getDictionary(tokens[1]));
+							tree.generateJSON(tree.rootWord, "", tree.root);
+							send("json " + tree.JSON);
+						}
+						case "def" -> {
+							String definition = server.getDictionary(tokens[1]).getDefinition(tokens[2]);
+							if(definition == null) definition = "Definition not available";
+							send("def " + definition);
+						}
+						default -> System.out.println("Error: Command not recognized: " + line);
 					}
 				}
 
+				//game-related commands
 				else {
-					System.out.println("Error: Command not recognized: " + line);
+					switch (cmd) {
+						case "makeword" -> {
+							if(server.getDictionary(game.lexicon).contains(tokens[3]))
+								game.doMakeWord(tokens[2], tokens[3]);
+						}
+						case "steal" -> {
+							if(server.getDictionary(game.lexicon).contains(tokens[5])) {
+								game.doSteal(tokens[2], tokens[3], tokens[4], tokens[5]);
+							}
+						}
+						case "gamechat" -> game.notifyRoom(line);
+						case "joingame" -> game.addPlayer(this);
+						case "watchgame" -> game.addWatcher(this);
+						case "stopplaying" -> game.removePlayer(this.username);
+						case "stopwatching" -> game.removeWatcher(this.username);
+						case "findplays" -> send("plays " + game.gameID + " " + game.findPlays(Integer.parseInt(tokens[2])));
+						default -> System.out.println("Error: Command not recognized: " + line);
+					}
 				}
+
 			}
 		}
 	}

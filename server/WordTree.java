@@ -18,9 +18,9 @@ public class WordTree {
 
 	public final AlphagramTrie trie;
 	public TreeNode root;
-	private final String rootWord;
+	String rootWord;
 	private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
-
+	String JSON = "";
 
 	/**
 	 * Generates a tree from a existing trie
@@ -41,6 +41,10 @@ public class WordTree {
 			buildTree();
 
 		root.getChildren().sort(new TreeNodeComparator().reversed());
+		if(!trie.contains(rootWord)) {
+			this.rootWord = rootWord.toLowerCase();
+		}
+
 	}
 
 
@@ -117,6 +121,26 @@ public class WordTree {
 			return result;
 		}
 	}
+
+	/**
+	 *
+	 *'[{"id":"grubb", "tooltip": ""},{"id":"grubb.BUGBEAR", tooltip: "AE"}]'
+	 * Recursively generates a JSON-formatted list for making a "flare" diagram
+	 */
+
+	public void generateJSON(String prefix, String tooltip, TreeNode node) {
+
+//		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"tooltip\": \"" + tooltip + "\", \"def\": \"" + trie.getDefinition(node.toString()) + "\"},");
+		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"tooltip\": \"" + tooltip + "\"},");
+		for(TreeNode child : node.getChildren()) {
+			String nextTooltip = child.getTooltip();
+			for(char c : node.getTooltip().toCharArray()) {
+				nextTooltip = nextTooltip.replaceFirst(c + "", "");
+			}
+			generateJSON(prefix + "." + child.toString(), nextTooltip, child);
+		}
+	}
+
 
 	/**
 	 * Given two words, determines whether one's letters are a strict subset of the other's.

@@ -1,5 +1,6 @@
 package server;
 
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,7 +15,7 @@ public class Server extends Thread {
 	private static final String[] lexicons = {"NWL20", "CSW19"};
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final Hashtable<String, Game> gameList = new Hashtable<>();
-	private final Hashtable<String, AlphagramTrie> dictionaries = new Hashtable<>();
+	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	
 	
 	/**

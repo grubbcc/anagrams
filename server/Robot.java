@@ -142,11 +142,9 @@ class Robot {
 					for (TreeNode child : trees.get(shortWord).root.getChildren()) {
 
 						String longWord = child.toString();
-						
-						if(rgen.nextInt(4) < skillLevel) {
-							if(game.doSteal(player, shortWord, robotName, longWord)) {
-								return true;
-							}
+
+						if(game.doSteal(player, shortWord, robotName, longWord)) {
+							return true;
 						}
 					}
 				}
