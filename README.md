@@ -18,7 +18,7 @@ Features
     • Play against up to 5 other players or against the computer (or just watch a game)
     • Automatic dictionary verification with the NWL 18 (North American) and CSW 19 (International) lexicons.
     • Play with up to 300 tiles per game (including "blanks") at adjustable speeds
-    • Load custom settings and colors automatically upon startup
+    * Create a personalized account profile and load customizable settings automatically upon startup
     • Chat with other players before or during a game
     • Postgame analysis mode shows you what words you could have made
 
@@ -29,6 +29,19 @@ I am an amateur Java programmer, mostly self taught, as well as an avid Scrabble
 Since I have benefited greatly from the advice and code of others, I have made this an open source project. Check out the code over at my GitHub page, and feel free to use what you like in your own work. (Just no redistributing or selling without my permission, of course.) If you are an experienced prorgammer, any bug reports or feedback on how I can improve things would be greatly appreciated!
 
 Update Log
+
+Version 0.9.8 - June 25, 2021
+
+    • Enabled account creation and password login
+    • Enabled personalized profile creation using markdown syntax.
+    * Fixed bug that would delay logoff recognition.
+
+Version 0.9.7 - February 15, 2021
+
+    • Enabled online play(finall!)
+    • Migrated to JavaFX for improved graphical improvement.
+    • Added tree visualization widget.
+    • Fixed a bug that would cause game panels to disappear prematurely.
 
 Version 0.9.6 - July 6, 2020
 
@@ -80,16 +93,6 @@ Version 0.9.1 - June 4, 2020
     • Improved the way that game panes tile on the main screen
     • Configured server to run on Dynamic DNS
     • Adjusted Robot capabilities to better match their names
-
-This software uses CodeNotary, a blockchain-based trust and verification service to guarantee that it is safe and tamperproof. Nevertheless on some computers, you may need to take an additional step or two in order to bypass security settings.
-
-On Windows PCs, the easiest way to do this is to right-click the installer file, select Properties, and make sure the checkmark labeled "Unblock" is selected.
-
-If your MacOS tells you that the application is "damaged", chances are that is not true. If ctrl-clicking and selecting Open does not work, try one of the solutions in these videos: Sierra / Catalina.
-
-To verify the authenticity and integrity of this software, please navigate to this link and drag your download into the browser window. If you get a thumbs-up logo, the software is working correctly.
-
-To date, this software has been tested on Windows 10 and MacOS Mojave.
 
 Copyright Notice
 
