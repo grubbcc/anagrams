@@ -2,6 +2,9 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
 * Handles tasks for the client on the server side.
@@ -11,12 +14,12 @@ public class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final Server server;
-	private final int[] latestVersion = {0, 9, 7};
+	private final int[] latestVersion = {0, 9, 8};
 	private String username = null;
 	private OutputStream outputStream;
 	private InputStream inputStream;
 	private BufferedReader reader;
-	
+
 	/**
 	*
 	*/
@@ -37,7 +40,6 @@ public class ServerWorker extends Thread {
 			handleClientSocket();
 		}
 		catch (IOException e) {
-			
 			System.out.println(username + " has disconnected.");
 			try {
 				handleLogoff();
@@ -48,62 +50,40 @@ public class ServerWorker extends Thread {
 		}
 	}
 
-
-	/**
-	* Checks to see if the client is using an "outdated" and/or "unsupported" version of Anagrams.
-	*
-	* @param version the latest version of this software
-	*/
-	
-	private void checkVersion(String version) {
-		String[] subversions = version.split("\\.");
-		for(int i = 0; i < 3; i++) {
-			if(Integer.parseInt(subversions[i]) < latestVersion[i]) {
-//				send("outdated");
-				send("unsupported");
-				return;
-			}
-		}
-		send("ok version");
-	}
-
 	/**
 	* Checks to see whether the user has entered a valid username
-	* (And in future versions, a valid password)
 	*/
 	
 	private void handleLogin(String username) {
-
-		if(server.getUsernames().contains(username) || username.startsWith("Robot")) {
-			send("Sorry, that username is already taken. Please try again.");
-			System.out.println("Login failed for " + username);
+		if(server.getUsernames().contains(username)) {
+			send("Sorry, that username is currently being used.");
 		}
 		else {
 			send("ok login");
 			//use this space to send alert messages or chat messages upon login
-			send("chat Server says: Welcome to Anagrams version 0.9.7!");
+			send("chat Server says: Welcome to Anagrams version 0.9.8!");
 			this.username = username;
 			System.out.println("User logged in successfully: " + username);
 
 			//notify new player of other players
-			synchronized(server.getUsernames()) {
-				for(String playerName : server.getUsernames()) {
+			synchronized (server.getUsernames()) {
+				for (String playerName : server.getUsernames()) {
 					send("loginplayer " + playerName);
 				}
 			}
 
 			//notify new player of games
-			synchronized(server.getGames()) {
-				for(Game game : server.getGames()) {
+			synchronized (server.getGames()) {
+				for (Game game : server.getGames()) {
 					send("addgame " + game.getGameParams());
-					for(String playerName : game.getPlayerList()) {
+					for (String playerName : game.getPlayerList()) {
 						send("takeseat " + game.gameID + " " + playerName);
 					}
-					for(String inactivePlayer : game.getInactivePlayers()) {
+					for (String inactivePlayer : game.getInactivePlayers()) {
 						send("abandonseat " + game.gameID + " " + inactivePlayer);
 					}
-					if(game.gameOver) {
-						for(String gameState : game.gameLog) {
+					if (game.gameOver) {
+						for (String gameState : game.gameLog) {
 							send("gamelog " + game.gameID + " " + gameState);
 						}
 						send("note " + game.gameID + " @" + "Game over");
@@ -116,6 +96,7 @@ public class ServerWorker extends Thread {
 			server.addWorker(username, this);
 			server.broadcast("loginplayer " + username);
 		}
+
 	}
 
 
@@ -136,7 +117,7 @@ public class ServerWorker extends Thread {
 		outputStream.close();
 		clientSocket.close();
 
-		interrupt(); //needs to be tested
+		interrupt();
 		
 		System.out.println(username + " has just logged off");
 
@@ -198,7 +179,6 @@ public class ServerWorker extends Thread {
 				if(game == null) {
 					switch (cmd) {
 						case "login" -> handleLogin(tokens[1]);
-						case "version" -> checkVersion(tokens[1]);
 						case "logoff" -> handleLogoff();
 						case "chat" -> server.broadcast(line);
 						case "newgame" -> handleCreateGame(tokens);

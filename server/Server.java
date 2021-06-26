@@ -11,30 +11,29 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server extends Thread {
 	
-	private final int serverPort;
+	private final int serverPort = 8118;
 	private static final String[] lexicons = {"NWL20", "CSW19"};
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final Hashtable<String, Game> gameList = new Hashtable<>();
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
-	
+
 	
 	/**
 	*
 	*/
 	
-	public Server(int serverPort) {
-		this.serverPort = serverPort;
+	public Server() {
+		System.out.println("Starting server...");
 		for(String lexicon : lexicons) {
 			dictionaries.put(lexicon, new AlphagramTrie(lexicon));
 		}
 	}
-	
+
 	/**
 	*
 	*/
 	
 	public void endGame(String gameToEnd) {
-		
 		gameList.remove(gameToEnd);
 		broadcast("removegame " + gameToEnd);
 	}
@@ -75,10 +74,12 @@ public class Server extends Thread {
 				game.removeWatcher(username);
 			}
 		}
-
 		broadcast("logoffplayer " + username);
-
 	}
+
+	/**
+	 *
+	 */
 	
 	public ServerWorker getWorker(String username) {
 		return workerList.get(username);
@@ -91,8 +92,7 @@ public class Server extends Thread {
 	public void addGame(String gameID, Game game) {
 		gameList.put(gameID, game);
 	}
-	
-	
+
 	/**
 	*
 	*/
@@ -136,8 +136,6 @@ public class Server extends Thread {
 	*
 	*/
 	
-	
-	
 	@Override
 	public void run() {
 		
@@ -147,13 +145,22 @@ public class Server extends Thread {
 				System.out.println("Ready to accept client connections on port " + serverPort);
 				Socket clientSocket = serverSocket.accept();
 				System.out.println("Accepted connection from " + clientSocket);
-				ServerWorker worker = new ServerWorker(this, clientSocket);
-				worker.start();
+				ServerWorker newWorker = new ServerWorker(this, clientSocket);
+				newWorker.start();
 			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 *
+	 */
+
+	public static void main(String[] args) {
+		Server server = new Server();
+		server.start();
 	}
 
 }

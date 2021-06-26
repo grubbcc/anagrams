@@ -30,8 +30,6 @@ public class AlphagramTrie {
 
 		this.lexicon = lexicon;
 
-		System.out.println("new trie created with lexicon = " + lexicon);
-
 		try {
 			InputStream stream = getClass().getResourceAsStream("wordlists/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -42,6 +40,7 @@ public class AlphagramTrie {
 					currentDefinition = entry[1];
 				insertWord(alphabetize(currentWord), rootNode);
 			}
+			System.out.println("new trie created with lexicon = " + lexicon);
 		}
 		catch (FileNotFoundException exception) {
 			System.out.println("Word list not found.");
@@ -78,7 +77,6 @@ public class AlphagramTrie {
 		if (subalphagram.length() == 1) {
 			nextChild.anagrams.add(currentWord);
 			nextChild.definitions.put(currentWord, currentDefinition);
-			return;
 		}
 		else {
 			//This node is not the end of a word. Remove the first letter and
