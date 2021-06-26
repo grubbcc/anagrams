@@ -1,18 +1,17 @@
 package client;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
 import com.jpro.webapi.JProApplication;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.media.AudioClip;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
+import java.io.*;
+import java.net.Socket;
+import java.util.*;
 import java.util.prefs.Preferences;
 
 /**
@@ -21,28 +20,26 @@ import java.util.prefs.Preferences;
  */
 
 public class AnagramsClient extends JProApplication {
-//	private final String serverName = "anagrams.mynetgear.com"; //connect over internet
-//	private final String serverName = "192.168.0.17"; 			//connect over home network
-    private final String serverName = "127.0.0.1"; 				//connect to this computer
 
+    private final String serverName = "127.0.0.1";
 	private final int port = 8118;
-	public final String version = "0.9.7";
+	private final String version = "0.9.8";
 
 	boolean connected;
 	private InputStream serverIn;
 	private OutputStream serverOut;
-	private BufferedReader bufferedIn;
+	BufferedReader bufferedIn;
 
 	Stage stage;
 	private Thread messageLoop;
 
-	private LoginWindow loginWindow;
+	private LoginMenu loginMenu;
 	private final FlowPane gamesPanel = new FlowPane();
 	private final ScrollPane gamesScrollPane = new ScrollPane();
 
 	private final Label playersHeader = new Label("Players logged in");
 	private final VBox playersListPane = new VBox();
-	final BorderPane borderPane = new BorderPane();
+	private final BorderPane borderPane = new BorderPane();
 	private final BorderPane playersPanel = new BorderPane();
 	private final ScrollPane playersScrollPane = new ScrollPane();
 
@@ -52,19 +49,20 @@ public class AnagramsClient extends JProApplication {
 	private final TextArea chatBox = new TextArea();
 	private final BorderPane chatPanel = new BorderPane();
 	private final ScrollPane chatScrollPane = new ScrollPane();
+	private final PlayerPane playerPane = new PlayerPane(this);
 
 	private SettingsMenu settingsMenu;
 	final WordExplorer explorer = new WordExplorer(null, this);
 	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
 	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
-	private final HashSet<String> playersList = new HashSet<>();
+	private final HashMap<String, Label> playersList = new HashMap<>();
 	public String username;
 
 	public static final String[] lexicons = {"CSW19", "NWL20"};
 
-	//load settings
-	Preferences prefs = Preferences.userNodeForPackage(getClass());
+	Preferences prefs;
 	EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
+	boolean guest = false;
 
 	/**
 	 *
@@ -72,21 +70,21 @@ public class AnagramsClient extends JProApplication {
 
 	public enum Colors {
 
-		MAIN_SCREEN ("-main-screen", "mainScreen", "Main Screen", "#F5DEB3"),
-		PLAYERS_LIST ("-players-list", "playersList", "Players List", "#B36318"),
-		GAME_FOREGROUND ("-game-foreground", "gameForeground", "Game Foreground", "#2080AA"),
-		GAME_BACKGROUND ("-game-background", "gameBackground", "Game Background", "#F5DEB3"),
-		CHAT_AREA ("-chat-area", "chatArea", "Chat Area", "#00FFFF"),
+		MAIN_SCREEN ("-main-screen", "main_screen", "Main Screen", "#f5deb3"),
+		PLAYERS_LIST ("-players-list", "players_list", "Players List", "#b36318"),
+		GAME_FOREGROUND ("-game-foreground", "game_foreground", "Game Foreground", "#2080aa"),
+		GAME_BACKGROUND ("-game-background", "game_background", "Game Background", "#f5deb3"),
+		CHAT_AREA ("-chat-area", "chat_area", "Chat Area", "#00ffff"),
 		;
 
 		final String css;
-		final String camel;
+		final String key;
 		final String display;
 		final String defaultCode;
 
-		Colors(String css, String camel, String display, String defaultCode) {
+		Colors(String css, String key, String display, String defaultCode) {
 			this.css = css;
-			this.camel = camel;
+			this.key = key;
 			this.display = display;
 			this.defaultCode = defaultCode;
 		}
@@ -114,12 +112,13 @@ public class AnagramsClient extends JProApplication {
 			colors.put(color, color.defaultCode);
 		}
 
-		settingsMenu = new SettingsMenu(this);
 		createAndShowGUI();
 		if(connect() ) {
 			System.out.println("Connected to server on port " + port);
-			loginWindow = new LoginWindow(this);
-			loginWindow.show(true);
+			if(loginMenu == null) {
+				loginMenu = new LoginMenu(this);
+				loginMenu.show(true);
+			}
 		}
 	}
 
@@ -130,11 +129,10 @@ public class AnagramsClient extends JProApplication {
 	private void createAndShowGUI() {
 		//control panel
 		Button createGameButton = new Button("Create Game");
-		createGameButton.setPrefHeight(36);
+		createGameButton.setPrefHeight(39);
 
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
-		Image settingsImage = new Image(getClass().getResourceAsStream("/settings.png"), 30, 30, true ,true);
-		Button settingsButton = new Button("Settings", new ImageView(settingsImage));
+		Button settingsButton = new Button("Settings", new ImageView("/settings.png"));
 		settingsButton.setPrefSize(143, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
 		HBox controlPanel = new HBox();
@@ -151,7 +149,6 @@ public class AnagramsClient extends JProApplication {
 		gamesScrollPane.setContent(gamesPanel);
 
 		//players panel
-		playersHeader.setFont(new Font("Arial Bold", 16));
 		playersPanel.setPrefWidth(143);
 		playersPanel.setId("players-panel");
 		playersScrollPane.setFitToHeight(true);
@@ -186,12 +183,18 @@ public class AnagramsClient extends JProApplication {
 		AnchorPane.setBottomAnchor(borderPane, 0.0);
 		AnchorPane.setLeftAnchor(borderPane, 0.0);
 
-		Scene scene = new Scene(stack);
+		Scene scene;
+		try {
+			scene = new Scene(stack);
+		}
+		catch(IllegalArgumentException e) {
+			System.out.println("Scene already exists on account of server restart");
+			scene = stack.getScene();
+		}
 		scene.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
 
 		//main stage
-		if(port == 8117) stage.setTitle("Anagrams (testing mode)");
-		else stage.setTitle("Anagrams");
+		stage.setTitle("Anagrams");
 		stage.setMinWidth(792);
 		stage.setMinHeight(400);
 		stage.setScene(scene);
@@ -199,7 +202,7 @@ public class AnagramsClient extends JProApplication {
 		setColors();
 		stage.show();
 
-		getWebAPI().addInstanceCloseListener(() -> {System.out.println("closing instance");  logOut();});
+		getWebAPI().addInstanceCloseListener(this::logOut);
 	}
 
 	/**
@@ -265,63 +268,28 @@ public class AnagramsClient extends JProApplication {
 		}
 	}
 
-
 	/**
 	 *
 	 */
 
-	public void login(String username) throws IOException {
+	public void login(String username) {
 		this.username = username;
-		send("login " + username);
-		String response = "";
-		try {
-			response = this.bufferedIn.readLine();
-		}
-		catch (IOException ioe) {
-			System.out.println("The connection between client and host has been lost.");
-			if (stage.isShowing()) {
-				if (connected) {
-					logOut();
-				}
-				MessageDialog dialog = new MessageDialog(this, "Connection error");
-				dialog.setText("The connection to the server has been lost. Try to reconnect?");
-				dialog.addYesNoButtons();
-				dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
-				dialog.noButton.setOnAction(e -> dialog.hide());
-				Platform.runLater(() -> dialog.show(true));
-			}
-		} finally {
-			//successful login
-			if ("ok login".equals(response)) {
-				System.out.println(username + " has just logged in.");
 
-				//set user colors
-				for (Colors color : Colors.values())
-					colors.put(color, prefs.get(username + "/" + color.toString(), color.defaultCode));
-				setColors();
+		prefs = Preferences.userNodeForPackage(getClass()).node(username);
 
-				messageLoop = new Thread(this::readMessageLoop);
-				messageLoop.start();
-				if (Thread.currentThread().isInterrupted()) {
-					messageLoop = null;
-					System.out.println("Thread + " + Thread.currentThread().toString() + " interrupted!");
-					if (connected) logOut();
-				}
-				loginWindow.hide();
-				borderPane.setDisable(false); //is this necessary?
+		//set user colors
+		for (Colors color : Colors.values())
+			colors.put(color, prefs.get(color.key, color.defaultCode));
+		setColors();
 
-			}
+		settingsMenu = new SettingsMenu(this);
 
-			//login was unsuccessful
-			else if (!response.isEmpty()) {
-				MessageDialog dialog = new MessageDialog(this, "Login unsuccessful");
-				dialog.setText(response);
-				dialog.addOkayButton();
-				dialog.show(true);
+		messageLoop = new Thread(this::readMessageLoop);
+		messageLoop.start();
 
-			}
-		}
+		borderPane.setDisable(false);
 	}
+
 
 
 	/**
@@ -407,10 +375,8 @@ public class AnagramsClient extends JProApplication {
 				watchButton.setOnAction(e -> {
                     if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
                         if(!players.contains(username) || gameOver) {
-
                             GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true);
                             gameWindows.put(gameID, newGame);
-
                             send("watchgame " + gameID);
                         }
                     }
@@ -485,21 +451,45 @@ public class AnagramsClient extends JProApplication {
 	 */
 
 	void addPlayer(String newPlayerName) {
-		playersList.add(newPlayerName);
-		playersListPane.getChildren().clear();
-		for(String player : playersList) {
-			playersListPane.getChildren().add(new Label(player));
-		}
-		if(prefs.getBoolean(username + "/PLAY_SOUNDS", true)) {
+
+		if(prefs.getBoolean("play_sounds", true)) {
 			new AudioClip(this.getClass().getResource("/new player sound.wav").toExternalForm()).play();
 		}
+
+		Label newLabel = new Label(newPlayerName);
+		playersList.put(newPlayerName, newLabel);
+		playersListPane.getChildren().add(newLabel);
+
+		newLabel.setOnMouseClicked(click -> {
+			playerPane.displayPlayerInfo(newPlayerName);
+			if(!playerPane.isVisible()) {
+				playerPane.setTranslateX(stage.getWidth() - 453);
+				playerPane.setTranslateY(newLabel.getLayoutY() + 66);
+				playerPane.setPrefSize(300, 240);
+				playerPane.setMinSize(300, 140);
+				playerPane.show(false);
+			}
+		});
 	}
+
+	/**
+	 *
+	 */
+
+	void removePlayer(String playerToRemove) {
+		playersListPane.getChildren().remove(playersList.remove(playerToRemove));
+	}
+
+	/**
+	 *
+	 */
+
 
 	/**
 	 * Inform the server that the player is no longer an active part of the specified game.
 	 *
 	 * @param gameID the game to exit
-	 * @param isWatcher whether the player is watching
+	 * @param isWatcher whether the user is watching
 	 */
 
 	void exitGame(String gameID, boolean isWatcher) {
@@ -543,12 +533,7 @@ public class AnagramsClient extends JProApplication {
 								dialog.show(true);
 							}
 							case "loginplayer" -> addPlayer(tokens[1]);
-							case "logoffplayer" -> {
-								playersList.remove(tokens[1]);
-								playersListPane.getChildren().clear();
-								for (String player : playersList)
-									playersListPane.getChildren().add(new Label(player));
-							}
+							case "logoffplayer" -> removePlayer(tokens[1]);
 							case "chat" -> {
 								String msg = finalLine.replaceFirst("chat ", "");
 								if (chatBox.getText().isEmpty()) chatBox.appendText(msg);
@@ -639,6 +624,11 @@ public class AnagramsClient extends JProApplication {
 			if(messageLoop != null) messageLoop.interrupt();
 
 			send("logoff");
+			serverOut.close();
+			serverIn.close();
+			if(guest)
+				prefs.removeNode();
+			connected = false;
 			System.out.println(username + " has just logged out.");
 		}
 		catch (Exception e) {
