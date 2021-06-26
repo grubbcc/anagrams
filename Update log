@@ -1,5 +1,19 @@
 Update log
 
+Version 0.9.8 - June 25, 2021
+* 
+* 
+* 
+* 
+
+Version 0.9.7 - February 15, 2021
+
+* Enabled online play(!)
+* Migrated to JavaFX for graphical improvement.
+* Added tree visualization widget.
+* Fixed a bug that would cause game panels to disappear prematurely.
+
+
 Version 0.9.6 - July 6, 2020
 
 * Added buttons to click through previous game positions.
