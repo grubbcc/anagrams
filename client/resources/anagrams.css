@@ -12,7 +12,7 @@
 	-chat-area-text:        blue;
 }
 
-.scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
+.scroll-pane, .scroll-pane   .content, .scroll-pane .viewport {
     -fx-background-color: transparent;
 }
 .check-box {
@@ -34,7 +34,7 @@
     -fx-graphic-text-gap: 15;
 }
 .text-field {
-    -fx-background-color: lightgray;
+    -fx-background-color: #DDDDDD;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
     -fx-prompt-text-fill: #333333;
@@ -42,6 +42,12 @@
 .text-area {
     -fx-background-color: -chat-area;
     -fx-text-fill: -chat-area-text;
+}
+.tooltip {
+    -fx-padding: 2;
+    -fx-background-radius: 1;
+    -fx-background-color: white;
+    -fx-text-fill: black;
 }
 
 /* main window */
@@ -65,6 +71,14 @@
 }
 #players-panel .label {
     -fx-text-fill: -players-list-text;
+    -fx-font-size: 16;
+}
+#players-panel .scroll-pane .label {
+    -fx-font-weight: normal;
+    -fx-font-size: 14;
+}
+#players-panel .scroll-pane .label:hover{
+    -fx-font-weight: bold;
 }
 
 /* game window */
@@ -90,12 +104,10 @@
     -fx-background-color: -game-foreground;
 }
 #game-panel .label {
-
     -fx-font: bold 22px "Arial";
     -fx-text-fill: -game-foreground-text;
 }
 #game-panel:abandoned .label {
-
     -fx-font: bold 22px "Arial";
     -fx-text-fill: darkgray;
 }

@@ -87,10 +87,6 @@
     -fx-font-weight: bold;
     -fx-text-background-color: black;
 }
-.tooltip {
-    -fx-padding: 2;
-    -fx-background-radius: 1;
-}
 
 /* message area */
 #message-area .label {
