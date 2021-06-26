@@ -11,7 +11,8 @@ import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 
 /**
- *  A JPro-compatible alternative to the standard JavaFX Window with draggable functionality and title bar.
+ *  A JPro-compatible alternative to the standard JavaFX Window with
+ *  draggable and resizable functionality and title bar.
  */
 
 public class PopWindow extends BorderPane {
@@ -43,11 +44,9 @@ public class PopWindow extends BorderPane {
         setTop(titleBar);
 
         makeMovable();
-        setResizable(true);
         setVisible(false);
         setId("popup");
         getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
-
     }
 
     /**
@@ -72,8 +71,8 @@ public class PopWindow extends BorderPane {
     
     public void show(boolean modal) {
         if(!isVisible()) {
-            for (Node child : container.getChildren()) {
-                if (modal) {
+            if(modal) {
+                for (Node child : container.getChildren()) {
                     child.setDisable(true);
                 }
             }
@@ -117,7 +116,8 @@ public class PopWindow extends BorderPane {
 
     public void setResizable(boolean resizable) {
         this.resizable = resizable;
-        DragResizer.makeResizable(this);
+        if(resizable)
+            DragResizer.makeResizable(this);
     }
 
 

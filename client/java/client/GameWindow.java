@@ -874,7 +874,7 @@ public class GameWindow extends PopWindow {
     public void makeWord(String playerName, String wordToAdd, String nextTiles) {
         players.get(playerName).addWord(wordToAdd);
 
-        if (client.prefs.getBoolean("PLAY_SOUNDS", true))
+        if (client.prefs.getBoolean("play_sounds", true))
             new AudioClip(this.getClass().getResource("/steal sound.wav").toExternalForm()).play();
 
         setTiles(nextTiles);

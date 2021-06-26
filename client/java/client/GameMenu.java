@@ -1,14 +1,16 @@
 package client;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.*;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * A menu for choosing game options and saving them for future use
@@ -69,19 +71,19 @@ class GameMenu extends PopWindow {
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
 
         //selectors
-        playersSelector.getSelectionModel().select(client.prefs.get(client.username + "/MAX_PLAYERS", "6"));
-        lengthsSelector.getSelectionModel().select(client.prefs.get(client.username + "/MIN_LENGTH", "7"));
-        setsSelector.getSelectionModel().select(client.prefs.get(client.username + "/NUM_SETS", "1"));
-        blanksSelector.getSelectionModel().select(client.prefs.get(client.username +"/BLANK_PENALTY", "2"));
-        lexiconSelector.getSelectionModel().select(client.prefs.get(client.username + "/LEXICON", "CSW19"));
-        speedSelector.getSelectionModel().select(client.prefs.get(client.username + "/SPEED", "medium"));
-        skillLevelSelector.getSelectionModel().select(client.prefs.get(client.username + "/ROBOT_SKILL", "standard"));
+        playersSelector.getSelectionModel().select(client.prefs.get("max_players", "6"));
+        lengthsSelector.getSelectionModel().select(client.prefs.get("min_length", "7"));
+        setsSelector.getSelectionModel().select(client.prefs.get("num_sets", "1"));
+        blanksSelector.getSelectionModel().select(client.prefs.get("blank_penalty", "2"));
+        lexiconSelector.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        speedSelector.getSelectionModel().select(client.prefs.get("speed", "medium"));
+        skillLevelSelector.getSelectionModel().select(client.prefs.get("robot_skill", "standard"));
         skillLevelSelector.disableProperty().bind(robotChooser.selectedProperty().not());
 
         //choosers
-        chatChooser.setSelected(client.prefs.getBoolean(client.username + "/ALLOW_CHAT",true));
-        watchersChooser.setSelected(client.prefs.getBoolean(client.username + "/ALLOW_WATCHERS", true));
-        robotChooser.setSelected(client.prefs.getBoolean(client.username + "/ADD_ROBOT", false));
+        chatChooser.setSelected(client.prefs.getBoolean("allow_chat",true));
+        watchersChooser.setSelected(client.prefs.getBoolean("allow_watchers", true));
+        robotChooser.setSelected(client.prefs.getBoolean("add_robot", false));
 
         grid.add(new Label("Maximum number of players"), 0, 0);
         grid.add(playersSelector, 1, 0);
@@ -127,16 +129,16 @@ class GameMenu extends PopWindow {
      */
 
     private void savePreferences() {
-        client.prefs.put(client.username + "/MAX_PLAYERS", playersSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/MIN_LENGTH", lengthsSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/NUM_SETS", setsSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/BLANK_PENALTY", blanksSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/LEXICON", lexiconSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/SPEED", speedSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put(client.username + "/ROBOT_SKILL", skillLevelSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.putBoolean(client.username + "/ALLOW_CHAT", chatChooser.isSelected());
-        client.prefs.putBoolean(client.username + "/ALLOW_WATCHERS", watchersChooser.isSelected());
-        client.prefs.putBoolean(client.username + "/ADD_ROBOT", robotChooser.isSelected());
+        client.prefs.put("max_players", playersSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("min_length", lengthsSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("num_sets", setsSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("blank_penalty", blanksSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("lexicon", lexiconSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("speed", speedSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.put("robot_skill", skillLevelSelector.getSelectionModel().getSelectedItem() + "");
+        client.prefs.putBoolean("allow_chat", chatChooser.isSelected());
+        client.prefs.putBoolean("allow_watchers", watchersChooser.isSelected());
+        client.prefs.putBoolean("add_robot", robotChooser.isSelected());
     }
 
     /**

@@ -29,7 +29,7 @@ public class DragResizer {
     private boolean draggingSouth;
     private boolean draggingWest;
 
-    ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
+    private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
 
     /**
      *

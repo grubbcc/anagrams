@@ -1,7 +1,5 @@
 package client;
 
-import java.lang.Integer;
-import java.util.EnumMap;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -10,6 +8,8 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+
+import java.util.EnumMap;
 
 /**
  * A menu for choosing preferences and saving them for future use
@@ -44,8 +44,8 @@ class SettingsMenu extends PopWindow {
         lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW19 = International"));
 
         //selectors
-        lexiconChooser.getSelectionModel().select(client.prefs.get(client.username + "/LEXICON", "CSW19"));
-        soundChooser.setSelected(client.prefs.getBoolean(client.username + "/PLAY_SOUNDS", true));
+        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
         soundChooser.setPadding(new Insets(0,9,0,7));
 
         //buttons
@@ -90,10 +90,10 @@ class SettingsMenu extends PopWindow {
      */
 
     private void savePreferences() {
-        client.prefs.put(client.username + "/LEXICON", lexiconChooser.getSelectionModel().getSelectedItem() + "");
-        client.prefs.putBoolean(client.username + "PLAY_SOUNDS", soundChooser.isSelected());
+        client.prefs.put("lexicon", lexiconChooser.getSelectionModel().getSelectedItem() + "");
+        client.prefs.putBoolean("play_sounds", soundChooser.isSelected());
         for(AnagramsClient.Colors color : client.colors.keySet()) {
-            client.prefs.put(client.username + "/" + color.toString(), client.colors.get(color));
+            client.prefs.put(color.key, client.colors.get(color));
         }
     }
 
@@ -202,7 +202,7 @@ class SettingsMenu extends PopWindow {
                     if(textField.equals(textFieldG)) G = Integer.parseInt(textField.getText());
                     if(textField.equals(textFieldB)) B = Integer.parseInt(textField.getText());
 
-                    comboBox.setColor(String.format("#%02X%02X%02X", R, G, B));
+                    comboBox.setColor(String.format("#%02x%02x%02x", R, G, B));
                     newColors.put(color, colorCode);
                 }
             };
@@ -214,7 +214,7 @@ class SettingsMenu extends PopWindow {
 
         public class ColorComboBox extends ComboBox<String> {
 
-            String[] colorCodes = {"#CD5C5C", "#F08080", "#FA8072", "#E9967A", "#FFA07A", "#DC143C", "#FF0000", "#B22222", "#8B0000", "#FFC0CB", "#FFB6C1", "#FF69B4", "#FF1493", "#C71585", "#DB7093", "#FFA07A", "#FF7F50", "#FF6347", "#FF4500", "#FF8C00", "#FFA500", "#FFD700", "#FFFF00", "#FFFFE0", "#FFFACD", "#FAFAD2", "#FFEFD5", "#FFE4B5", "#FFDAB9", "#EEE8AA", "#F0E68C", "#BDB76B", "#E6E6FA", "#D8BFD8", "#DDA0DD", "#EE82EE", "#DA70D6", "#FF00FF", "#FF00FF", "#BA55D3", "#9370DB", "#663399", "#8A2BE2", "#9400D3", "#9932CC", "#8B008B", "#800080", "#4B0082", "#6A5ACD", "#483D8B", "#7B68EE", "#ADFF2F", "#7FFF00", "#7CFC00", "#00FF00", "#32CD32", "#98FB98", "#90EE90", "#00FA9A", "#00FF7F", "#3CB371", "#2E8B57", "#228B22", "#008000", "#006400", "#9ACD32", "#6B8E23", "#808000", "#556B2F", "#66CDAA", "#8FBC8B", "#20B2AA", "#008B8B", "#008080", "#00FFFF", "#00FFFF", "#E0FFFF", "#AFEEEE", "#7FFFD4", "#40E0D0", "#48D1CC", "#00CED1", "#5F9EA0", "#4682B4", "#B0C4DE", "#B0E0E6", "#ADD8E6", "#87CEEB", "#87CEFA", "#00BFFF", "#1E90FF", "#6495ED", "#7B68EE", "#4169E1", "#0000FF", "#0000CD", "#00008B", "#000080", "#191970", "#FFF8DC", "#FFEBCD", "#FFE4C4", "#FFDEAD", "#F5DEB3", "#DEB887", "#D2B48C", "#BC8F8F", "#F4A460", "#DAA520", "#B8860B", "#CD853F", "#D2691E", "#8B4513", "#A0522D", "#A52A2A", "#800000", "#FFFFFF", "#FFFAFA", "#F0FFF0", "#F5FFFA", "#F0FFFF", "#F0F8FF", "#F8F8FF", "#F5F5F5", "#FFF5EE", "#F5F5DC", "#FDF5E6", "#FFFAF0", "#FFFFF0", "#FAEBD7", "#FAF0E6", "#FFF0F5", "#FFE4E1", "#DCDCDC", "#D3D3D3", "#C0C0C0", "#A9A9A9", "#808080", "#696969", "#778899", "#708090", "#2F4F4F", "#000000"};
+            String[] colorCodes = {"#cd5c5c", "#f08080", "#fa8072", "#e9967a", "#ffa07a", "#dc143c", "#ff0000", "#b22222", "#8b0000", "#ffc0cb", "#ffb6c1", "#ff69b4", "#ff1493", "#c71585", "#db7093", "#ffa07a", "#ff7f50", "#ff6347", "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#ffff00", "#ffffe0", "#fffacd", "#fafad2", "#ffefd5", "#ffe4b5", "#ffdab9", "#eee8aa", "#f0e68c", "#bdb76b", "#e6e6fa", "#d8bfd8", "#dda0dd", "#ee82ee", "#da70d6", "#ff00ff", "#ff00ff", "#ba55d3", "#9370db", "#663399", "#8a2be2", "#9400d3", "#9932cc", "#8b008b", "#800080", "#4b0082", "#6a5acd", "#483d8b", "#7b68ee", "#adff2f", "#7fff00", "#7cfc00", "#00ff00", "#32cd32", "#98fb98", "#90ee90", "#00fa9a", "#00ff7f", "#3cb371", "#2e8b57", "#228b22", "#008000", "#006400", "#9acd32", "#6b8e23", "#808000", "#556b2f", "#66cdaa", "#8fbc8b", "#20b2aa", "#008b8b", "#008080", "#00ffff", "#00ffff", "#e0ffff", "#afeeee", "#7fffd4", "#40e0d0", "#48d1cc", "#00ced1", "#5f9ea0", "#4682b4", "#b0c4de", "#b0e0e6", "#add8e6", "#87ceeb", "#87cefa", "#00bfff", "#1e90ff", "#6495ed", "#7b68ee", "#4169e1", "#0000ff", "#0000cd", "#00008b", "#000080", "#191970", "#fff8dc", "#ffebcd", "#ffe4c4", "#ffdead", "#f5deb3", "#deb887", "#d2b48c", "#bc8f8f", "#f4a460", "#daa520", "#b8860b", "#cd853f", "#d2691e", "#8b4513", "#a0522d", "#a52a2a", "#800000", "#ffffff", "#fffafa", "#f0fff0", "#f5fffa", "#f0ffff", "#f0f8ff", "#f8f8ff", "#f5f5f5", "#fff5ee", "#f5f5dc", "#fdf5e6", "#fffaf0", "#fffff0", "#faebd7", "#faf0e6", "#fff0f5", "#ffe4e1", "#dcdcdc", "#d3d3d3", "#c0c0c0", "#a9a9a9", "#808080", "#696969", "#778899", "#708090", "#2f4f4f", "#000000"};
 
             /**
              */
