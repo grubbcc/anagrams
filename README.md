@@ -1,6 +1,7 @@
 Anagrams is a classic word game of thought and thievery. For many players, including myself, their first encounter with Anagrams occurred at the end of a long day of playing tournament Scrabble™, but it has a long popular history as well. Originating in Victorian England (according to the Wikipedia article), the first published version dates to 1877 or earlier. It has been published in various tabletop versions over the years, one of which even made its way into a Hitchcock movie:
 
 It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly Snatch!, Carl Johnson's browser-based Anagrams Blitz, and the program on this page.
+
 How to Play
 
 Gameplay is simple: A certain number of tiles are placed face down into a pool on the table. As they are turned over one at a time, players attempt to form words out of them. If a player is successful at finding a word, they arrange the tiles to spell out the word and place them in front of themselves. There is no penalty for guessing incorrectly.
@@ -32,7 +33,7 @@ Update Log
 
 Version 0.9.8 - June 25, 2021
 
-    • Enabled account creation and password login
+    • Enabled account creation (SSL encrypted) and password login.
     • Enabled personalized profile creation using markdown syntax.
     * Fixed bug that would delay logoff recognition.
 
