@@ -36,6 +36,8 @@ Version 0.9.8 - June 25, 2021
     • Enabled account creation (SSL encrypted) and password login.
     • Enabled personalized profile creation using markdown syntax.
     * Fixed bug that would delay logoff recognition.
+    * Chat panel is now resizable.
+    * Migrated to faster server.
 
 Version 0.9.7 - February 15, 2021
 
