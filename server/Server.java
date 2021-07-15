@@ -1,29 +1,28 @@
 package server;
 
-import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
-import java.util.Set;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Server extends Thread {
 	
-	private final int serverPort = 8118;
+	private static final int serverPort = 8118;
 	private static final String[] lexicons = {"NWL20", "CSW19"};
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final Hashtable<String, Game> gameList = new Hashtable<>();
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
+	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
 
-	
 	/**
 	*
 	*/
 	
 	public Server() {
 		System.out.println("Starting server...");
+
 		for(String lexicon : lexicons) {
 			dictionaries.put(lexicon, new AlphagramTrie(lexicon));
 		}
@@ -115,6 +114,17 @@ public class Server extends Thread {
 	
 	public AlphagramTrie getDictionary(String lexicon) {
 		return dictionaries.get(lexicon);
+	}
+
+	/**
+	 *
+	 */
+
+	public void logChat(String line) {
+		chatLog.add(line);
+		if(chatLog.size() >= 100) {
+			chatLog.remove();
+		}
 	}
 	
 	/**

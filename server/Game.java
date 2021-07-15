@@ -271,13 +271,17 @@ public class Game {
 
 		if(playerList.isEmpty()) {
 			gameTimer.cancel();
+			if(timeRemaining > 0) {
+				String message = "Time remaining: " + timeRemaining;
+				notifyEveryone("note " + gameID + " @" + message);
+			}
 			if(watcherList.isEmpty()) {
 				deleteTimer.cancel();
 				deleteTimer = new Timer();
 				deleteTimer.schedule(new DeleteTask(), 180000);
+
 				System.out.println("Beginning countdown. Game will disappear in 3 minutes.");
 			}
-
 		}
 	}
 	

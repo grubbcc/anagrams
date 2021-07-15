@@ -2,9 +2,7 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
 
 /**
 * Handles tasks for the client on the server side.
@@ -14,7 +12,6 @@ public class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final Server server;
-	private final int[] latestVersion = {0, 9, 8};
 	private String username = null;
 	private OutputStream outputStream;
 	private InputStream inputStream;
@@ -60,10 +57,15 @@ public class ServerWorker extends Thread {
 		}
 		else {
 			send("ok login");
-			//use this space to send alert messages or chat messages upon login
-			send("chat Server says: Welcome to Anagrams version 0.9.8!");
 			this.username = username;
 			System.out.println("User logged in successfully: " + username);
+			//use this space to send alert messages or chat messages upon login
+
+			Iterator<String> it = server.chatLog.iterator();
+			StringBuilder chatLog = new StringBuilder(username + " has just joined the game.");
+			while(it.hasNext()) {
+				send("chat " + it.next());
+			}
 
 			//notify new player of other players
 			synchronized (server.getUsernames()) {
@@ -88,6 +90,10 @@ public class ServerWorker extends Thread {
 						}
 						send("note " + game.gameID + " @" + "Game over");
 						send("endgame " + game.gameID);
+					}
+					else if(game.timeRemaining > 0) {
+						String message = "Time remaining: " + game.timeRemaining;
+						send("note " + game.gameID + " @" + message);
 					}
 				}
 			}
@@ -180,7 +186,10 @@ public class ServerWorker extends Thread {
 					switch (cmd) {
 						case "login" -> handleLogin(tokens[1]);
 						case "logoff" -> handleLogoff();
-						case "chat" -> server.broadcast(line);
+						case "chat" -> {
+							server.logChat(line.replaceFirst("chat ", ""));
+							server.broadcast(line);
+						}
 						case "newgame" -> handleCreateGame(tokens);
 						case "lookup" -> {
 							WordTree tree = new WordTree(tokens[2], server.getDictionary(tokens[1]));
