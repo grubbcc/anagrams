@@ -69,21 +69,23 @@ class PlayerPane extends PopWindow {
     private final MarkdownView mdfx = new MarkdownView() {
         @Override
         public void setLink(Node node, String link, String description) {
-            if (description.equals("text-color")) {
-                textColor = link;
-                nodesToRemove.add(node);
-            }
-            else if(description.equals("link-color")) {
-                linkColor = link;
-                nodesToRemove.add(node);
-            }
-            else if (description.equals("background-color")) {
-                backgroundColor = link;
-                nodesToRemove.add(node);
-            }
-            else {
-                node.setCursor(Cursor.HAND);
-                node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
+            switch (description) {
+                case "text-color" -> {
+                    textColor = link;
+                    nodesToRemove.add(node);
+                }
+                case "link-color" -> {
+                    linkColor = link;
+                    nodesToRemove.add(node);
+                }
+                case "background-color" -> {
+                    backgroundColor = link;
+                    nodesToRemove.add(node);
+                }
+                default -> {
+                    node.setCursor(Cursor.HAND);
+                    node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
+                }
             }
         }
     };
@@ -104,6 +106,7 @@ class PlayerPane extends PopWindow {
         bioScrollPane.setFitToWidth(true);
         bioScrollPane.setContent(mdfx);
         bioScrollPane.addEventFilter(KeyEvent.ANY, Event::consume);
+
         contents.setCenter(bioScrollPane);
 
         mdfx.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(this, event));
@@ -141,7 +144,7 @@ class PlayerPane extends PopWindow {
 
         setTitle(playerName);
         textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
-
+        mdfx.setMdString("");
         mdfx.setMdString(client.prefs.parent().node(playerName).get("bio", playerName));
         setColors();
         bioScrollPane.setContent(mdfx);
@@ -208,11 +211,13 @@ class PlayerPane extends PopWindow {
         editorPane.lengthProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.intValue() > oldValue.intValue()) {
                 if (editorPane.getText().length() >= 4000) {
-
                     editorPane.setText(editorPane.getText().substring(0, 4000));
                 }
             }
         });
+
+    //    editorPane.caretPositionProperty().addListener((observable, oldValue, newValue) -> {
+     //   });
 
         Button editBioButton = new Button("Change bio");
         Button confirmButton = new Button("Confirm changes");
@@ -238,11 +243,12 @@ class PlayerPane extends PopWindow {
             buttonPanel.getChildren().addAll(confirmButton, cancelButton, infoIcon);
         });
         confirmButton.setOnAction(e -> {
+            client.prefs.put("bio", editorPane.getText());
             textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
+            mdfx.setMdString("");
             mdfx.setMdString(editorPane.getText());
             setColors();
             bioScrollPane.setContent(mdfx);
-            client.prefs.put("bio", mdfx.getMdString());
             buttonPanel.getChildren().clear();
             buttonPanel.getChildren().addAll(editBioButton, deleteAccountButton);
 
@@ -264,7 +270,7 @@ class PlayerPane extends PopWindow {
                 infoDialog.setText("Your account has been deleted. You will remain\n" +
                         "logged in as a guest until you close the window.");
                 infoDialog.addOkayButton();
-                Platform.runLater(() -> confirmDialog.show(true));
+
             });
             confirmDialog.noButton.setOnAction(click -> confirmDialog.hide());
             Platform.runLater(() -> confirmDialog.show(true));

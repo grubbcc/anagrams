@@ -122,7 +122,7 @@ public class PopWindow extends BorderPane {
 
 
     /**
-     * Maybe need to change this to getBoundsInParent or getLayoutX something so that the GameWindows doesn't move also.
+     * Allows user to reposition this window by dragging inside its area.
      */
 
     public void makeMovable() {

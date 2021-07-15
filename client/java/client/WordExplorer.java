@@ -133,7 +133,6 @@ public class WordExplorer extends PopWindow {
         setVisible(false);
         setResizable(true);
         setPrefSize(345, 415);
-
     }
 
     /**

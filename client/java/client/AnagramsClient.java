@@ -2,12 +2,13 @@ package client;
 
 import com.jpro.webapi.JProApplication;
 import javafx.application.Platform;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.media.AudioClip;
 import javafx.stage.Stage;
+import one.jpro.sound.*;               //figure thsi out
 
 import java.io.*;
 import java.net.Socket;
@@ -43,7 +44,8 @@ public class AnagramsClient extends JProApplication {
 	private final BorderPane playersPanel = new BorderPane();
 	private final ScrollPane playersScrollPane = new ScrollPane();
 
-	final AnchorPane anchor = new AnchorPane(borderPane);
+	final SplitPane splitPane = new SplitPane();
+	final AnchorPane anchor = new AnchorPane(splitPane);
 	final StackPane stack = new StackPane(anchor);
 
 	private final TextArea chatBox = new TextArea();
@@ -61,7 +63,9 @@ public class AnagramsClient extends JProApplication {
 	public static final String[] lexicons = {"CSW19", "NWL20"};
 
 	Preferences prefs;
-	EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
+	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
+	private final String newPlayerSound = getClass().getResource("/new player sound.wav").toExternalForm();
+	private AudioClip newPlayerClip;
 	boolean guest = false;
 
 	/**
@@ -108,11 +112,13 @@ public class AnagramsClient extends JProApplication {
 		this.stage = stage;
 		System.out.println("Welcome to Anagrams!");
 
+		newPlayerClip = AudioClip.getAudioClip(newPlayerSound, stage);
 		for(Colors color : Colors.values()) {
 			colors.put(color, color.defaultCode);
 		}
 
 		createAndShowGUI();
+
 		if(connect() ) {
 			System.out.println("Connected to server on port " + port);
 			if(loginMenu == null) {
@@ -163,18 +169,43 @@ public class AnagramsClient extends JProApplication {
 		chatField.setPromptText("Type here to chat");
 		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
 		chatPanel.setBottom(chatField);
-		chatPanel.setPrefHeight(100);
+	//	chatPanel.setPrefHeight(100);
 		chatScrollPane.setFitToHeight(true);
 		chatScrollPane.setFitToWidth(true);
 		chatScrollPane.setContent(chatBox);
+
+	/*	Clipboard clipboard = Clipboard.getSystemClipboard();
+		ClipboardContent content = new ClipboardContent();
+		ContextMenu contextMenu = new ContextMenu();
+		MenuItem copyItem = new MenuItem("Copy");
+		copyItem.setOnAction(e -> {
+			content.putString(chatBox.getSelectedText());
+			clipboard.setContent(content);
+		});
+		MenuItem selectAllItem = new MenuItem("Select All");
+		selectAllItem.setOnAction(e -> chatBox.selectAll());
+		contextMenu.getItems().addAll(copyItem, selectAllItem);*/
+		chatBox.appendText("Welcome to Anagrams version " + version + "!");
+
 		chatPanel.setCenter(chatScrollPane);
 
 		//main layout
 		borderPane.setTop(controlPanel);
 		borderPane.setCenter(gamesScrollPane);
 		borderPane.setRight(playersPanel);
-		borderPane.setBottom(chatPanel);
+		borderPane.setMinHeight(300);
+
+		splitPane.setOrientation(Orientation.VERTICAL);
+		splitPane.getItems().addAll(borderPane, chatPanel);
+		splitPane.setDividerPosition(0, 0.9);
+
+		AnchorPane.setRightAnchor(splitPane, 0.0);
+		AnchorPane.setBottomAnchor(splitPane, 0.0);
+		AnchorPane.setLeftAnchor(splitPane, 0.0);
+		AnchorPane.setTopAnchor(splitPane, 0.0);
+
         borderPane.setDisable(true);
+        splitPane.setDisable(true);
 
         anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
 		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -283,11 +314,10 @@ public class AnagramsClient extends JProApplication {
 		setColors();
 
 		settingsMenu = new SettingsMenu(this);
-
 		messageLoop = new Thread(this::readMessageLoop);
 		messageLoop.start();
-
 		borderPane.setDisable(false);
+		splitPane.setDisable(false);
 	}
 
 
@@ -453,12 +483,12 @@ public class AnagramsClient extends JProApplication {
 	void addPlayer(String newPlayerName) {
 
 		if(prefs.getBoolean("play_sounds", true)) {
-			new AudioClip(this.getClass().getResource("/new player sound.wav").toExternalForm()).play();
+			newPlayerClip.play();
 		}
 
 		Label newLabel = new Label(newPlayerName);
 		playersList.put(newPlayerName, newLabel);
-		playersListPane.getChildren().add(newLabel);
+		playersListPane.getChildren().add(newPlayerName.equals(username) ? 0 : 1, newLabel);
 
 		newLabel.setOnMouseClicked(click -> {
 			playerPane.displayPlayerInfo(newPlayerName);
@@ -536,8 +566,7 @@ public class AnagramsClient extends JProApplication {
 							case "logoffplayer" -> removePlayer(tokens[1]);
 							case "chat" -> {
 								String msg = finalLine.replaceFirst("chat ", "");
-								if (chatBox.getText().isEmpty()) chatBox.appendText(msg);
-								else chatBox.appendText("\n" + msg);
+								chatBox.appendText("\n" + msg);
 							}
 							case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
 									tokens[7], tokens[8], tokens[9], tokens[10]);
@@ -580,7 +609,7 @@ public class AnagramsClient extends JProApplication {
 													case "makeword" -> gameWindow.makeWord(tokens[2], tokens[3], tokens[4]);
 													case "steal" -> gameWindow.doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
 													case "abandonseat" -> gameWindow.removePlayer(tokens[2]);
-													case "gamechat" -> gameWindow.handleChat((finalLine.split(tokens[1]))[1]);
+													case "gamechat" -> gameWindow.handleChat(finalLine.replaceFirst("gamechat " + tokens[1] + " ", ""));
 													case "removeword" -> gameWindow.removeWord(tokens[2], tokens[3]);
 													case "gamestate" -> gameWindow.showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
 													case "plays" -> gameWindow.showPlays(finalLine);

@@ -10,6 +10,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 
 /**
  * A menu for choosing preferences and saving them for future use
@@ -21,7 +22,9 @@ class SettingsMenu extends PopWindow {
     private final AnagramsClient client;
     private final CheckBox soundChooser = new CheckBox("Play sounds");
     private final ComboBox<String> lexiconChooser = new ComboBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
+    private EnumMap<AnagramsClient.Colors, String> oldColors;
     private final EnumMap<AnagramsClient.Colors, String> newColors;
+    private final HashMap<AnagramsClient.Colors, SettingsMenu.ColorChooser> colorChoosers = new HashMap<>();
 
     /**
      *
@@ -31,8 +34,8 @@ class SettingsMenu extends PopWindow {
         super(client.stack);
         this.client = client;
 
+        oldColors = client.colors.clone();
         newColors = client.colors.clone();
-
 
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(3));
@@ -65,9 +68,10 @@ class SettingsMenu extends PopWindow {
         grid.add(CancelButton, 1, 6);
         grid.add(ApplyButton, 2, 6);
 
-        OKButton.setOnAction(e -> {applyChanges(); savePreferences(); hide(); });
-        CancelButton.setOnAction(e -> hide());
-        ApplyButton.setOnAction(e -> {applyChanges(); savePreferences();});
+        OKButton.setOnAction(e -> { applyChanges(); savePreferences(); hide(); });
+        CancelButton.setOnAction(e -> {revertChanges(); hide();});
+        ApplyButton.setOnAction(e -> applyChanges());
+        closeButton.setOnAction(e -> {revertChanges(); hide();});
 
         setContents(grid);
         setMaxSize(310,320);
@@ -77,16 +81,18 @@ class SettingsMenu extends PopWindow {
     }
 
     /**
-     *
+     * Instructs client to apply any requested color changes.
      */
 
     private void applyChanges() {
-        client.colors = newColors;
+        for(AnagramsClient.Colors color : newColors.keySet()) {
+            client.colors.put(color, newColors.get(color));
+        }
         client.setColors();
     }
 
     /**
-     *
+     * Saves current color configuration to preferences file.
      */
 
     private void savePreferences() {
@@ -95,6 +101,20 @@ class SettingsMenu extends PopWindow {
         for(AnagramsClient.Colors color : client.colors.keySet()) {
             client.prefs.put(color.key, client.colors.get(color));
         }
+    }
+
+    /**
+     * Restores colors to previous values.
+     */
+
+    private void revertChanges() {
+        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
+        for (AnagramsClient.Colors color : AnagramsClient.Colors.values()) {
+            client.colors.put(color, client.prefs.get(color.key, color.defaultCode));
+            colorChoosers.get(color).setColor(client.colors.get(color));
+        }
+        client.setColors();
     }
 
     /**
@@ -122,13 +142,14 @@ class SettingsMenu extends PopWindow {
 
         ColorChooser(AnagramsClient.Colors color) {
             this.color = color;
-            setColors(client.colors.get(color));
+            setColor(client.colors.get(color));
+            colorChoosers.put(color, this);
 
             getColumnConstraints().add(new ColumnConstraints(110));
             setHgap(4);
 
             comboBox.setColor(colorCode);
-            comboBox.setOnAction(e -> setColors(comboBox.getSelectionModel().getSelectedItem()));
+            comboBox.setOnAction(e -> setColor(comboBox.getSelectionModel().getSelectedItem()));
 
             add(new Label(color.display), 0, 0);
             add(new ColorPane(), 1, 0);
@@ -138,7 +159,7 @@ class SettingsMenu extends PopWindow {
         /**
          */
 
-        public void setColors(String colorCode) {
+        public void setColor(String colorCode) {
 
             R = Integer.valueOf(colorCode.substring(1, 3), 16);
             G = Integer.valueOf(colorCode.substring(3, 5), 16);
@@ -150,7 +171,6 @@ class SettingsMenu extends PopWindow {
 
             this.colorCode = colorCode;
             newColors.put(color, colorCode);
-
         }
 
         /**

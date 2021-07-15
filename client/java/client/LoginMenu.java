@@ -345,8 +345,7 @@ public class LoginMenu extends PopWindow {
             Platform.runLater(() -> dialog.show(true));
         }
 
-        if ("ok login".equals(response)) {
-            System.out.println(username + " has just logged in.");
+        if (response.equals("ok login")) {
             client.login(username);
             client.guest = guest;
             hide();
