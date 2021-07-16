@@ -236,12 +236,6 @@ public class Game {
 			//inform everyone of the newPlayer
 			notifyEveryone("takeseat " + gameID + " " + newPlayer.getUsername());
 		}
-		else {
-			for(String gameState : gameLog) {
-				newPlayer.send("gamelog " + gameID + " " + gameState);
-			}
-		}
-
 	}
 
 	/**
@@ -311,14 +305,7 @@ public class Game {
 				}
 			}
 		}
-		else {
-			for (String gameState : gameLog) {
-				newWatcher.send("gamelog " + gameID + " " + gameState);
-			}
-		}
-
 		watcherList.put(newWatcher.getUsername(), newWatcher);
-
 	}
 
 	
