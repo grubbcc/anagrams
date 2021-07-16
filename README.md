@@ -67,7 +67,6 @@ Version 0.9.4 - June 12, 2020
     • Game window can now be maximized and minimized.
     • Added informative tooltips to game menu.
     • Game window now displays game parameters.
-    • Game notifications are now displayed in the main screen.
     • Tile size automatically adjusts according when panel is full.
 
 Version 0.9.3 - June 10, 2020
