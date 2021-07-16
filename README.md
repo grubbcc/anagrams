@@ -76,7 +76,8 @@ Version 0.9.3 - June 10, 2020
     • Added NWL18 definitions
     • Players may now select minimum word length of 4 or 5.
     • Game notifications are now displayed in the main screen.
-    • You can now resume a game after leaving or getting connected. The game will automatically delete if there is no activity after one minute.
+    • You can now resume a game after leaving or getting connected. The game will automatically delete itself
+      if there is no activity after one minute.
     • Improved robot loading speed
 
 Version 0.9.2 - June 5, 2020
