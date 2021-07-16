@@ -6,8 +6,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.css.PseudoClass;
+import javafx.css.Styleable;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -15,7 +15,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.media.AudioClip;
+import one.jpro.sound.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
@@ -53,9 +53,12 @@ public class GameWindow extends PopWindow {
     private final LinkedHashSet<GamePanel> gamePanels = new LinkedHashSet<>();
     private final GridPane gameGrid = new GridPane();
     private final BorderPane borderPane = new BorderPane();
+    private final SplitPane splitPane = new SplitPane();
     private final GamePanel homePanel = new GamePanel();
     private final WordExplorer explorer;
     private final TilePanel tilePanel = new TilePanel();
+    private final String wordSound = getClass().getResource("/steal sound.wav").toExternalForm();
+    private final AudioClip wordClip;
     private final Image blackRobot = new Image(getClass().getResourceAsStream("/black robot.png"));
     private final Image whiteRobot = new Image(getClass().getResourceAsStream("/white robot.png"));
     private final ImageView robotImage = new ImageView(blackRobot);
@@ -75,9 +78,8 @@ public class GameWindow extends PopWindow {
     private final HashMap<String, GamePanel> players = new HashMap<>();
     boolean gameOver = false;
 
-    //fields for analysis
+    //fields for postgame analysis
     ArrayList<String[]> gameLog;
-    HashSet<String> allWords = new HashSet<>();
     private int position;
     private int maxPosition;
 
@@ -99,6 +101,7 @@ public class GameWindow extends PopWindow {
         this.allowsChat = allowsChat;
         this.isWatcher = isWatcher;
 
+        wordClip = AudioClip.getAudioClip(wordSound, client.stage);
         client.gameWindows.put(gameID, this);
         wordDisplay = new WordDisplay();
 
@@ -184,6 +187,26 @@ public class GameWindow extends PopWindow {
         gameGrid.add(new GamePanel(2), 2, 1);
         gameGrid.add(homePanel, 0, 2, 3, 1);
 
+        //main layout
+        borderPane.setTop(controlPanel);
+        borderPane.setCenter(gameGrid);
+        borderPane.setId("game-background");
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.getItems().add(borderPane);
+
+     /*       for (Node divider : splitPane.lookupAll(".split-pane-divider")) {
+                divider.setMouseTransparent(true);
+                divider.setPickOnBounds(true);
+            }*/
+        splitPane.addEventFilter(MouseEvent.ANY, event -> {
+            if (event.getTarget() instanceof Styleable) {
+                if (!((Styleable) event.getTarget()).getStyleClass().contains("split-pane-divider")) {
+                     Event.fireEvent(this, event);
+                }
+
+            }
+        });
+
         //chat panel
         BorderPane chatPanel = new BorderPane();
         if (allowsChat) {
@@ -200,17 +223,16 @@ public class GameWindow extends PopWindow {
             chatScrollPane.setFitToWidth(true);
             chatScrollPane.setContent(chatBox);
             chatPanel.setMaxHeight(100);
+            chatPanel.setMinHeight(0);
             chatPanel.setCenter(chatScrollPane);
             chatPanel.setBottom(chatField);
-            borderPane.setBottom(chatPanel);
+            chatBox.addEventFilter(MouseEvent.ANY, Event::consume);
+            splitPane.getItems().add(chatPanel);
+            splitPane.setDividerPosition(0, 0.85);
         }
 
-        //main layout
-        borderPane.setTop(controlPanel);
-        borderPane.setCenter(gameGrid);
-        borderPane.setId("game-background");
         this.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
-        setContents(borderPane);
+        setContents(splitPane);
         setTitle("Game " + gameID);
 
         setPrefSize(1000,674);
@@ -383,13 +405,10 @@ public class GameWindow extends PopWindow {
             scrollPane.prefViewportHeightProperty().bind(heightProperty());
 
             //Prevent scrollPane from capturing drag events
-            EventHandler<MouseEvent> filter = event -> {
-                if (wordPane.equals(event.getTarget())) {
-                    Event.fireEvent(getParent(), event);
-                    event.consume();
-                }
-            };
-            wordPane.addEventFilter(MouseEvent.ANY, filter);
+            wordPane.addEventFilter(MouseEvent.ANY, event ->
+                Event.fireEvent(this, event)
+            );
+
             wordPane.setAlignment(Pos.TOP_CENTER);
             wordPane.hgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 6 : 12, savingSpace));
             wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 6, savingSpace));
@@ -418,7 +437,7 @@ public class GameWindow extends PopWindow {
          * @param newPlayer The name of the player to be added.
          */
 
-        public void takeSeat(String newPlayer) {
+        public GamePanel takeSeat(String newPlayer) {
             pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), false);
             this.playerName = newPlayer;
             players.put(newPlayer, this);
@@ -435,6 +454,7 @@ public class GameWindow extends PopWindow {
 
             widthProperty().addListener(listener);
             heightProperty().addListener(listener);
+            return this;
         }
 
         /**
@@ -829,29 +849,31 @@ public class GameWindow extends PopWindow {
      * Otherwise, the player takes the next available seat, if there is one.
      *
      * @param newPlayerName the name of the player to be added.
+     * @return the GamePanel to which the player has been added or null if
+     *         none is available
      */
 
-    public void addPlayer(String newPlayerName) {
+    public GamePanel addPlayer(String newPlayerName) {
 
         //current player is assigned homePanel
         if (newPlayerName.equals(username)) {
-            homePanel.takeSeat(newPlayerName);
+            return homePanel.takeSeat(newPlayerName);
         }
 
         //player reenters game after leaving
         else if(players.containsKey(newPlayerName)) {
-            players.get(newPlayerName).takeSeat(newPlayerName);
+            return players.get(newPlayerName).takeSeat(newPlayerName);
         }
 
         //new player is assigned the first available seat
         else {
             for (GamePanel panel : gamePanels) {
                 if (panel.isAvailable && panel.column >= 0) {
-                    panel.takeSeat(newPlayerName);
-                    return;
+                    return panel.takeSeat(newPlayerName);
                 }
             }
         }
+        return null;
     }
 
     /**
@@ -875,7 +897,7 @@ public class GameWindow extends PopWindow {
         players.get(playerName).addWord(wordToAdd);
 
         if (client.prefs.getBoolean("play_sounds", true))
-            new AudioClip(this.getClass().getResource("/steal sound.wav").toExternalForm()).play();
+            wordClip.play();
 
         setTiles(nextTiles);
     }
@@ -949,7 +971,7 @@ public class GameWindow extends PopWindow {
         forwardTenButton.setOnAction(e -> {position = Math.min(position + 10, maxPosition); showPosition(gameLog.get(position));});
         forwardToEndButton.setOnAction(e -> {position = maxPosition; showPosition(gameLog.get(position));});
 
-        showPosition(gameLog.get(position));
+        Platform.runLater(() -> showPosition(gameLog.get(position)));
 
     }
 
@@ -959,7 +981,6 @@ public class GameWindow extends PopWindow {
 
     void showPosition(String[] tokens) {
 
-        allWords.clear();
         for (GamePanel panel : gamePanels)
             panel.reset();
 
@@ -970,13 +991,9 @@ public class GameWindow extends PopWindow {
         if (tokens.length > 2) {
             for (int i = 2; i < tokens.length; i += 2) {
                 String playerName = tokens[i];
-                addPlayer(playerName);
+                GamePanel panel = addPlayer(playerName);
                 String[] words = tokens[i + 1].substring(1, tokens[i + 1].length() - 1).split(",");
-                Platform.runLater(() -> players.get(playerName).addWords(words));
-                for(String word : words) {
-                    if(!word.isEmpty())
-                        allWords.add(word);
-                }
+                panel.addWords(words);
             }
         }
         allocateSpace();
@@ -1019,6 +1036,7 @@ public class GameWindow extends PopWindow {
             setViewOrder(Double.NEGATIVE_INFINITY);
             AnchorPane.setLeftAnchor(this, 800.0);
             AnchorPane.setTopAnchor(this, 80.0);
+
 
             poolPanel.infoPane.getChildren().remove(poolPanel.playerScoreLabel);
             stealsPanel.infoPane.getChildren().remove(stealsPanel.playerScoreLabel);
