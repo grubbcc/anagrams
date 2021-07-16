@@ -2,18 +2,18 @@ Update log
 
 Version 0.9.8 - June 25, 2021
 
-* Enabled account creation.
-* Enabled personalized profile creation with markdown capability.
-* Expanded login menu to include registration and login with password options.
-* Fixed bug that would delay logoff recognition.
+    • Enabled account creation (SSL encrypted) and password login.
+    • Enabled personalized profile creation using markdown syntax.
+    * Fixed bug that would delay logoff recognition.
+    * Chat panel is now resizable.
+    * Migrated to faster server.
 
 Version 0.9.7 - February 15, 2021
 
-* Enabled online play(!)
-* Migrated to JavaFX for graphical improvement.
-* Added tree visualization widget.
-* Fixed a bug that would cause game panels to disappear prematurely.
-
+    • Enabled online play(finall!)
+    • Migrated to JavaFX for improved graphical improvement.
+    • Added tree visualization widget.
+    • Fixed a bug that would cause game panels to disappear prematurely.
 
 Version 0.9.6 - July 6, 2020
 
