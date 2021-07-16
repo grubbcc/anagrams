@@ -8,7 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import one.jpro.sound.*;               //figure thsi out
+import one.jpro.sound.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -488,7 +488,7 @@ public class AnagramsClient extends JProApplication {
 
 		Label newLabel = new Label(newPlayerName);
 		playersList.put(newPlayerName, newLabel);
-		playersListPane.getChildren().add(newPlayerName.equals(username) ? 0 : 1, newLabel);
+		playersListPane.getChildren().add(newLabel);
 
 		newLabel.setOnMouseClicked(click -> {
 			playerPane.displayPlayerInfo(newPlayerName);
@@ -547,9 +547,9 @@ public class AnagramsClient extends JProApplication {
 				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-	/*				if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
+					if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
 						System.out.println("command received: " + line);
-					}*/
+					}
 
 					String finalLine = line;
 
