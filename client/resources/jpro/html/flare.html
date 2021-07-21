@@ -119,7 +119,7 @@
 
     document.getElementById('steals').onclick = function () {
         var text = g.selectAll("text").text(function() {
-            return d3.select(this).attr("tooltip");
+            return d3.select(this).attr("shorttip");
         });
     }
 
@@ -233,7 +233,7 @@
         var link = g.selectAll(".link").data(root.descendants().slice(1)).enter()
         link.append("path")
             .attr("class", "link")
-            .attr("id", d=> d.data.tooltip)
+            .attr("id", d=> d.data.shorttip)
             .attr("d", function(d) {
                     return "M" + project(d.x, d.y)
                          + "C" + project(d.x, (d.y + d.parent.y) / 2)
@@ -255,12 +255,12 @@
             .style("text-anchor", d => d.x < 180 === !d.children ? "start" : "end")
             .attr("transform", d => "rotate(" + (d.x < 180 ? d.x - 90 : d.x + 90) + ")")
             .attr("word", d => d.id.substring(d.id.lastIndexOf(".") + 1))
-            .attr("tooltip", d => d.depth == 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.tooltip)
+            .attr("shorttip", d => d.depth == 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.shorttip)
             .text(function(d) {
                 if(document.getElementById("words").checked || d.depth == 0)
                     return d.id.substring(d.id.lastIndexOf(".") + 1);
                 else
-                    return d.data.tooltip;
+                    return d.data.shorttip;
             });
     }
 
