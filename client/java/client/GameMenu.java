@@ -28,20 +28,20 @@ class GameMenu extends PopWindow {
     private final String[] speedChoices = {"slow", "medium", "fast"};
     private final String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
 
-    private final ComboBox<String> playersSelector = new ComboBox<>(FXCollections.observableArrayList(numPlayersChoices));
-    private final ComboBox<String> lengthsSelector = new ComboBox<>(FXCollections.observableArrayList(minLengthChoices));
-    private final ComboBox<String> setsSelector = new ComboBox<>(FXCollections.observableArrayList(numSetsChoices));
-    private final ComboBox<String> blanksSelector = new ComboBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
-    private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
-    private final ComboBox<String> speedSelector = new ComboBox<>(FXCollections.observableArrayList(speedChoices));
-    private final ComboBox<String> skillLevelSelector = new ComboBox<>(FXCollections.observableArrayList(skillLevelChoices));
+    private final ChoiceBox<String> playersSelector = new ChoiceBox<>(FXCollections.observableArrayList(numPlayersChoices));
+    private final ChoiceBox<String> lengthsSelector = new ChoiceBox<>(FXCollections.observableArrayList(minLengthChoices));
+    private final ChoiceBox<String> setsSelector = new ChoiceBox<>(FXCollections.observableArrayList(numSetsChoices));
+    private final ChoiceBox<String> blanksSelector = new ChoiceBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
+    private final ChoiceBox<String> lexiconSelector = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
+    private final ChoiceBox<String> speedSelector = new ChoiceBox<>(FXCollections.observableArrayList(speedChoices));
+    private final ChoiceBox<String> skillLevelSelector = new ChoiceBox<>(FXCollections.observableArrayList(skillLevelChoices));
 
     private final CheckBox chatChooser = new CheckBox("Allow chatting");
     private final CheckBox watchersChooser = new CheckBox("Allow watchers");
     private final CheckBox robotChooser = new CheckBox("Add robot player");
     private final CheckBox defaultChooser = new CheckBox("Save as default");
 
-    private Button startButton = new Button("Start");
+    private final Button startButton = new Button("Start");
 
     /**
      *
@@ -162,7 +162,9 @@ class GameMenu extends PopWindow {
         String allowWatchers = watchersChooser.isSelected() + "";
         String addRobot = robotChooser.isSelected() + "";
 
+
         client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
+
 
         String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);

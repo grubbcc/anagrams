@@ -6,17 +6,20 @@ import java.util.LinkedHashMap;
 public class TreeNode {
 
     private final String word;
-    private final String tooltip;
+    final String shortTip;
+    final String longTip;
     private double prob;
+    private TreeNode parent;
     private final LinkedHashMap<String, TreeNode> children = new LinkedHashMap<>();
 
     /**
      *
      */
 
-    public TreeNode(String word, String tooltip) {
+    public TreeNode(String word, String shortTooltip, String longTooltip) {
         this.word = word;
-        this.tooltip = tooltip;
+        this.shortTip = shortTooltip;
+        this.longTip = longTooltip;
     }
 
     /**
@@ -28,13 +31,6 @@ public class TreeNode {
         return word;
     }
 
-    /**
-     *
-     */
-
-    public String getTooltip() {
-        return tooltip;
-    }
 
     /**
      *
@@ -50,6 +46,22 @@ public class TreeNode {
 
     public void setProb(double prob) {
         this.prob = prob;
+    }
+
+    /**
+     *
+     */
+
+    public void setParent(TreeNode parent) {
+        this.parent = parent;
+    }
+
+    /**
+     *
+     */
+
+    public TreeNode getParent() {
+        return parent;
     }
 
     /**

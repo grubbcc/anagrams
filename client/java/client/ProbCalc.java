@@ -8,7 +8,7 @@ import java.lang.Math;
 
 public class ProbCalc {
 
-    static int[] tileFrequencies = {27, 6, 6, 12, 36, 6, 9, 6, 27, 3, 3, 12, 6, 18, 24, 6, 3, 18, 12, 18, 12, 6, 6, 3, 6, 3};
+    private final static int[] tileFrequencies = {27, 6, 6, 12, 36, 6, 9, 6, 27, 3, 3, 12, 6, 18, 24, 6, 3, 18, 12, 18, 12, 6, 6, 3, 6, 3};
 
     /**
      *

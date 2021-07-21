@@ -89,6 +89,12 @@ public class LoginMenu extends PopWindow {
         confirmField.setPromptText("Confirm password");
         codeField.setPromptText("Enter code from email");
 
+        usernameField.getProperties().put("vkType", "text");
+        emailField.getProperties().put("vkType", "email");
+        passwordField.getProperties().put("vkType", "text");
+        confirmField.getProperties().put("vkType", "text");
+        codeField.getProperties().put("vkType", "numeric");
+
         warningLabel.setStyle("-fx-text-fill: red;");
 
         usernameField.setPrefWidth(300);

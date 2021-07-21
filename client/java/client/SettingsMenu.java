@@ -21,8 +21,7 @@ class SettingsMenu extends PopWindow {
 
     private final AnagramsClient client;
     private final CheckBox soundChooser = new CheckBox("Play sounds");
-    private final ComboBox<String> lexiconChooser = new ComboBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
-    private EnumMap<AnagramsClient.Colors, String> oldColors;
+    private final ChoiceBox<String> lexiconChooser = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
     private final EnumMap<AnagramsClient.Colors, String> newColors;
     private final HashMap<AnagramsClient.Colors, SettingsMenu.ColorChooser> colorChoosers = new HashMap<>();
 
@@ -34,7 +33,6 @@ class SettingsMenu extends PopWindow {
         super(client.stack);
         this.client = client;
 
-        oldColors = client.colors.clone();
         newColors = client.colors.clone();
 
         GridPane grid = new GridPane();

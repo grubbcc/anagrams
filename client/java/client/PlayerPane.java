@@ -112,7 +112,7 @@ class PlayerPane extends PopWindow {
         mdfx.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(this, event));
 
         setContents(contents);
-        setResizable(true);
+        makeResizable();
 
         infoPane = new PopWindow(client.anchor);
         infoPane.setTitle("Markdown Guide");
@@ -208,6 +208,8 @@ class PlayerPane extends PopWindow {
 
         TextArea editorPane = new TextArea();
         editorPane.setWrapText(true);
+        editorPane.getProperties().put("vkType", "text");
+
         editorPane.lengthProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.intValue() > oldValue.intValue()) {
                 if (editorPane.getText().length() >= 4000) {
@@ -215,9 +217,6 @@ class PlayerPane extends PopWindow {
                 }
             }
         });
-
-    //    editorPane.caretPositionProperty().addListener((observable, oldValue, newValue) -> {
-     //   });
 
         Button editBioButton = new Button("Change bio");
         Button confirmButton = new Button("Confirm changes");
@@ -241,6 +240,7 @@ class PlayerPane extends PopWindow {
             bioScrollPane.setContent(editorPane);
             buttonPanel.getChildren().clear();
             buttonPanel.getChildren().addAll(confirmButton, cancelButton, infoIcon);
+            Platform.runLater(editorPane::requestFocus);
         });
         confirmButton.setOnAction(e -> {
             client.prefs.put("bio", editorPane.getText());

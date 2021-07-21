@@ -166,7 +166,9 @@ public class AnagramsClient extends JProApplication {
 		//chat panel
 		chatBox.setEditable(false);
 		TextField chatField = new TextField();
+
 		chatField.setPromptText("Type here to chat");
+		chatField.getProperties().put("vkType", "text");
 		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
 		chatPanel.setBottom(chatField);
 	//	chatPanel.setPrefHeight(100);
@@ -219,15 +221,28 @@ public class AnagramsClient extends JProApplication {
 			scene = new Scene(stack);
 		}
 		catch(IllegalArgumentException e) {
-			System.out.println("Scene already exists on account of server restart");
-			scene = stack.getScene();
+			getWebAPI().executeScript("window.location.reload(false)");
+			return;
 		}
 		scene.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
 
 		//main stage
 		stage.setTitle("Anagrams");
-		stage.setMinWidth(792);
-		stage.setMinHeight(400);
+
+		if(getWebAPI().isMobile()) {
+			getWebAPI().registerJavaFunction("resize", newSize ->
+				stage.setHeight(Integer.parseInt(newSize)));
+			getWebAPI().executeScript(
+			"window.onresize = function() {" +
+					"jpro.resize(window.innerHeight);" +
+					"console.log('resize');" +
+				"};"
+			);
+		}
+		else {
+			stage.setMinHeight(792);
+			stage.setMinHeight(400);
+		}
 		stage.setScene(scene);
 
 		setColors();
@@ -323,7 +338,7 @@ public class AnagramsClient extends JProApplication {
 
 
 	/**
-	 * Displays information about games and tools for joining
+	 * Displays information about a game and tools for joining
 	 */
 
 	class GamePane extends GridPane {
@@ -386,8 +401,9 @@ public class AnagramsClient extends JProApplication {
                 if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
                     if(players.size() < maxPlayers || gameOver && allowWatchers) {
 
-                        GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, gameOver);
-                        gameWindows.put(gameID, newGame);
+                    	gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, gameOver));
+
+
                         if(gameOver) {
                             send("watchgame " + gameID);
                         }
@@ -405,8 +421,7 @@ public class AnagramsClient extends JProApplication {
 				watchButton.setOnAction(e -> {
                     if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
                         if(!players.contains(username) || gameOver) {
-                            GameWindow newGame = new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true);
-                            gameWindows.put(gameID, newGame);
+                            gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true));
                             send("watchgame " + gameID);
                         }
                     }
@@ -547,9 +562,9 @@ public class AnagramsClient extends JProApplication {
 				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-					if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
+/*					if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
 						System.out.println("command received: " + line);
-					}
+					}*/
 
 					String finalLine = line;
 
@@ -628,7 +643,6 @@ public class AnagramsClient extends JProApplication {
 		}
 		catch (Exception ex) {
      //       ex.printStackTrace();
-			System.out.println("The connection between client and host has been lost.");
 			if(stage.isShowing()) {
 				if(connected) {
 					logOut();

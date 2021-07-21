@@ -30,7 +30,7 @@ public class WordExplorer extends PopWindow {
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
     private final String[] lexicons = {"CSW19", "NWL20"};
-    private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
+    private final ChoiceBox<String> lexiconSelector = new ChoiceBox<>(FXCollections.observableArrayList(lexicons));
 
     private final TextArea messagePane = new TextArea();
     private final HBox controlPanel = new HBox();
@@ -131,7 +131,7 @@ public class WordExplorer extends PopWindow {
         setStyle(explorerStyle);
         setContents(mainPanel);
         setVisible(false);
-        setResizable(true);
+        makeResizable();
         setPrefSize(345, 415);
     }
 
@@ -168,7 +168,7 @@ public class WordExplorer extends PopWindow {
         Matcher m = Pattern.compile("\"id\": \"([A-z]+)").matcher(nodes[0]);
         m.find();
         String rootWord = m.group(1);
-        rootNode = new TreeNode(rootWord, "");
+        rootNode = new TreeNode(rootWord, "", "");
         rootNode.setProb(1);
 
         for(int i = 1; i < nodes.length; i++) {
@@ -181,9 +181,10 @@ public class WordExplorer extends PopWindow {
 
             Collections.addAll(id, matches[0].split("\\."));
             id.removeFirst();
-            String tooltip = matches[1];
+            String shortTip = matches[1];
+            String longTip = matches[2];
 
-            TreeNode child = new TreeNode(id.removeLast(), tooltip);
+            TreeNode child = new TreeNode(id.removeLast(), shortTip, longTip);
             addNode(rootNode, child, id);
         }
 
@@ -225,6 +226,7 @@ public class WordExplorer extends PopWindow {
     private void addNode(TreeNode parent, TreeNode child, LinkedList<String>address) {
         if(address.isEmpty()) {
             parent.addChild(child.toString(), child);
+            child.setParent(parent);
         }
         else {
             parent = parent.getChild(address.removeFirst());
@@ -282,20 +284,20 @@ public class WordExplorer extends PopWindow {
             super.updateItem(item, empty);
 
             if(!empty) {
+
                 setText(item.toString());
                 doProbabilities(item);
-                Tooltip tooltip = new Tooltip(item.getTooltip() + "   " + round(100*item.getProb(), 1) + "%");
-                tooltip.setShowDelay(Duration.seconds(0.5));
-                setTooltip(tooltip);
+                if(item.getParent() != null ) {
+                    Tooltip tooltip = new Tooltip(item.longTip + "   " + round(100 * item.getProb(), 1) + "%");
+                    tooltip.setShowDelay(Duration.seconds(0.5));
+                    setTooltip(tooltip);
+                }
+
                 setStyle("-cell-background: hsb(0, " + round(100*item.getProb(), 0) + "%, 100%);");
 
-                if(item.equals(rootNode)) {
-                    setTooltip(null);
-                }
             }
             else {
                 setText(null);
-                setTooltip(null);
                 setStyle("-cell-background: white;");
             }
         }
@@ -350,10 +352,10 @@ public class WordExplorer extends PopWindow {
         double norm = 0;
 
         for(TreeNode child : parent.getChildren()) {
-            norm += ProbCalc.getProbability(child.getTooltip());
+            norm += ProbCalc.getProbability(child.shortTip);
         }
         for(TreeNode child : parent.getChildren()) {
-            child.setProb(parent.getProb()*ProbCalc.getProbability(child.getTooltip())/norm);
+            child.setProb(parent.getProb()*ProbCalc.getProbability(child.shortTip)/norm);
         }
     }
 
@@ -412,4 +414,5 @@ public class WordExplorer extends PopWindow {
         int scale = (int) Math.pow(10, precision);
         return (double) Math.round(value * scale) / scale;
     }
+
 }
