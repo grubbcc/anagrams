@@ -176,7 +176,7 @@ public class Game {
 	
 	
 	/**
-	* Stops the gameTimer and sends a notification to the players and watchers the game is over
+	* Stops the gameTimer and sends a notification to the players and watchers that the game is over
 	*/
 	
 	synchronized void endGame() {
@@ -368,7 +368,7 @@ public class Game {
 	* formed and awarded to the longPlayer, the tilePool is updated, and the players and 
 	* watchers are informed.
 	*
-	* @param	shortPlayer The owner of the word that is trying to be stolen
+	* @param	shortPlayer	The owner of the word that is trying to be stolen
 	* @param	shortWord 	The word that the is trying to be stolen.
 	* @param	longPlayer	The player that is attempting the steal.
 	* @param	longWord	The word that the longPlayer is attempting to form.
@@ -578,7 +578,9 @@ public class Game {
 	}
 
 	/**
-	*
+	* Adds a String descriptive of the current game state, e.g.
+	 * 257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]
+	 * to the gameLog.
 	*/
 
 	private void saveState() {
@@ -599,7 +601,7 @@ public class Game {
 	}
 	
 	/**
-	*
+	* @return the names of all players and Robots that are either active or have at least one word.
 	*/
 	
 	synchronized public Set<String> getPlayerList() {
@@ -613,7 +615,7 @@ public class Game {
 	}
 	
 	/**
-	*
+	* @return a set of all players who have left the game but still have at least one word.
 	*/
 	
 	public Set<String> getInactivePlayers() {
@@ -625,7 +627,9 @@ public class Game {
 	}
 
 	/**
-	*
+	 * @return A semantically-ordered String containing all active players and Robots with or without words
+	 * as well as inactive players with words, e.g.
+	 * player1 [HELLO, WORLD] player2 []
 	*/
 
 	private String getFormattedWordList() {

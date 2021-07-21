@@ -130,8 +130,7 @@ public class WordTree {
 
 	public void generateJSON(String prefix, String tooltip, TreeNode node) {
 
-//		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"tooltip\": \"" + tooltip + "\", \"def\": \"" + trie.getDefinition(node.toString()) + "\"},");
-		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"tooltip\": \"" + tooltip + "\"},");
+		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"shorttip\": \"" + tooltip + "\", \"longtip\": \"" + node.getTooltip() + "\"},");
 		for(TreeNode child : node.getChildren()) {
 			String nextTooltip = child.getTooltip();
 			for(char c : node.getTooltip().toCharArray()) {
