@@ -4,11 +4,14 @@ import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
 
@@ -30,7 +33,7 @@ public class WordExplorer extends PopWindow {
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
     private final String[] lexicons = {"CSW19", "NWL20"};
-    private final ChoiceBox<String> lexiconSelector = new ChoiceBox<>(FXCollections.observableArrayList(lexicons));
+    private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
     private final TextArea messagePane = new TextArea();
     private final HBox controlPanel = new HBox();
@@ -58,6 +61,7 @@ public class WordExplorer extends PopWindow {
         AnchorPane.setTopAnchor(this, 200.0);
 
         setLexicon(lexicon);
+        if(client.getWebAPI().isMobile()) getTransforms().add(new Scale(1.35, 1.35));
 
         //Top panel
         textField.setOnAction(e -> {
@@ -124,12 +128,36 @@ public class WordExplorer extends PopWindow {
         //Window
         BorderPane mainPanel = new BorderPane();
         mainPanel.setTop(controlPanel);
-        mainPanel.setCenter(treePanel);
-        mainPanel.setBottom(messagePanel);
+
+        if(client.getWebAPI().isMobile()) {
+            MenuButton saveListButton = new MenuButton("Save List");
+            saveListButton.getItems().addAll(textOption, imageOption);
+            saveListButton.setPopupSide(Side.TOP);
+            AnchorPane anchor = new AnchorPane(treePanel, saveListButton);
+            mainPanel.setCenter(anchor);
+
+            anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
+            anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            AnchorPane.setTopAnchor(treePanel, 0.0);
+            AnchorPane.setRightAnchor(treePanel, 0.0);
+            AnchorPane.setBottomAnchor(treePanel, 0.0);
+            AnchorPane.setLeftAnchor(treePanel, 0.0);
+
+            AnchorPane.setRightAnchor(saveListButton, 15.0);
+            AnchorPane.setBottomAnchor(saveListButton, 15.0);
+        }
+        else {
+            mainPanel.setCenter(treePanel);
+        }
+        SplitPane splitPane = new SplitPane();
+        splitPane.setOrientation(Orientation.VERTICAL);
+        splitPane.getItems().addAll(mainPanel, messagePanel);
+        splitPane.setDividerPosition(0, 0.75);
         String explorerStyle = getClass().getResource("/explorer.css").toExternalForm();
         getStylesheets().add(explorerStyle);
         setStyle(explorerStyle);
-        setContents(mainPanel);
+        setContents(splitPane);
+
         setVisible(false);
         makeResizable();
         setPrefSize(345, 415);

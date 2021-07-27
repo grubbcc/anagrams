@@ -3,7 +3,6 @@ package client;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -192,8 +191,7 @@ public class PopWindow extends BorderPane {
 
     public void makeResizable() {
         this.resizable = true;
-        if(resizable)
-            DragResizer.makeResizable(this);
+        DragResizer.makeResizable(this);
     }
 
     /**

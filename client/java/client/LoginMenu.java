@@ -12,6 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.transform.Scale;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -25,7 +26,8 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
- *
+ * Pop-up window used for registering a new account, logging in as a registered
+ * user, or logging in as a guest.
  *
  */
 
@@ -74,6 +76,8 @@ public class LoginMenu extends PopWindow {
     public LoginMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
+
+        if(client.getWebAPI().isMobile()) {this.getTransforms().add(new Scale(1.25, 1.25));}
 
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -180,7 +184,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Action undergone when registerButton is activated.
      */
 
     private void registerAction(ActionEvent actionEvent) {
@@ -218,7 +222,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Restores menu to original settings, retaining entered username
      */
 
     private void cancelAction(ActionEvent actionEvent) {
@@ -306,6 +310,7 @@ public class LoginMenu extends PopWindow {
         grid.getChildren().removeAll(registerButton, loginButton, guestButton);
         grid.getChildren().addAll(passwordField, submitButton, cancelButton);
         usernameField.setDisable(true);
+        passwordField.requestFocus();
         passwordField.requestFocus();
     }
 
@@ -463,7 +468,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Prompts user to enter an email address for password recovery.
      */
 
     private void forgotPasswordAction(MouseEvent click) {
@@ -477,7 +482,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Prompts user to enter an email address for username recovery.
      */
 
     private void forgotUsernameAction(MouseEvent click) {
@@ -490,7 +495,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Attempts to send an confirmation email to the registrant.
      */
 
     private void sendUsername(ActionEvent actionEvent) {
@@ -538,7 +543,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Attempts to send an message containing the registered user's password to the associated email.
      */
 
     private void sendPassword(ActionEvent actionEvent) {
@@ -593,7 +598,8 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Checks if the email address has between 1 and 21 characters and does not start with "Robot".
+     * @return true if the username is valid, false otherwise
      */
 
     private static boolean isInvalidUsername(String username) {
@@ -601,7 +607,8 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * Checks if the contents of the emailField is a valid email address.
+     * @return true if the email address is valid, false otherwise
      */
 
     public static boolean isInvalidEmailAddress(String email) {

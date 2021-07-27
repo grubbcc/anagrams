@@ -8,6 +8,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ class SettingsMenu extends PopWindow {
 
         newColors = client.colors.clone();
 
+        if(client.getWebAPI().isMobile()) {getTransforms().add(new Scale(1.35, 1.35, 0, 0));}
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(3));
         grid.setHgap(3);

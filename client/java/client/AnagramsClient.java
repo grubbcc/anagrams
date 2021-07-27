@@ -5,8 +5,10 @@ import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 import one.jpro.sound.*;
 
@@ -54,7 +56,7 @@ public class AnagramsClient extends JProApplication {
 	private final PlayerPane playerPane = new PlayerPane(this);
 
 	private SettingsMenu settingsMenu;
-	final WordExplorer explorer = new WordExplorer(null, this);
+	WordExplorer explorer;
 	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
 	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
 	private final HashMap<String, Label> playersList = new HashMap<>();
@@ -138,6 +140,7 @@ public class AnagramsClient extends JProApplication {
 		createGameButton.setPrefHeight(39);
 
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
+
 		Button settingsButton = new Button("Settings", new ImageView("/settings.png"));
 		settingsButton.setPrefSize(143, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
@@ -206,15 +209,19 @@ public class AnagramsClient extends JProApplication {
 		AnchorPane.setLeftAnchor(splitPane, 0.0);
 		AnchorPane.setTopAnchor(splitPane, 0.0);
 
+	/*	ImageView fullScreenIcon = new ImageView(new Image("fullscreen.png"));
+		Button fullScreenButton = new Button("", fullScreenIcon);
+		fullScreenButton.setOnAction(e -> getWebAPI().executeScript("toggleFullscreen()"));
+		AnchorPane.setRightAnchor(fullScreenButton, 50.0);
+		AnchorPane.setBottomAnchor(fullScreenButton, 50.0);
+		if(getWebAPI().isMobile())
+			anchor.getChildren().add(fullScreenButton);*/
+
         borderPane.setDisable(true);
         splitPane.setDisable(true);
 
         anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
 		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        AnchorPane.setTopAnchor(borderPane, 0.0);
-		AnchorPane.setRightAnchor(borderPane, 0.0);
-		AnchorPane.setBottomAnchor(borderPane, 0.0);
-		AnchorPane.setLeftAnchor(borderPane, 0.0);
 
 		Scene scene;
 		try {
@@ -230,21 +237,15 @@ public class AnagramsClient extends JProApplication {
 		stage.setTitle("Anagrams");
 
 		if(getWebAPI().isMobile()) {
-			getWebAPI().registerJavaFunction("resize", newSize ->
-				stage.setHeight(Integer.parseInt(newSize)));
-			getWebAPI().executeScript(
-			"window.onresize = function() {" +
-					"jpro.resize(window.innerHeight);" +
-					"console.log('resize');" +
-				"};"
-			);
+			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
+				stage.setWidth(Double.parseDouble(newWidth));
+			});
+			getWebAPI().registerJavaFunction("setHeight", newHeight -> {
+				stage.setHeight(Double.parseDouble(newHeight));
+			});
 		}
-		else {
-			stage.setMinHeight(792);
-			stage.setMinHeight(400);
-		}
-		stage.setScene(scene);
 
+		stage.setScene(scene);
 		setColors();
 		stage.show();
 
@@ -322,7 +323,7 @@ public class AnagramsClient extends JProApplication {
 		this.username = username;
 
 		prefs = Preferences.userNodeForPackage(getClass()).node(username);
-
+		explorer = new WordExplorer(prefs.get("lexicon", "CSW19"), this);
 		//set user colors
 		for (Colors color : Colors.values())
 			colors.put(color, prefs.get(color.key, color.defaultCode));
@@ -331,6 +332,7 @@ public class AnagramsClient extends JProApplication {
 		settingsMenu = new SettingsMenu(this);
 		messageLoop = new Thread(this::readMessageLoop);
 		messageLoop.start();
+	//	getWebAPI().executeScript("jpro.resize(window.innerHeight);");
 		borderPane.setDisable(false);
 		splitPane.setDisable(false);
 	}
@@ -373,6 +375,8 @@ public class AnagramsClient extends JProApplication {
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
 			allowChat = Boolean.parseBoolean(allowsChat);
 			maxPlayers = Integer.parseInt(playerMax);
+
+			if(getWebAPI().isMobile()) getTransforms().add(new Scale(1.25, 1.25));
 
 			//labels
 			lexiconLabel.setText("Lexicon: " + lexicon);
@@ -526,11 +530,6 @@ public class AnagramsClient extends JProApplication {
 	}
 
 	/**
-	 *
-	 */
-
-
-	/**
 	 * Inform the server that the player is no longer an active part of the specified game.
 	 *
 	 * @param gameID the game to exit
@@ -562,7 +561,7 @@ public class AnagramsClient extends JProApplication {
 				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-/*					if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
+	/*				if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
 						System.out.println("command received: " + line);
 					}*/
 
