@@ -12,6 +12,11 @@
 	-chat-area-text:        blue;
 }
 
+.zoom {
+    -fx-scale-x: 1.35;
+    -fx-scale-y: 1.35;
+}
+
 .scroll-pane, .scroll-pane   .content, .scroll-pane .viewport {
     -fx-background-color: transparent;
 }
@@ -24,8 +29,12 @@
 }
 .combo-box {
     -fx-padding: 3;
-    -fx-pref-width: 118
+    -fx-pref-width: 118;
 }
+.combo-box .list-view, .combo-box .list-cell, .choice-box, .choice-box .open-button {
+    -fx-pref-width: 118;
+}
+
 .button {
     -fx-font-size: 12;
     -fx-font-weight: bold;
