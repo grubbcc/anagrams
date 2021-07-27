@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 
+<meta charset="UTF-8">
+
 <html>
+
+<script>
+const prefWidth = Math.round(Math.min(screen.width, screen.height)/0.7);
+const prefHeight = Math.round(Math.max(screen.width, screen.height)/0.7);
+
+var isMobile = prefWidth < 560/0.7;
+
+
+
+</script>
+
 <head>
     <title>Anagrams</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width initial-scale=0.7 maximum-scale=0.7">
 
     <link rel="stylesheet" type="text/css" href="/jpro/css/jpro-fullscreen.css">
 
@@ -15,9 +28,78 @@
 
 <body>
 
-<jpro-app id="jpro" href="/app/anagrams" fullscreen="true"></jpro-app>
+<jpro-app id="jpro" href="/app/anagrams" fullscreen="true" autofocusEnabled="true" ></jpro-app>
+
+<script>
+
+if(isMobile) {
+    console.log('mobile detected');
+    var jpro = document.getElementById('jpro');
+    jpro.setAttribute('fxwidth', 'true');
+
+
+    function toggleFullscreen() {
+
+        if (!document.fullscreenElement && !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement && !document.msFullscreenElement) {
+            if (jpro.requestFullscreen) {
+                jpro.requestFullscreen();
+            }
+            else if (jpro.msRequestFullscreen) {
+                jpro.msRequestFullscreen();
+            }
+            else if (jpro.mozRequestFullScreen) {
+                jpro.mozRequestFullScreen();
+            }
+            else if (jpro.webkitRequestFullscreen) {
+                jpro.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
+        }
+        else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            }
+            else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    }
+
+
+    function detectOrientation() {
+        return (screen.orientation || {}).type || screen.mozOrientation || screen.msOrientation;
+    }
+
+    var prevOrientation = detectOrientation();
+
+    const resizeObserver = new ResizeObserver(entries => {
+        var orientation = detectOrientation();
+
+        if(orientation == prevOrientation) { //keyboard detected
+            jpro.setHeight(window.innerHeight);
+        }
+        if(orientation == 'landscape-primary' || orientation == 'landscape-secondary') { //landscape
+            jpro.setWidth(prefHeight);
+            jpro.setHeight(prefHeight*window.innerHeight/window.innerWidth);
+        }
+        else { //portrait
+            jpro.setWidth(prefWidth);
+            jpro.setHeight(prefWidth*window.innerHeight/window.innerWidth);
+        }
+        prevOrientation = orientation;
+    });
+
+    resizeObserver.observe(document.body);
+}
+
+</script>
 
 </body>
 
 </html>
-
