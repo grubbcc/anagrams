@@ -62,7 +62,7 @@ public class LoginMenu extends PopWindow {
     private final String from;
     private final String password;
 
-    Session session = Session.getInstance(props, new Authenticator() {
+    private final Session session = Session.getInstance(props, new Authenticator() {
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
             return new PasswordAuthentication(from, password);
@@ -77,7 +77,9 @@ public class LoginMenu extends PopWindow {
         super(client.stack);
         this.client = client;
 
-        if(client.getWebAPI().isMobile()) {this.getTransforms().add(new Scale(1.25, 1.25));}
+        if(client.getWebAPI().isMobile()) {
+            setScaleX(1.45); setScaleY(1.45);
+        }
 
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");

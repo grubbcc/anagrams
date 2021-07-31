@@ -61,7 +61,11 @@ public class WordExplorer extends PopWindow {
         AnchorPane.setTopAnchor(this, 200.0);
 
         setLexicon(lexicon);
-        if(client.getWebAPI().isMobile()) getTransforms().add(new Scale(1.35, 1.35));
+
+        if(client.getWebAPI().isMobile()) {
+            setScaleX(1.35); setScaleY(1.35);
+            setStyle(".split-pane > .split-pane-divider {-fx-padding: 0 1.0em 0 1.0em;}");
+        }
 
         //Top panel
         textField.setOnAction(e -> {

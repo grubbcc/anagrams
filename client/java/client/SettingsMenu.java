@@ -36,7 +36,10 @@ class SettingsMenu extends PopWindow {
 
         newColors = client.colors.clone();
 
-        if(client.getWebAPI().isMobile()) {getTransforms().add(new Scale(1.35, 1.35, 0, 0));}
+        if(client.getWebAPI().isMobile()) {
+            setScaleX(1.45); setScaleY(1.45);
+        }
+
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(3));
         grid.setHgap(3);

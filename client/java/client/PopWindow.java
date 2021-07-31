@@ -28,6 +28,7 @@ public class PopWindow extends BorderPane {
     final HBox titleBar = new HBox();
     final Label title = new Label();
     MaximizeButton maximizeButton = new MaximizeButton();
+    boolean isMaximized;
     final Button closeButton = new Button();
 
     /**
@@ -73,13 +74,24 @@ public class PopWindow extends BorderPane {
 
     class MaximizeButton extends Button {
 
-        boolean isMaximized;
-
         Polyline maximizeIcon = new Polyline(2, 2, 14, 2, 14, 14, 2, 14, 2, 2);
         Polyline unmaximizeIcon = new Polyline(10, 9, 12, 9, 12, 1, 4, 1, 4, 4, 10, 4, 10, 12, 2, 12, 2, 4, 4, 4);
 
         Point2D savedCoords;
         Point2D savedSize;
+
+        /**
+         *
+         */
+
+        MaximizeButton() {
+            setGraphic(maximizeIcon);
+            setOnAction(maximizeAction);
+        }
+
+        /**
+         *
+         */
 
         EventHandler<ActionEvent> maximizeAction = event -> {
             if (isMaximized) {
@@ -107,13 +119,6 @@ public class PopWindow extends BorderPane {
             }
         };
 
-        /**
-         */
-
-        MaximizeButton() {
-            setGraphic(maximizeIcon);
-            setOnAction(maximizeAction);
-        }
     }
 
     /**

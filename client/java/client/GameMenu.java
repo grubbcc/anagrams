@@ -1,15 +1,12 @@
 package client;
 
 import javafx.collections.FXCollections;
-import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.transform.Scale;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,8 +52,9 @@ class GameMenu extends PopWindow {
         this.client = client;
 
         if(client.getWebAPI().isMobile()) {
-            setScaleX(1.35); setScaleY(1.35);
+            setScaleX(1.45); setScaleY(1.45);
         }
+
         GridPane grid = new GridPane();
         ColumnConstraints cc = new ColumnConstraints();
         cc.setHgrow(Priority.ALWAYS);
@@ -114,6 +112,8 @@ class GameMenu extends PopWindow {
         setContents(grid);
         setMaxSize(320, 350);
 
+        startButton.setPrefWidth(75.0);
+        startButton.setPrefHeight(25.0);
         startButton.setOnAction(e -> {
             if(defaultChooser.isSelected())
                 savePreferences();

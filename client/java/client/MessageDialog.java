@@ -30,6 +30,7 @@ public class MessageDialog extends PopWindow {
 
         VBox mainPane = new VBox(htmlView, buttonPane);
         buttonPane.setAlignment(Pos.BASELINE_CENTER);
+        buttonPane.setSpacing(5);
         setContents(mainPane);
         setMaxSize(400, 120);
         setTitle(title);
@@ -61,7 +62,6 @@ public class MessageDialog extends PopWindow {
      */
 
     public void addYesNoButtons() {
-
         yesButton.setPrefWidth(50);
         noButton.setPrefWidth(50);
         buttonPane.getChildren().addAll(yesButton, noButton);

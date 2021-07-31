@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
@@ -237,6 +236,10 @@ public class AnagramsClient extends JProApplication {
 		stage.setTitle("Anagrams");
 
 		if(getWebAPI().isMobile()) {
+			if(getWebAPI().isMobile()) {
+				gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
+			}
+			scene.getRoot().setStyle(".split-pane-divider {-fx-padding: 0 2 0 7}");
 			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
 				stage.setWidth(Double.parseDouble(newWidth));
 			});
@@ -257,7 +260,6 @@ public class AnagramsClient extends JProApplication {
 	 */
 
 	public void setColors() {
-
 		String newStyle = "";
 		for(Colors color : colors.keySet()) {
 			newStyle += color.css + ": " + colors.get(color) + "; ";
@@ -375,8 +377,6 @@ public class AnagramsClient extends JProApplication {
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
 			allowChat = Boolean.parseBoolean(allowsChat);
 			maxPlayers = Integer.parseInt(playerMax);
-
-			if(getWebAPI().isMobile()) getTransforms().add(new Scale(1.25, 1.25));
 
 			//labels
 			lexiconLabel.setText("Lexicon: " + lexicon);
@@ -650,7 +650,7 @@ public class AnagramsClient extends JProApplication {
 				dialog.setText("The connection to the server has been lost. Try to reconnect?");
 				dialog.addYesNoButtons();
 				dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
-				dialog.noButton.setOnAction(e -> dialog.hide());
+				dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
 				Platform.runLater(() -> dialog.show(true));
 			}
 		}
