@@ -12,12 +12,7 @@
 	-chat-area-text:        blue;
 }
 
-.zoom {
-    -fx-scale-x: 1.35;
-    -fx-scale-y: 1.35;
-}
-
-.scroll-pane, .scroll-pane   .content, .scroll-pane .viewport {
+.scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
     -fx-background-color: transparent;
 }
 .check-box {
@@ -27,12 +22,8 @@
     -fx-label-padding: 3;
     -fx-font-weight: bold;
 }
-.combo-box {
-    -fx-padding: 3;
-    -fx-pref-width: 118;
-}
-.combo-box .list-view, .combo-box .list-cell, .choice-box, .choice-box .open-button {
-    -fx-pref-width: 118;
+.choice-box, .choice-box .context-menu {
+    -fx-pref-width: 108;
 }
 
 .button {
@@ -43,7 +34,7 @@
     -fx-graphic-text-gap: 15;
 }
 .text-field {
-    -fx-background-color: #DDDDDD;
+    -fx-background-color: #E3E3E3;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
     -fx-prompt-text-fill: #333333;
@@ -72,6 +63,10 @@
     -fx-hgap: 3;
     -fx-vgap: 3;
 }
+#games-panel .button {
+    -fx-pref-width: 70;
+    -fx-pref-height: 25;
+}
 #games-panel .label {
     -fx-text-fill: -game-foreground-text;
 }
@@ -98,7 +93,6 @@
     -fx-padding: 8;
 }
 #control-panel {
-    -fx-spacing: 20;
     -fx-alignment: center;
     -fx-padding: 3;
 }
@@ -106,6 +100,7 @@
     -fx-pref-height: 25;
 }
 #game-background .label {
+    -fx-font: 14, Arial, Bold, normal;
     -fx-text-fill: -game-background-text;
     -fx-padding: 4;
 }
@@ -134,15 +129,16 @@
     -fx-border-insets: -1;
     -fx-padding: 4px;
 }
+
 #popup #title-bar {
     -fx-background-color: #EFEFEF;
-    -fx-spacing: 5px;
-    -fx-padding: 2px;
+    -fx-spacing: 15px;
+    -fx-padding: 2;
 }
 #title-bar .button {
-    -fx-padding: 0px;
     -fx-pref-width: 20px;
     -fx-pref-height: 20px;
+    -fx-padding: 2;
 }
 
 /* settings menu */
