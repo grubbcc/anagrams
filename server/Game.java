@@ -36,8 +36,7 @@ public class Game {
 	private Timer gameTimer = new Timer();
 	private Timer deleteTimer = new Timer();
 	private final Random rgen = new Random();
-	
-	private boolean lock = false;
+
 	boolean paused = false;
 	private int countdown = 10;
 	int timeRemaining;
@@ -114,17 +113,12 @@ public class Game {
 		@Override
 		public void run() {
 
-			if(tilePool.length() >= 30 && robotList.isEmpty()) {
-				pauseGame(); //pause game due to inactivity
-				return;
-			}
-			paused = false;
-
 			//draw initial tiles
 			if(countdown == 10 && tileCount < minLength - 1)
 				for(int i = 0; i < minLength - 1; i++)
 					drawTile();
 
+			//countdown to start or resume game
 			if(countdown > 0) {
 				if(tileCount < minLength) {
 					String message = "Game will begin in " + countdown + " seconds";
@@ -137,9 +131,16 @@ public class Game {
 				countdown--;
 				return;
 			}
-			
-			else if(timeRemaining > 0) {
-				lock = true;
+
+			//check if game should be paused
+			if(tilePool.length() >= 30 && robotList.isEmpty()) {
+				pauseGame(); //pause game due to inactivity
+				return;
+			}
+			paused = false;
+
+			//update timer and check for game over
+			if(timeRemaining > 0) {
 				String message = "Time remaining: " + timeRemaining--;
 				notifyEveryone("note " + gameID + " @" + message);				
 
@@ -154,6 +155,7 @@ public class Game {
 				endGame();
 			}
 
+			//decide whether robot should attempt a move
 			if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
 				drawTile();
 				if(!robotList.isEmpty()) {
@@ -166,10 +168,9 @@ public class Game {
 				}
 			}
 			
-			//robot-related tasks
+			//decide what type of move the robot should make
 			if(!robotList.isEmpty() && think == 0) {
 
-				lock = false;
 				robotPlayer.found = false;
 				robotPlayer.blanksAvailable = tilePool.length() - tilePool.replace("?","").length();
 				
