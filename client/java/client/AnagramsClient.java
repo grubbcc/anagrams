@@ -36,6 +36,9 @@ public class AnagramsClient extends JProApplication {
 	private Thread messageLoop;
 
 	private LoginMenu loginMenu;
+	private SettingsMenu settingsMenu;
+	WordExplorer explorer;
+
 	private final FlowPane gamesPanel = new FlowPane();
 	private final ScrollPane gamesScrollPane = new ScrollPane();
 
@@ -45,7 +48,7 @@ public class AnagramsClient extends JProApplication {
 	private final BorderPane playersPanel = new BorderPane();
 	private final ScrollPane playersScrollPane = new ScrollPane();
 
-	final SplitPane splitPane = new SplitPane();
+	private final SplitPane splitPane = new SplitPane();
 	final AnchorPane anchor = new AnchorPane(splitPane);
 	final StackPane stack = new StackPane(anchor);
 
@@ -54,15 +57,12 @@ public class AnagramsClient extends JProApplication {
 	private final ScrollPane chatScrollPane = new ScrollPane();
 	private final PlayerPane playerPane = new PlayerPane(this);
 
-	private SettingsMenu settingsMenu;
-	WordExplorer explorer;
 	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
 	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
 	private final HashMap<String, Label> playersList = new HashMap<>();
 	public String username;
 
 	public static final String[] lexicons = {"CSW19", "NWL20"};
-
 	Preferences prefs;
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
 	private final String newPlayerSound = getClass().getResource("/new player sound.wav").toExternalForm();
@@ -134,18 +134,21 @@ public class AnagramsClient extends JProApplication {
 	 */
 
 	private void createAndShowGUI() {
+
 		//control panel
 		Button createGameButton = new Button("Create Game");
+		createGameButton.setStyle("-fx-font: bold 18 arial;");
 		createGameButton.setPrefHeight(39);
-
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
 
 		Button settingsButton = new Button("Settings", new ImageView("/settings.png"));
-		settingsButton.setPrefSize(143, 33);
+		settingsButton.setStyle("-fx-font: bold 18 arial;");
+		settingsButton.setPrefSize(155, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
+
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
-        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(143));
+        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(155));
 		controlPanel.getChildren().addAll(createGameButton, settingsButton);
 
 		//games panel
@@ -157,7 +160,7 @@ public class AnagramsClient extends JProApplication {
 		gamesScrollPane.setContent(gamesPanel);
 
 		//players panel
-		playersPanel.setPrefWidth(143);
+		playersPanel.setPrefWidth(155);
 		playersPanel.setId("players-panel");
 		playersScrollPane.setFitToHeight(true);
 		playersScrollPane.setFitToWidth(true);
@@ -168,15 +171,17 @@ public class AnagramsClient extends JProApplication {
 		//chat panel
 		chatBox.setEditable(false);
 		TextField chatField = new TextField();
-
+		chatField.setStyle("-fx-font: 16 arial;");
 		chatField.setPromptText("Type here to chat");
 		chatField.getProperties().put("vkType", "text");
 		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
 		chatPanel.setBottom(chatField);
-	//	chatPanel.setPrefHeight(100);
 		chatScrollPane.setFitToHeight(true);
 		chatScrollPane.setFitToWidth(true);
 		chatScrollPane.setContent(chatBox);
+		chatBox.setStyle("-fx-font: 16 arial;");
+		chatBox.appendText("Welcome to Anagrams version " + version + "!");
+		chatPanel.setCenter(chatScrollPane);
 
 	/*	Clipboard clipboard = Clipboard.getSystemClipboard();
 		ClipboardContent content = new ClipboardContent();
@@ -189,24 +194,26 @@ public class AnagramsClient extends JProApplication {
 		MenuItem selectAllItem = new MenuItem("Select All");
 		selectAllItem.setOnAction(e -> chatBox.selectAll());
 		contextMenu.getItems().addAll(copyItem, selectAllItem);*/
-		chatBox.appendText("Welcome to Anagrams version " + version + "!");
-
-		chatPanel.setCenter(chatScrollPane);
 
 		//main layout
 		borderPane.setTop(controlPanel);
 		borderPane.setCenter(gamesScrollPane);
 		borderPane.setRight(playersPanel);
 		borderPane.setMinHeight(300);
+		borderPane.setDisable(true);
 
 		splitPane.setOrientation(Orientation.VERTICAL);
 		splitPane.getItems().addAll(borderPane, chatPanel);
 		splitPane.setDividerPosition(0, 0.9);
+		splitPane.setDisable(true);
 
 		AnchorPane.setRightAnchor(splitPane, 0.0);
 		AnchorPane.setBottomAnchor(splitPane, 0.0);
 		AnchorPane.setLeftAnchor(splitPane, 0.0);
 		AnchorPane.setTopAnchor(splitPane, 0.0);
+
+		anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
+		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
 	/*	ImageView fullScreenIcon = new ImageView(new Image("fullscreen.png"));
 		Button fullScreenButton = new Button("", fullScreenIcon);
@@ -215,12 +222,6 @@ public class AnagramsClient extends JProApplication {
 		AnchorPane.setBottomAnchor(fullScreenButton, 50.0);
 		if(getWebAPI().isMobile())
 			anchor.getChildren().add(fullScreenButton);*/
-
-        borderPane.setDisable(true);
-        splitPane.setDisable(true);
-
-        anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
-		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
 		Scene scene;
 		try {
@@ -236,9 +237,7 @@ public class AnagramsClient extends JProApplication {
 		stage.setTitle("Anagrams");
 
 		if(getWebAPI().isMobile()) {
-			if(getWebAPI().isMobile()) {
-				gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
-			}
+			gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
 			scene.getRoot().setStyle(".split-pane-divider {-fx-padding: 0 2 0 7}");
 			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
 				stage.setWidth(Double.parseDouble(newWidth));

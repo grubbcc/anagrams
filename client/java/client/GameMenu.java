@@ -1,6 +1,7 @@
 package client;
 
 import javafx.collections.FXCollections;
+import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -50,9 +51,15 @@ class GameMenu extends PopWindow {
     public GameMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
-
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.45); setScaleY(1.45);
+            pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            lengthsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            setsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            blanksSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            lexiconSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            speedSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            skillLevelSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         }
 
         GridPane grid = new GridPane();
@@ -171,6 +178,13 @@ class GameMenu extends PopWindow {
 
         client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
+        if(client.getWebAPI().isMobile()) {
+            client.getWebAPI().executeScript(
+           "let stateObj = { id: '100' };" +
+                "window.history.pushState(stateObj,'Game " + gameID + "','#" + gameID + "');" +
+                "console.log('new page?');"
+            );
+        }
 
         String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);

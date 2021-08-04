@@ -49,7 +49,7 @@ public class TreeNode {
     }
 
     /**
-     *
+     * Places this TreeNode into a tree hierarchy as a child of the the supplied TreeNode
      */
 
     public void setParent(TreeNode parent) {
@@ -57,7 +57,7 @@ public class TreeNode {
     }
 
     /**
-     *
+     * @return The TreeNode of which this one is a child. Returns null if this is the root node.
      */
 
     public TreeNode getParent() {
@@ -66,7 +66,7 @@ public class TreeNode {
 
     /**
      *
-     * @param key
+     * @param key The letters which, when added to this word, form the alphagram of newChild's word
      * @param newChild another TreeNode whose word is a steal of this node according to the rules of Anagrams.
      */
 
