@@ -11,6 +11,26 @@
 	-chat-area:             blue;
 	-chat-area-text:        blue;
 }
+.border-style-yes {
+    -fx-border-color: green, black;
+    -fx-border-width: 2, 2;
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 0, 2;
+    -fx-border-style: solid inside, dotted outside;
+}
+
+.border-style-no {
+    -fx-border-color: red, black;
+    -fx-border-width: 2, 2;
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 0, 2;
+    -fx-border-style: solid inside, dotted outside;
+}
+
+.choice-box:mobile .context-menu {
+    -fx-scale-x: 1.45;
+    -fx-scale-y: 1.45;
+}
 
 .scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
     -fx-background-color: transparent;
@@ -27,14 +47,13 @@
 }
 
 .button {
-    -fx-font-size: 12;
     -fx-font-weight: bold;
     -fx-padding: 3;
     -fx-content-display: right;
     -fx-graphic-text-gap: 15;
 }
 .text-field {
-    -fx-background-color: #E3E3E3;
+    -fx-background-color: #E5E5E5;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
     -fx-prompt-text-fill: #333333;
@@ -75,11 +94,11 @@
 }
 #players-panel .label {
     -fx-text-fill: -players-list-text;
-    -fx-font-size: 16;
+    -fx-font-size: 18;
 }
 #players-panel .scroll-pane .label {
     -fx-font-weight: normal;
-    -fx-font-size: 14;
+    -fx-font-size: 16;
 }
 #players-panel .scroll-pane .label:hover{
     -fx-font-weight: bold;
@@ -98,6 +117,11 @@
 }
 #control-panel .button {
     -fx-pref-height: 25;
+    -fx-font-size: 13;
+    -fx-min-width: 30;
+}
+#control-panel:mobile .button {
+    -fx-font-size: 15;
 }
 #game-background .label {
     -fx-font: 14, Arial, Bold, normal;
