@@ -76,20 +76,23 @@ public class ServerWorker extends Thread {
 
 			//notify new player of games
 			synchronized (server.getGames()) {
-				for (Game game : server.getGames()) {
+				for(Game game : server.getGames()) {
 					send("addgame " + game.getGameParams());
-					for (String playerName : game.getPlayerList()) {
+					for(String playerName : game.getPlayerList()) {
 						send("takeseat " + game.gameID + " " + playerName);
 					}
-					for (String inactivePlayer : game.getInactivePlayers()) {
+					for(String inactivePlayer : game.getInactivePlayers()) {
 						send("abandonseat " + game.gameID + " " + inactivePlayer);
 					}
-					if (game.gameOver) {
-						for (String gameState : game.gameLog) {
+					if(game.gameOver) {
+						for(String gameState : game.gameLog) {
 							send("gamelog " + game.gameID + " " + gameState);
 						}
 						send("note " + game.gameID + " @" + "Game over");
 						send("endgame " + game.gameID);
+					}
+					else if(game.paused) {
+						send("note " + game.gameID + " @" + "Game paused");
 					}
 					else if(game.timeRemaining > 0) {
 						String message = "Time remaining: " + game.timeRemaining;

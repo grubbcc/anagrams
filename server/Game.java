@@ -8,7 +8,7 @@ import java.util.*;
 
 public class Game {
 	
-	Server server;
+	private final Server server;
 
 	private final Hashtable<String, ServerWorker> playerList = new Hashtable<>();
 	private final Hashtable<String, ServerWorker> watcherList = new Hashtable<>();
@@ -27,7 +27,8 @@ public class Game {
 	final int minLength;
 	final int blankPenalty;
 	private final int delay;
-	int timeRemaining;
+
+
 	final String lexicon;
 	private final String speed;
 	private final boolean allowsChat;
@@ -36,13 +37,16 @@ public class Game {
 	private Timer deleteTimer = new Timer();
 	private final Random rgen = new Random();
 	
-	boolean lock = false;
+	private boolean lock = false;
+	boolean paused = false;
+	private int countdown = 10;
+	int timeRemaining;
 	private int think = 2;
 	private Robot robotPlayer;
 
-	Vector<String> gameLog = new Vector<>();
-	HashMap<Integer, String> plays = new HashMap<>();
-	WordFinder wordFinder;
+	final Vector<String> gameLog = new Vector<>();
+	final HashMap<Integer, String> plays = new HashMap<>();
+	private WordFinder wordFinder;
 	
 	/**
 	*
@@ -102,11 +106,19 @@ public class Game {
 
 
 	private class GameTask extends TimerTask {
-		
-		private int countdown = 10;
+
+		private GameTask() {
+			countdown = 10;
+		}
 
 		@Override
 		public void run() {
+
+			if(tilePool.length() >= 30 && robotList.isEmpty()) {
+				pauseGame(); //pause game due to inactivity
+				return;
+			}
+			paused = false;
 
 			//draw initial tiles
 			if(countdown == 10 && tileCount < minLength - 1)
@@ -138,18 +150,19 @@ public class Game {
 					endGame();
 				}
 			}
-			
 			else {
 				endGame();
 			}
 
 			if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
 				drawTile();
-				if(tilePool.length() >= 30) {
-					think = 2; //robot starts thinking of a play
-				}
-				else if(!robotList.isEmpty() && rgen.nextInt(50) <= 2*robotPlayer.skillLevel + delay/3 + 7*(tilePool.length()/minLength - 1)) {
-					think = 2; //robot starts thinking of a play
+				if(!robotList.isEmpty()) {
+					if (tilePool.length() >= 29) {
+						think = 2; //robot starts thinking of a play
+					}
+					else if (rgen.nextInt(50) <= 2 * robotPlayer.skillLevel + delay / 3 + 7 * (tilePool.length() / minLength - 1)) {
+						think = 2; //robot starts thinking of a play
+					}
 				}
 			}
 			
@@ -173,8 +186,17 @@ public class Game {
 			}
 		}
 	}
-	
-	
+
+	/**
+	 *
+	 */
+
+	synchronized void pauseGame() {
+		paused = true;
+		String message = "Game paused";
+		notifyEveryone("note " + gameID + " @" + message);
+	}
+
 	/**
 	* Stops the gameTimer and sends a notification to the players and watchers that the game is over
 	*/
@@ -323,7 +345,7 @@ public class Game {
 		if(playerList.isEmpty() && watcherList.isEmpty()) {
 			deleteTimer.cancel();
 			deleteTimer = new Timer();
-			deleteTimer.schedule(new DeleteTask(), 300000);
+			deleteTimer.schedule(new DeleteTask(), 180000);
 			System.out.println("Beginning countdown; game will disappear in 3 minutes");
 		}
 	}
@@ -377,6 +399,10 @@ public class Game {
 	
 	synchronized boolean doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord) {
 
+		if(countdown > 0) {
+			return false;
+		}
+
 		// charsToFind contains the letters that cannot be found in the existing word;
 		// they must be taken from the pool or a blank must be redesignated.
 		String charsToFind = longWord;
@@ -401,7 +427,7 @@ public class Game {
 		}
 
 		//The number of blanksToTakeFromPool is the number of letters found in neither the shortWord nor the pool
-		String tiles = tilePool;	
+		String tiles = tilePool;
 		for(String s : charsToFind.split("")) {
 			if(tiles.contains(s))
 				tiles = tiles.replaceFirst(s, "");
@@ -500,6 +526,9 @@ public class Game {
 	
 	synchronized boolean doMakeWord(String newWordPlayer, String entry) {
 
+		if(countdown > 0) {
+			return false;
+		}
 		String tiles = tilePool;
 		int blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 		int blanksRequired = 0;
@@ -579,7 +608,7 @@ public class Game {
 
 	/**
 	* Adds a String descriptive of the current game state, e.g.
-	 * 257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]
+	 * "257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]"
 	 * to the gameLog.
 	*/
 

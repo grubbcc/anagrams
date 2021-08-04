@@ -172,7 +172,6 @@ class WordFinder {
         StringBuilder possibleSteals = new StringBuilder();
         int wordsFound = 0;
 
-    //    LinkedHashSet<String[]> possibleSteals = new LinkedHashSet<>();
         if(!tilePool.isEmpty()) {
 
             outer: for(String shortWord : words) {
@@ -185,9 +184,6 @@ class WordFinder {
                     if (entry.length() <= shortWord.length() + tilePool.length()) {
                         String longWord = checkSteal(shortWord, entry);
                         if (longWord != null) {
-
-                 //           String toolTip = child.getTooltip();
-               //             String[] array = {shortWord, toolTip, longWord};
 
                             possibleSteals.append(shortWord).append(" + ").append(child.getTooltip()).append(" -> ").append(longWord).append(",");
                             if(++wordsFound >= 30) {
