@@ -21,13 +21,13 @@ import javafx.scene.shape.Polyline;
 
 public class PopWindow extends BorderPane {
 
-    ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
+    private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
     boolean resizable = false;
     boolean movable = true;
     private final Pane container;
     final HBox titleBar = new HBox();
     final Label title = new Label();
-    MaximizeButton maximizeButton = new MaximizeButton();
+    final MaximizeButton maximizeButton = new MaximizeButton();
     boolean isMaximized;
     final Button closeButton = new Button();
 
