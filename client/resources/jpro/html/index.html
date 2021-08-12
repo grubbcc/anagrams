@@ -4,7 +4,7 @@
 
 <head>
     <title>Anagrams</title>
-    <meta name="viewport" content="width=device-width initial-scale=0.7 maximum-scale=0.7">
+    <meta name="viewport" content="width=device-width initial-scale=0.7 maximum-scale=0.7 user-scalable=no">
     <link rel="stylesheet" type="text/css" href="/jpro/css/jpro-fullscreen.css">
     <link rel="stylesheet" type="text/css" href="/jpro/css/jpro.css">
     <script src="/jpro/js/jpro.js" type="text/javascript"></script>
@@ -20,7 +20,23 @@ var isMobile = Math.min(screen.width, screen.height) < 560;
 
 if(isMobile) {
     var jpro = document.getElementById('jpro');
-    jpro.setAttribute('fxwidth', 'true');
+
+    window.onload = function() {
+        jpro.setAttribute('fxwidth', 'false');
+        jpro.setAttribute('fullscreen', 'false');
+        jpro.setWidth(window.innerWidth);
+        jpro.setHeight(window.innerHeight);
+    }
+
+    document.addEventListener('fullscreenchange', (event) => {
+        jpro.toggleFullscreenIcon();
+        if (!document.fullscreenElement && !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement && !document.msFullscreenElement) {
+            jpro.setAttribute('fullscreen', 'true');
+            jpro.setHeight(window.innerHeight);
+        }
+    });
+
 
     function toggleFullscreen() {
         if (!document.fullscreenElement && !document.mozFullScreenElement &&
@@ -51,13 +67,13 @@ if(isMobile) {
             else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
             }
-
             jpro.setAttribute('fullscreen', 'true');
             jpro.setHeight(window.innerHeight);
         }
     }
 
 
+    /* Resize appropriately according to screen orientation and virtual keyboard appearance/disappearance. */
 
     const resizeObserver = new ResizeObserver(entries => {
         if(document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
@@ -77,6 +93,7 @@ if(isMobile) {
     });
 
     resizeObserver.observe(document.body);
+
 }
 
 </script>
