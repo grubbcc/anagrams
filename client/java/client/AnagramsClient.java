@@ -25,7 +25,7 @@ public class AnagramsClient extends JProApplication {
 
     private final String serverName = "127.0.0.1";
 	private final int port = 8118;
-	private final String version = "0.9.8";
+	private final String version = "0.9.9";
 
 	boolean connected;
 	private InputStream serverIn;
@@ -120,13 +120,14 @@ public class AnagramsClient extends JProApplication {
 
 		createAndShowGUI();
 
-		if(connect() ) {
-			System.out.println("Connected to server on port " + port);
-			if(loginMenu == null) {
-				loginMenu = new LoginMenu(this);
-				loginMenu.show(true);
+			if(connect() ) {
+				System.out.println("Connected to server on port " + port);
+				if(loginMenu == null) {
+					loginMenu = new LoginMenu(this);
+					loginMenu.show(true);
+				}
 			}
-		}
+
 	}
 
 	/**
@@ -167,11 +168,12 @@ public class AnagramsClient extends JProApplication {
 		playersScrollPane.setContent(playersListPane);
 		playersPanel.setTop(playersHeader);
 		playersPanel.setCenter(playersScrollPane);
+		playersHeader.setTooltip(new Tooltip("Click a player's name to view profile")); //needs testing
 
 		//chat panel
 		chatBox.setEditable(false);
 		TextField chatField = new TextField();
-		chatField.setStyle("-fx-font: 16 arial;");
+		chatField.setStyle("-fx-font: " + (getWebAPI().isMobile() ? 18 : 16) + " arial;");
 		chatField.setPromptText("Type here to chat");
 		chatField.getProperties().put("vkType", "text");
 		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
@@ -179,7 +181,7 @@ public class AnagramsClient extends JProApplication {
 		chatScrollPane.setFitToHeight(true);
 		chatScrollPane.setFitToWidth(true);
 		chatScrollPane.setContent(chatBox);
-		chatBox.setStyle("-fx-font: 16 arial;");
+		chatBox.setStyle("-fx-font: " + (getWebAPI().isMobile() ? 18 : 16) + " arial;");
 		chatBox.appendText("Welcome to Anagrams version " + version + "!");
 		chatPanel.setCenter(chatScrollPane);
 
@@ -238,7 +240,6 @@ public class AnagramsClient extends JProApplication {
 
 		if(getWebAPI().isMobile()) {
 			gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
-			scene.getRoot().setStyle(".split-pane-divider {-fx-padding: 0 2 0 7}");
 			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
 				stage.setWidth(Double.parseDouble(newWidth));
 			});

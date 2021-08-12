@@ -12,7 +12,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.transform.Scale;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -195,10 +194,10 @@ public class LoginMenu extends PopWindow {
                 if (prefs.node(usernameField.getText()).get("password", null) != null) {
 
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
-                    dialog.setText("<center>The username you entered has already been registered. <br>" +
-                            "Please choose a different name or log in using the password.</center>");
+
+                    dialog.setText("<center>The username you entered has already<br> been registered. " +
+                            "Please choose a different<br>name or log in using the password.</center>");
                     dialog.addOkayButton();
-                    dialog.show(true);
                     Platform.runLater(() -> dialog.show(true));
                     return;
                 }
@@ -206,7 +205,6 @@ public class LoginMenu extends PopWindow {
                     MessageDialog dialog = new MessageDialog(client, "Multiple logins");
                     dialog.setText("<center>A user with this username is already logged in.</center>");
                     dialog.addOkayButton();
-                    dialog.show(true);
                     Platform.runLater(() -> dialog.show(true));
                     return;
                 }
@@ -249,17 +247,15 @@ public class LoginMenu extends PopWindow {
             if (prefs.nodeExists(username)) {
                 if (prefs.node(username).get("password", null) != null) {
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
-                    dialog.setText("<center>The username you entered has already been registered. <br>" +
-                            "Please choose a different name or log in using the password.</center>");
+                    dialog.setText("<center>The username you entered has already been<br> registered." +
+                            "Please choose a different name<br> or log in using the password.</center>");
                     dialog.addOkayButton();
-                    dialog.show(true);
                     Platform.runLater(() -> dialog.show(true));
                 }
                 else {
                     MessageDialog dialog = new MessageDialog(client, "Multiple logins");
                     dialog.setText("<center>A user with this username is already logged in.</center>");
                     dialog.addOkayButton();
-                    dialog.show(true);
                     Platform.runLater(() -> dialog.show(true));
                 }
             }
@@ -286,7 +282,6 @@ public class LoginMenu extends PopWindow {
                     dialog.setText("<center>The username you entered has not been registered <br>" +
                             "Please register or choose \"Play as guest\".</center>");
                     dialog.addOkayButton();
-                    dialog.show(true);
                     Platform.runLater(() -> dialog.show(true));
                     warningLabel.setText("Forgot username?");
                     warningLabel.setOnMouseClicked(this::forgotUsernameAction);
@@ -298,7 +293,6 @@ public class LoginMenu extends PopWindow {
                 dialog.setText("<center>The username you entered has not been registered <br>" +
                         "Please register or choose \"Play as guest\".</center>");
                 dialog.addOkayButton();
-                dialog.show(true);
                 Platform.runLater(() -> dialog.show(true));
                 warningLabel.setText("Forgot username?");
                 warningLabel.setOnMouseClicked(this::forgotUsernameAction);

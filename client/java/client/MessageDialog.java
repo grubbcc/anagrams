@@ -3,8 +3,12 @@ package client;
 import com.jpro.webapi.HTMLView;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+
+/**
+ *
+ */
 
 
 public class MessageDialog extends PopWindow {
@@ -26,9 +30,15 @@ public class MessageDialog extends PopWindow {
 
     public MessageDialog(AnagramsClient client, String title) {
         super(client.stack);
-        htmlView.setPrefSize(500, 100);
+        htmlView.setPrefSize(USE_PREF_SIZE, USE_PREF_SIZE);
 
-        VBox mainPane = new VBox(htmlView, buttonPane);
+        if(client.getWebAPI().isMobile()) {
+            setScaleX(1.2);
+            setScaleY(1.2);
+        }
+        BorderPane mainPane = new BorderPane();
+        mainPane.setCenter(htmlView);
+        mainPane.setBottom(buttonPane);
         buttonPane.setAlignment(Pos.BASELINE_CENTER);
         buttonPane.setSpacing(5);
         setContents(mainPane);

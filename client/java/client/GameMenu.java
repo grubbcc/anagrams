@@ -175,16 +175,11 @@ class GameMenu extends PopWindow {
         String allowWatchers = watchersChooser.isSelected() + "";
         String addRobot = robotChooser.isSelected() + "";
 
+        if(addRobot.equals("true")) {
+            maxPlayers = Math.max(6, Integer.parseInt(maxPlayers) + 1) + "";
+        }
 
         client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
-
-        if(client.getWebAPI().isMobile()) {
-            client.getWebAPI().executeScript(
-           "let stateObj = { id: '100' };" +
-                "window.history.pushState(stateObj,'Game " + gameID + "','#" + gameID + "');" +
-                "console.log('new page?');"
-            );
-        }
 
         String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);

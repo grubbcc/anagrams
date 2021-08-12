@@ -86,7 +86,22 @@ public class PopWindow extends BorderPane {
 
         MaximizeButton() {
             setGraphic(maximizeIcon);
-            setOnAction(maximizeAction);
+//          setOnAction(maximizeAction);
+        }
+
+        /**
+         *
+         */
+
+        public void toggle() {
+            if(isMaximized) {
+                maximizeButton.setGraphic(maximizeButton.maximizeIcon);
+                isMaximized = false;
+            }
+            else {
+                maximizeButton.setGraphic(maximizeButton.unmaximizeIcon);
+                isMaximized = true;
+            }
         }
 
         /**
