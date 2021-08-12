@@ -407,11 +407,8 @@ public class Game {
 		// charsToFind contains the letters that cannot be found in the existing word;
 		// they must be taken from the pool or a blank must be redesignated.
 		String charsToFind = longWord;
-
-		int blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 		int blanksToChange = 0;
-		int blanksToTakeFromPool = 0;
-		
+
 		//lowercase is used to represent blanks
 		//If the shortWord contains a tile not found in the longWord, it cannot be stolen unless that tile is a blank
 		for(String s : shortWord.split("")) {
@@ -420,48 +417,52 @@ public class Game {
 			else {
 				if(Character.isLowerCase(s.charAt(0))) {
 					blanksToChange++;
-					blanksAvailable++;
 				}
 				else
 					return false;
 			}
 		}
 
-		//The number of blanksToTakeFromPool is the number of letters found in neither the shortWord nor the pool
+		int missingTiles = 0;
 		String tiles = tilePool;
 		for(String s : charsToFind.split("")) {
 			if(tiles.contains(s))
 				tiles = tiles.replaceFirst(s, "");
 			else
-				blanksToTakeFromPool++;
+				missingTiles++;
 		}
-		
-		if(blanksAvailable - blanksToChange < blanksToTakeFromPool)
-			return false; //not enough blanks in the pool
-		
-		//Calculate how long the word needs to be, accounting for the blankPenalty
-		int additionalTilesRequired = 1;
-		if(blanksToTakeFromPool > 0 || blanksToChange > 0)
-			additionalTilesRequired = blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool;
 
-		if(longWord.length() - shortWord.length() < additionalTilesRequired)
+		int blanksInPool = tilePool.length() - tilePool.replace("?", "").length();
+		int blanksToTakeFromPool = missingTiles - blanksToChange;
+
+		if(blanksInPool < blanksToTakeFromPool)
+			return false; //not enough blanks in the pool
+
+		//Calculate how long enough, accounting for the blankPenalty
+		if(shortWord.isEmpty()) {
+			if(longWord.length() < minLength + (blankPenalty + 1)*missingTiles) {
+				return false;
+			}
+		}
+		else if(longWord.length() - shortWord.length() < blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool)
 			return false;
-		
+
 		//steal is successful
 		String oldWord = shortWord;
 		String newWord = "";
+
 		for(String s : longWord.split("")) {
+
 			//move a non-blank from the old word to the new word
-			if(oldWord.contains(s)) {
+			if (oldWord.contains(s)) {
 				oldWord = oldWord.replaceFirst(s, "");
 				newWord = newWord.concat(s);
 			}
 			//move a blank from the old word to the new word without redesignating it
-			else if(oldWord.contains(s.toLowerCase())) {
+			else if (oldWord.contains(s.toLowerCase())) {
 				oldWord = oldWord.replaceFirst(s.toLowerCase(), "");
 				newWord = newWord.concat(s.toLowerCase());
 			}
-
 			else if(charsToFind.length() - blanksToChange > 0 ) {
 				//take a non-blank from the pool
 				if(tilePool.contains(s)) {
@@ -482,17 +483,17 @@ public class Game {
 			}
 		}
 
+
 		for(Robot robot : robotList.values()) {
 			robot.removeTree(shortWord);
 			robot.makeTree(newWord);
 		}
 
-		words.get(shortPlayer).remove(shortWord);	
-		words.get(longPlayer).add(newWord);	
-		
-		if(tileCount >= tileBag.length && tilePool.length() > 0) 
-			timeRemaining += 15;
+		words.get(shortPlayer).remove(shortWord);
+		words.get(longPlayer).add(newWord);
 
+		if(tileCount >= tileBag.length && tilePool.length() > 0)
+			timeRemaining += 15;
 		if(tilePool.isEmpty())	tiles = "#";
 
 		saveState();
@@ -501,12 +502,12 @@ public class Game {
 
 		//if the shortPlayer has left the game and has no words, make room for another player to join
 		if(words.get(shortPlayer).isEmpty()) {
-			if(!shortPlayer.startsWith("Robot")) {
-				if(server.getWorker(shortPlayer) == null) { //player is not logged in
+			if (!shortPlayer.startsWith("Robot")) {
+				if (server.getWorker(shortPlayer) == null) { //player is not logged in
 					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);
 				}
-				else if(!playerList.containsKey(shortPlayer)) { //player has left the game
-					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);					
+				else if (!playerList.containsKey(shortPlayer)) { //player has left the game
+					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);
 				}
 			}
 		}
@@ -570,7 +571,6 @@ public class Game {
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;
-	
 		if(tilePool.isEmpty())	tiles = "#";	
 
 		//inform players that a new word has been made	
