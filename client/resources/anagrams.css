@@ -11,21 +11,6 @@
 	-chat-area:             blue;
 	-chat-area-text:        blue;
 }
-.border-style-yes {
-    -fx-border-color: green, black;
-    -fx-border-width: 2, 2;
-    -fx-border-radius: 0, 0;
-    -fx-border-insets: 0, 2;
-    -fx-border-style: solid inside, dotted outside;
-}
-
-.border-style-no {
-    -fx-border-color: red, black;
-    -fx-border-width: 2, 2;
-    -fx-border-radius: 0, 0;
-    -fx-border-insets: 0, 2;
-    -fx-border-style: solid inside, dotted outside;
-}
 
 .choice-box:mobile .context-menu {
     -fx-scale-x: 1.45;
@@ -111,6 +96,12 @@
 #game-background .text-field {
     -fx-padding: 8;
 }
+#game-background .label {
+    -fx-font: 14, Arial, Bold, normal;
+    -fx-text-fill: -game-background-text;
+    -fx-padding: 4;
+}
+
 #control-panel {
     -fx-alignment: center;
     -fx-padding: 3;
@@ -123,11 +114,7 @@
 #control-panel:mobile .button {
     -fx-font-size: 15;
 }
-#game-background .label {
-    -fx-font: 14, Arial, Bold, normal;
-    -fx-text-fill: -game-background-text;
-    -fx-padding: 4;
-}
+
 #tile-panel, #game-panel {
     -fx-background-color: -game-foreground;
 }
@@ -135,10 +122,13 @@
     -fx-font: bold 22px "Arial";
     -fx-text-fill: -game-foreground-text;
 }
+#game-panel:mobile .label {
+    -fx-font: bold 19px "Arial";
+}
 #game-panel:abandoned .label {
-    -fx-font: bold 22px "Arial";
     -fx-text-fill: darkgray;
 }
+
 #word-display {
     -fx-background-color: -game-background;
 }
@@ -182,6 +172,7 @@
     -fx-label-padding: 0;
     -fx-max-width: Infinity;
 }
+
 #color-combo-box {
     -fx-pref-height: 18;
     -fx-pref-width: 70;
