@@ -104,8 +104,3 @@ Version 0.9.1 - June 4, 2020
     • Configured server to run on Dynamic DNS
     • Adjusted Robot capabilities to better match their names
 
-Copyright Notice
-
-© Christopher C. Grubb 2020
-
-It is believed that the name "Anagrams" and game concept and rules are in the public domain; however, I claim copyright over my implementation as well the underlying source code. This is a free product, so any user is allowed to distribute the installer freely as long as they keep it free. Any modifications intended for public distribution, however, are forbidden without express consent of the copyright holder.
