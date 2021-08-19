@@ -1,5 +1,6 @@
 <!--
-This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been adapted from:
+This widget uses D3.js (https://d3js.org/) JavaScript libraries to generate pretty
+WordTree visualizations. It has been adapted from:
  • "Radial Tidy Tree" by Herman Sontrop:
     https://bl.ocks.org/FrissAnalytics/ffbd3cb71848616957cd4c0f41738aec
  • "Export SVG D3 visualization to PNG or JPEG" by Nikita Rokotyan:
@@ -7,7 +8,11 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
 -->
 
 <!DOCTYPE html>
-<meta charset="utf-8">
+<head>
+    <meta charset="utf-8">
+    <title>Anagrams</title>
+</head>
+
 <style>
 
     .slider {
@@ -88,7 +93,7 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
     </tr>
     <tr>
         <td>Font size</td>
-        <td><input type="range" min="1" max="50" value="10" class="slider" id="fontslider" onchange="setFont();"></td>
+        <td><input type="range" min="1" max="50" value="12" class="slider" id="fontslider" onchange="setFont();"></td>
     </tr>
     <tr>
         <td>Angle</td>
@@ -97,7 +102,7 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
 </table>
 
 <div class = "container">
-    <svg width="1000" height="1000" style="background-color:aliceblue" id="svg" ></svg>
+    <svg style="background-color:aliceblue"></svg>
     <button id="zoom_in">+</button>
     <button id="zoom_out">&minus;</button>
 
@@ -132,18 +137,10 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
     }
 
     function resizeImage() {
-        width = 30*sizeslider.value,
-        height = 30*sizeslider.value;
-        var svg = document.getElementById('svg');
-            svg.setAttribute("width", height)
-            svg.setAttribute("height", width);
-
-        var svg = d3.select("svg")
-            .attr("viewBox", [-1*width/2, -1*height/2, width, height])
-            .call(zoom)
-            .on("wheel.zoom", null)
-            .append("g");
-
+        let svg = d3.select("svg");
+        let aspectRatio = svg.attr("height")/svg.attr("width");
+        svg.attr("width", 60*sizeslider.value)
+        svg.attr("height", 60*sizeslider.value*aspectRatio);
         display(data);
     }
 
@@ -152,7 +149,7 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
     }
 
     function setRadius() {
-        radius = 20 * radslider.value;
+        radius = 10 * radslider.value;
         zoomState = g.attr("transform");
         svg.selectAll("*").remove();
         g = svg.append("g");
@@ -189,37 +186,14 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
 </script>
 
 <script>
-    var data = JSON.parse(localStorage.getItem('JSON'));
-
-    var depth = 0;
-
-    for (const value of data.values()) {
-        count = 0;
-        for(let char of value.id) {
-            if(char === '.') {
-                count++;
-                if(count > depth)
-                    depth = count;
-            }
-        }
-    }
-
-    //Default values
-    var angle = 360,
-        radius = 140*depth,
-        width = 2*radius,
-        height = 2*radius;
-
-    document.getElementById("sizeslider").value = radius/15;
-    document.getElementById("fontslider").value = 10;
-    document.getElementById("angleslider").value = "72";
-
     var svg = d3.select("svg")
-        .attr("viewBox", [-1*width/2, -1*height/2, width, height])
-        .call(zoom)
         .on("wheel.zoom", null);
 
     var g = svg.append("g");
+
+    //Default values
+    var angle = 360,
+        radius = 350;
 
     var stratify = d3.stratify().parentId(d => d.id.substring(0, d.id.lastIndexOf(".")));
 
@@ -227,15 +201,28 @@ This widget uses D3.js (https://d3js.org/) JavaScript libraries. It has been ada
             .size([angle, radius])
             .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
 
+    var data = JSON.parse(localStorage.getItem('JSON'));
     display(data);
 
+    let rect = g.node().getBoundingClientRect();
+    svg.attr("width", Math.min(Math.max(500, rect.width), 1500));
+    svg.attr("height", Math.min(Math.max(500, rect.height), 1500));
+    svg.attr("viewBox", [rect.x - 50, rect.y - 50, rect.width + 100, rect.height + 100]);
+    g.attr("transform","translate(0," + svg.node().getBoundingClientRect().y + ") scale(1.0)");
+
+    document.getElementById("sizeslider").value = svg.attr("width")/60;
+    document.getElementById("fontslider").value = 12;
+    document.getElementById("angleslider").value = "72";
+
+    const centered = d3.zoomIdentity.translate(0, svg.node().getBoundingClientRect().y);
+    svg.call(zoom.transform, centered);
 
     function display(d) {
         root = tree(stratify(data));
         var link = g.selectAll(".link").data(root.descendants().slice(1)).enter()
         link.append("path")
             .attr("class", "link")
-            .attr("id", d=> d.data.shorttip)
+            .attr("id", d => d.data.shorttip)
             .attr("d", function(d) {
                     return "M" + project(d.x, d.y)
                          + "C" + project(d.x, (d.y + d.parent.y) / 2)
