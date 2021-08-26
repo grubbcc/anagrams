@@ -311,7 +311,7 @@ public class GameWindow extends PopWindow {
         setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 if (e.getClickCount() == 2) {
-                    if(!(e.getTarget() instanceof Button)) {
+                    if(e.getTarget() instanceof Pane) {
                         maximizeButton.fire();
                     }
                 }
