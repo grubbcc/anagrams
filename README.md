@@ -34,6 +34,7 @@ Update Log
 Version 0.9.9 - August 4, 2021
 
     • Added text entry widget that checks words as you type.
+    • Added some simple animations.
     • Enlarged buttons and labels for use on mobile phones.
     • Added code to handle screen rotations and full-screen mode on mobile phones.
     • Games pause automatically after a period of activity.
