@@ -89,7 +89,7 @@ WordTree visualizations. It has been adapted from:
     </tr>
     <tr>
         <td>Radius</td>
-        <td><input type="range" min="1" max="100" value="35" class="slider" id="radslider" onchange="setRadius();"></td>
+        <td><input type="range" min="1" max="100" value="24" class="slider" id="radslider" onchange="setRadius();"></td>
     </tr>
     <tr>
         <td>Font size</td>
@@ -140,7 +140,7 @@ WordTree visualizations. It has been adapted from:
         let svg = d3.select("svg");
         let aspectRatio = svg.attr("height")/svg.attr("width");
         svg.attr("width", 60*sizeslider.value)
-        svg.attr("height", 60*sizeslider.value*aspectRatio);
+           .attr("height", 60*sizeslider.value*aspectRatio);
         display(data);
     }
 
@@ -149,7 +149,7 @@ WordTree visualizations. It has been adapted from:
     }
 
     function setRadius() {
-        radius = 10 * radslider.value;
+        radius = 10 * radslider.value * depth;
         zoomState = g.attr("transform");
         svg.selectAll("*").remove();
         g = svg.append("g");
@@ -169,8 +169,8 @@ WordTree visualizations. It has been adapted from:
         g = svg.append("g");
 
         tree = d3.tree()
-                .size([angle, radius])
-                .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
+            .size([angle, radius])
+            .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
 
         display(data);
         g.attr("transform", zoomState);
@@ -186,22 +186,34 @@ WordTree visualizations. It has been adapted from:
 </script>
 
 <script>
-    var svg = d3.select("svg")
-        .on("wheel.zoom", null);
+    var data = JSON.parse(localStorage.getItem('JSON'));
+
+    var depth = 0;
+    for (const value of data.values()) {
+        count = 0;
+        for(let char of value.id) {
+            if(char === '.') {
+                count++;
+                if(count > depth)
+                    depth = count;
+            }
+        }
+    }
+
+    var svg = d3.select("svg");
 
     var g = svg.append("g");
 
     //Default values
     var angle = 360,
-        radius = 350;
+        radius = 240 * depth;
 
     var stratify = d3.stratify().parentId(d => d.id.substring(0, d.id.lastIndexOf(".")));
 
     var tree = d3.tree()
-            .size([angle, radius])
-            .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
+        .size([angle, radius])
+        .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
 
-    var data = JSON.parse(localStorage.getItem('JSON'));
     display(data);
 
     let rect = g.node().getBoundingClientRect();
@@ -215,7 +227,8 @@ WordTree visualizations. It has been adapted from:
     document.getElementById("angleslider").value = "72";
 
     const centered = d3.zoomIdentity.translate(0, svg.node().getBoundingClientRect().y);
-    svg.call(zoom.transform, centered);
+    svg.call(zoom.transform, centered)
+       .call(zoom);
 
     function display(d) {
         root = tree(stratify(data));
@@ -224,11 +237,11 @@ WordTree visualizations. It has been adapted from:
             .attr("class", "link")
             .attr("id", d => d.data.shorttip)
             .attr("d", function(d) {
-                    return "M" + project(d.x, d.y)
-                         + "C" + project(d.x, (d.y + d.parent.y) / 2)
-                         + " " + project(d.parent.x, (d.y + d.parent.y) / 2)
-                         + " " + project(d.parent.x, d.parent.y);
-                  }
+                return "M" + project(d.x, d.y)
+                    + "C" + project(d.x, (d.y + d.parent.y) / 2)
+                    + " " + project(d.parent.x, (d.y + d.parent.y) / 2)
+                    + " " + project(d.parent.x, d.parent.y);
+                }
             );
 
         var node = g.selectAll(".node").data(root.descendants()).enter().append("g")
@@ -254,11 +267,11 @@ WordTree visualizations. It has been adapted from:
     }
 
 
-    function project(x, y) {
-        var angle = (x - 90) / 180 * Math.PI,
-            radius = y;
-        return [radius * Math.cos(angle), radius * Math.sin(angle)];
+    function project(ang, rad) {
+        var ang = (ang - 90) / 180 * Math.PI;
+        return [rad * Math.cos(ang), rad * Math.sin(ang)];
     }
+
 </script>
 
 <script>
