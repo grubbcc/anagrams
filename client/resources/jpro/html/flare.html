@@ -186,8 +186,8 @@ WordTree visualizations. It has been adapted from:
 </script>
 
 <script>
-    var data = JSON.parse(localStorage.getItem('JSON'));
-
+    var json = localStorage.getItem('JSON').replaceAll(/\\/g,'\\\\').replaceAll(/ "([\w ]+)"/g, ' \\"$1\\"');
+    var data = JSON.parse(json);
     var depth = 0;
     for (const value of data.values()) {
         count = 0;
@@ -216,7 +216,7 @@ WordTree visualizations. It has been adapted from:
 
     display(data);
 
-    let rect = g.node().getBoundingClientRect();
+    var rect = g.node().getBoundingClientRect();
     svg.attr("width", Math.min(Math.max(500, rect.width), 1500));
     svg.attr("height", Math.min(Math.max(500, rect.height), 1500));
     svg.attr("viewBox", [rect.x - 50, rect.y - 50, rect.width + 100, rect.height + 100]);
@@ -247,8 +247,10 @@ WordTree visualizations. It has been adapted from:
         var node = g.selectAll(".node").data(root.descendants()).enter().append("g")
             .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
             .attr("transform", d => "translate(" + project(d.x, d.y) + ")");
+
         node.append("circle")
             .attr("r", 2.5);
+
         node.append("text")
             .style("font-size", fontslider.value + "px")
             .style("font-family", "sans-serif")
@@ -256,21 +258,92 @@ WordTree visualizations. It has been adapted from:
             .attr("x", d => d.x < 180 === !d.children ? 6 : -6)
             .style("text-anchor", d => d.x < 180 === !d.children ? "start" : "end")
             .attr("transform", d => "rotate(" + (d.x < 180 ? d.x - 90 : d.x + 90) + ")")
+            .attr("angle", d => d.children ? d.x + 180 : d.x)
             .attr("word", d => d.id.substring(d.id.lastIndexOf(".") + 1))
+            .attr("def", d => d.data.def)
             .attr("shorttip", d => d.depth == 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.shorttip)
             .text(function(d) {
                 if(document.getElementById("words").checked || d.depth == 0)
-                    return d.id.substring(d.id.lastIndexOf(".") + 1);
+                    return this.getAttribute("word");
                 else
                     return d.data.shorttip;
-            });
+            })
+
+            .on("mouseover", function() {
+                //create tooltip
+                var background = g.append('rect')
+                    .attr("class", "background")
+                    .attr('stroke', 'black')
+                    .attr('fill', 'yellow')
+                    .style("opacity", 1e-6);
+                var tip = g.append("text")
+                    .attr("class", "tooltip")
+                    .style("opacity", 1e-6);
+
+                //Create an invisible copy of the node for detecting mouse exit
+                d3.select(this.parentNode)
+                    .clone(true).style("opacity", 1e-6).raise()
+                    .on("mouseout", function(d) {
+                        console.log(tip.node().getBoundingClientRect());
+                        console.log(g.attr("transform"));
+                        background.transition()
+                           .duration(300)
+                           .style("opacity", 0)
+                           .remove();
+                        tip.transition()
+                           .duration(300)
+                           .style("opacity", 0)
+                           .remove();
+                        d3.select(this).remove();
+                    })
+
+                //set tooltip text
+                tip.html(this.getAttribute("def"));
+                var words = tip.text().split(/\s+/).reverse(),
+                    word,
+                    line = [],
+                    numLines = 0,
+                    lineHeight = 1.1,
+                    tspanGroup = tip.append("g")
+                    tspan = tip.text(null).append("tspan").attr("x", 0).attr("y", 0).attr("dy", 0);
+                while (word = words.pop()) {
+                    line.push(word);
+                    tspan.text(line.join(" "));
+                    if (tspan.node().getComputedTextLength() > 300) {
+                        line.pop();
+                        tspan.text(line.join(" "));
+                        line = [word];
+                        tspan = tip.append("tspan").attr("x", 0).attr("y", 0).attr("dy", ++numLines * lineHeight + "em").text(word);
+                    }
+                }
+
+                //display tooltip
+                tip
+                   .attr("transform", d => this.parentNode.getAttribute("transform") +
+                       " translate(" + project(this.getAttribute("angle"), this.getComputedTextLength()/2) + ")" +
+                       " translate(-150 0)" )
+                   .style("opacity", .9);
+
+                let tipSize = tip.node().getBBox();
+                background
+                   .attr("width", tipSize.width + 4)
+                   .attr("height", tipSize.height + 4)
+                   .attr("transform", d => this.parentNode.getAttribute("transform") +
+                       " translate(" + project(this.getAttribute("angle"), this.getComputedTextLength()/2) + ")" +
+                       " translate(-152 -15)")
+                   .style("opacity", .9);
+
+            })
+
     }
 
 
+    //convert from radial to Cartesian coordinates
     function project(ang, rad) {
         var ang = (ang - 90) / 180 * Math.PI;
         return [rad * Math.cos(ang), rad * Math.sin(ang)];
     }
+
 
 </script>
 
@@ -278,7 +351,7 @@ WordTree visualizations. It has been adapted from:
     // Set-up the export button
     d3.select('#saveButton').on('click', function() {
         var svgString = getSVGString(svg.node());
-        svgString2Image(svgString, 2 * width, 2 * height, 'png', save); // passes Blob and filesize String to the callback
+        svgString2Image(svgString, svg.attr('width'), svg.attr('height'), 'png', save); // passes Blob and filesize String to the callback
         function save(dataBlob, filesize) {
             saveAs(dataBlob, data[0].id +'.png'); // FileSaver.js function
         }
