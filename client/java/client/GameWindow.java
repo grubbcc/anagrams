@@ -16,8 +16,7 @@ import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 import one.jpro.sound.AudioClip;
@@ -49,6 +48,7 @@ public class GameWindow extends PopWindow {
     private final Label infoPane = new Label();
 
     private final TextArea chatBox = new TextArea();
+    private final TextField chatField = new TextField();
     private final Button backToStartButton = new Button("|<");
     private final Button backTenButton = new Button("<<");
     private final Button backButton = new Button("<");
@@ -174,7 +174,6 @@ public class GameWindow extends PopWindow {
         if (allowsChat) {
             ScrollPane chatScrollPane = new ScrollPane();
             chatBox.setEditable(false);
-            TextField chatField = new TextField();
             chatField.setPromptText("Type here to chat");
             chatField.getProperties().put("vkType", "text");
             chatField.setOnAction(ae -> {
@@ -311,7 +310,7 @@ public class GameWindow extends PopWindow {
         setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 if (e.getClickCount() == 2) {
-                    if(e.getTarget() instanceof Pane) {
+                    if(e.getSource() instanceof Pane) {
                         maximizeButton.fire();
                     }
                 }
@@ -1110,6 +1109,26 @@ public class GameWindow extends PopWindow {
         forwardButton.setOnAction(e -> {position = Math.min(position + 1, maxPosition); showPosition(gameLog.get(position));});
         forwardTenButton.setOnAction(e -> {position = Math.min(position + 10, maxPosition); showPosition(gameLog.get(position));});
         forwardToEndButton.setOnAction(e -> {position = maxPosition; showPosition(gameLog.get(position));});
+
+        if(!isMobile) {
+            addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+
+                if (!chatField.isFocused()) {
+                    if (event.getCode().isArrowKey()) {
+                        event.consume();
+                    }
+                    switch (event.getCode()) {
+                        case RIGHT -> forwardButton.fire();
+                        case LEFT -> backButton.fire();
+                        case PAGE_DOWN -> forwardTenButton.fire();
+                        case PAGE_UP -> backTenButton.fire();
+                        case END -> forwardToEndButton.fire();
+                        case HOME -> backToStartButton.fire();
+                    }
+                }
+            });
+        }
+
 
         Platform.runLater(() -> showPosition(gameLog.get(position)));
 
