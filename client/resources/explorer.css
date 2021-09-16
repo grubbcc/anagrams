@@ -16,7 +16,7 @@
     -fx-background-color: blue;
 }
 
-.text-field {
+#control-panel .text-field {
       -fx-background-color: rgb(230, 230, 230);
       -fx-border-insets: 0;
       -fx-padding: 1;
@@ -49,9 +49,11 @@
     -fx-background-radius: 0;
     -fx-border-color: black;
 }
+
 .combo-box > .arrow-button {
-    -fx-background-color: #3c7fb1;
-    -fx-padding: 2;
+     -fx-background-color: #3c7fb1,
+        linear-gradient(#aabbee 0%, #ffffff 24%, #ffffff 25%, #aabbee 100%);
+    -fx-padding: 4 4 3 3;
 }
 .combo-box > .arrow-button > .arrow {
     -fx-background-color: black;
