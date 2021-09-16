@@ -353,8 +353,8 @@ public class LoginMenu extends PopWindow {
         }
 
         if (response.equals("ok login")) {
-            client.login(username);
             client.guest = guest;
+            client.login(username);
             hide();
         }
 
