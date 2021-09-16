@@ -9,9 +9,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.css.PseudoClass;
 import javafx.css.Styleable;
-import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -65,10 +63,10 @@ public class GameWindow extends PopWindow {
     private final GamePanel homePanel = new GamePanel();
     private final WordExplorer explorer;
     private final TilePanel tilePanel = new TilePanel();
-    private final String wordSound = getClass().getResource("/steal sound.wav").toExternalForm();
+    private final String wordSound = getClass().getResource("/sounds/steal sound.wav").toExternalForm();
     private final AudioClip wordClip;
-    private final Image blackRobot = new Image(getClass().getResourceAsStream("/black robot.png"));
-    private final Image whiteRobot = new Image(getClass().getResourceAsStream("/white robot.png"));
+    private final Image blackRobot = new Image(getClass().getResourceAsStream("/images/black robot.png"));
+    private final Image whiteRobot = new Image(getClass().getResourceAsStream("/images/white robot.png"));
     private final ImageView robotImage = new ImageView(blackRobot);
     final WordDisplay wordDisplay;
 
@@ -1193,7 +1191,7 @@ public class GameWindow extends PopWindow {
         public WordDisplay() {
             super(client.anchor);
             setViewOrder(Double.NEGATIVE_INFINITY);
-            AnchorPane.setRightAnchor(this, 0.0);
+            AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
 
             poolPanel.infoPane.getChildren().remove(poolPanel.playerScoreLabel);
