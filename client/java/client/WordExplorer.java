@@ -13,11 +13,9 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
+import org.json.JSONArray;
 
 import java.util.*;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -41,11 +39,10 @@ public class WordExplorer extends PopWindow {
     private final ScrollPane treeSummaryScrollPane = new ScrollPane();
     private final ContextMenu contextMenu = new ContextMenu();
 
-    private final TreeMap<Integer, Integer> counts = new TreeMap<>();
     TreeItem<TreeNode> root;
     TreeNode rootNode;
     String wordList = "";
-    String json = "";
+    JSONArray data;
 
     /**
      *
@@ -184,39 +181,26 @@ public class WordExplorer extends PopWindow {
         treePanel.getChildren().clear();
         messagePane.clear();
         client.send("lookup " + lexicon + " " + query.toUpperCase());
-        client.send("def " + lexicon + " " + query.toUpperCase());
     }
 
     /**
      *
      */
 
-    public void setUpTree(String json) {
-        this.json = json;
+    public void setUpTree(JSONArray data) {
+        this.data = data;
 
-        String[] nodes = json.split("},");
-
-        Matcher m = Pattern.compile("\"id\": \"([A-z]+)").matcher(nodes[0]);
-        m.find();
-        String rootWord = m.group(1);
-        rootNode = new TreeNode(rootWord, "", "");
+        rootNode = new TreeNode(data.getJSONObject(0));
         rootNode.setProb(1);
 
-        for(int i = 1; i < nodes.length; i++) {
-            String[] matches = Pattern.compile("[.A-Z]+")
-                    .matcher(nodes[i])
-                    .results()
-                    .map(MatchResult::group)
-                    .toArray(String[]::new);
-            LinkedList<String> id = new LinkedList<>();
+        TreeMap<Integer, Integer> counts = new TreeMap<>();
 
-            Collections.addAll(id, matches[0].split("\\."));
-            id.removeFirst();
-            String shortTip = matches[1];
-            String longTip = matches[2];
-
-            TreeNode child = new TreeNode(id.removeLast(), shortTip, longTip);
-            addNode(rootNode, child, id);
+        for(int i = 1; i < data.length(); i++) {
+            TreeNode child = new TreeNode(data.getJSONObject(i));
+            child.getAddress().removeFirst();
+            counts.computeIfPresent(child.getWord().length(), (key, val) -> val + 1);
+            counts.putIfAbsent(child.getWord().length(), 1);
+            addNode(rootNode, child, child.getAddress());
         }
 
         root = new TreeItem<>(rootNode);
@@ -228,21 +212,17 @@ public class WordExplorer extends PopWindow {
         treeView.setContextMenu(contextMenu);
         treeView.setCellFactory(tv -> new CustomTreeCell());
 
+        messagePane.setText(rootNode.getDefinition());
+
         if(!rootNode.getChildren().isEmpty()) {
-            treeSummaryScrollPane.setContent(treeSummary());
+            treeSummaryScrollPane.setContent(treeSummary(counts));
             messagePanel.setRight(treeSummaryScrollPane);
         }
         else
             messagePanel.setRight(null);
     }
 
-    /**
-     *
-     */
 
-    public void showDefinition(String definition) {
-        messagePane.setText(definition);
-    }
 
     /**
      * Recursively adds a TreeNode to a hierarchy according to its address
@@ -256,7 +236,7 @@ public class WordExplorer extends PopWindow {
 
     private void addNode(TreeNode parent, TreeNode child, LinkedList<String>address) {
         if(address.isEmpty()) {
-            parent.addChild(child.toString(), child);
+            parent.addChild(child.getWord(), child);
             child.setParent(parent);
         }
         else {
@@ -300,7 +280,7 @@ public class WordExplorer extends PopWindow {
                         lookUp(getText());
                     }
                     else {
-                        client.send("def " + lexicon + " " + getText());
+                        messagePane.setText(getItem().getDefinition());
                     }
                 }
             });
@@ -316,7 +296,7 @@ public class WordExplorer extends PopWindow {
 
             if(!empty) {
 
-                setText(item.toString());
+                setText(item.getWord());
                 doProbabilities(item);
                 if(item.getParent() != null ) {
                     Tooltip tooltip = new Tooltip(item.longTip + "   " + round(100 * item.getProb(), 1) + "%");
@@ -335,27 +315,13 @@ public class WordExplorer extends PopWindow {
     }
 
     /**
-     * Recursively visits all nodes in the wordTree and stores their lengths in a HashMap.
+     * Creates a table showing the number of steals of the rootWord organized by word length
      */
 
-    private void countNodes(TreeNode node) {
-        for(TreeNode child: node.getChildren()) {
-            counts.computeIfPresent(child.toString().length(), (key, val) -> val + 1);
-            counts.putIfAbsent(child.toString().length(), 1);
-            countNodes(child);
-        }
-    }
-
-    /**
-     * Creates a JTable showing the number of steals of the rootWord organized by word length
-     */
-
-    public VBox treeSummary() {
+    public VBox treeSummary(TreeMap<Integer, Integer> counts) {
 
         VBox summaryPane = new VBox();
 
-        counts.clear();
-        countNodes(rootNode);
         if(!counts.isEmpty()) {
             GridPane treeSummary = new GridPane();
             treeSummary.getColumnConstraints().add(new ColumnConstraints(45));
@@ -433,7 +399,7 @@ public class WordExplorer extends PopWindow {
      */
 
     private void viewListAsImage() {
-        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('JSON', '[" + json.replaceAll(",$","") + "]');");
+        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('JSON', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
         WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
     }
 
