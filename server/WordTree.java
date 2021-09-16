@@ -12,15 +12,21 @@ package server;
  *
  */
 
-import java.util.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeSet;
 
 public class WordTree {
 
-	public final AlphagramTrie trie;
-	public TreeNode root;
+	final AlphagramTrie trie;
+	TreeNode root;
 	String rootWord;
 	private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
-	String JSON = "";
+	final JSONArray jsonArray = new JSONArray();
 
 	/**
 	 * Generates a tree from a existing trie
@@ -130,7 +136,13 @@ public class WordTree {
 
 	public void generateJSON(String prefix, String tooltip, TreeNode node) {
 
-		JSON = JSON.concat("{\"id\": \"" + prefix + "\", \"shorttip\": \"" + tooltip + "\", \"longtip\": \"" + node.getTooltip() + "\"},");
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("id", prefix);
+		jsonObject.put("shorttip", tooltip);
+		jsonObject.put("longtip", node.getTooltip());
+		jsonObject.put("def", trie.getDefinition(node.toString()));
+		jsonArray.put(jsonObject);
+
 		for(TreeNode child : node.getChildren()) {
 			String nextTooltip = child.getTooltip();
 			for(char c : node.getTooltip().toCharArray()) {
@@ -162,7 +174,6 @@ public class WordTree {
 			if(longString.length() == 0 ) {
 				return false;
 			}
-
 			else if(shortString.charAt(0) < longString.charAt(0)) {
 				return false;
 			}

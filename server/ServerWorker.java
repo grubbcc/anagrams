@@ -178,7 +178,7 @@ public class ServerWorker extends Thread {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-			System.out.println("command received: " + line);
+//			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
 			if (tokens.length > 0) {
@@ -197,12 +197,7 @@ public class ServerWorker extends Thread {
 						case "lookup" -> {
 							WordTree tree = new WordTree(tokens[2], server.getDictionary(tokens[1]));
 							tree.generateJSON(tree.rootWord, "", tree.root);
-							send("json " + tree.JSON);
-						}
-						case "def" -> {
-							String definition = server.getDictionary(tokens[1]).getDefinition(tokens[2]);
-							if(definition == null) definition = "Definition not available";
-							send("def " + definition);
+							send("json " + tree.jsonArray.toString());
 						}
 						default -> System.out.println("Error: Command not recognized: " + line);
 					}
@@ -229,7 +224,6 @@ public class ServerWorker extends Thread {
 						default -> System.out.println("Error: Command not recognized: " + line);
 					}
 				}
-
 			}
 		}
 	}

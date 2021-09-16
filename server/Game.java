@@ -95,8 +95,9 @@ public class Game {
 		
 		@Override
 		public void run() {
-			server.endGame(gameID);	
-		}			
+			server.endGame(gameID);
+			deleteTimer.cancel();
+		}
 	}
 	
 	/**
@@ -162,7 +163,7 @@ public class Game {
 					if (tilePool.length() >= 29) {
 						think = 2; //robot starts thinking of a play
 					}
-					else if (rgen.nextInt(50) <= 2 * robotPlayer.skillLevel + delay / 3 + 7 * (tilePool.length() / minLength - 1)) {
+					else if (rgen.nextInt(50) <= 3*(robotPlayer.skillLevel-1) + delay/3 + 7*(tilePool.length()/minLength-1)) {
 						think = 2; //robot starts thinking of a play
 					}
 				}
@@ -192,7 +193,7 @@ public class Game {
 	 *
 	 */
 
-	synchronized void pauseGame() {
+	private synchronized void pauseGame() {
 		paused = true;
 		String message = "Game paused";
 		notifyEveryone("note " + gameID + " @" + message);
@@ -213,7 +214,7 @@ public class Game {
 
 		for(String gameState : gameLog) {
 			notifyRoom("gamelog " + gameID + " " + gameState);
-		}		
+		}
 		notifyEveryone("endgame " + gameID);
 
 		wordFinder = new WordFinder(minLength, blankPenalty, server.getDictionary(lexicon));
@@ -229,13 +230,12 @@ public class Game {
 	synchronized void addPlayer(ServerWorker newPlayer) {
 
 		//stop the delete timer
-		if(deleteTimer != null) {
-			deleteTimer.cancel();
-			System.out.println("Delete timer canceled");
-		}
+		deleteTimer.cancel();
+
 		if(!gameOver) {
 			//restart the game timer
 			if (timeRemaining > 0 && playerList.isEmpty()) {
+				gameTimer.cancel();
 				gameTimer = new Timer();
 				gameTimer.schedule(new GameTask(), 1000, 1000);
 			}
@@ -311,11 +311,8 @@ public class Game {
 	*/
 
 	synchronized void addWatcher(ServerWorker newWatcher) {
-		
-		if(deleteTimer != null) {
-			deleteTimer.cancel();
-			System.out.println("Delete timer canceled");
-		}
+
+		deleteTimer.cancel();
 
 		if(!gameOver) {
 			//inform newPlayer of players and their words
@@ -438,14 +435,15 @@ public class Game {
 		if(blanksInPool < blanksToTakeFromPool)
 			return false; //not enough blanks in the pool
 
-		//Calculate how long enough, accounting for the blankPenalty
-		if(shortWord.isEmpty()) {
-			if(longWord.length() < minLength + (blankPenalty + 1)*missingTiles) {
+		//Calculate if the word is long enough, accounting for the blankPenalty
+		if(missingTiles == 0) {
+			if (longWord.length() - shortWord.length() < 1) {
 				return false;
 			}
 		}
-		else if(longWord.length() - shortWord.length() < blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool)
+		else if(longWord.length() - shortWord.length() < blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool) {
 			return false;
+		}
 
 		//steal is successful
 		String oldWord = shortWord;
@@ -494,7 +492,8 @@ public class Game {
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0)
 			timeRemaining += 15;
-		if(tilePool.isEmpty())	tiles = "#";
+
+		tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		saveState();
 
@@ -546,9 +545,11 @@ public class Game {
 		if(blanksAvailable < blanksRequired)
 			return false; //not enough blanks in pool
 		
-		if(blanksRequired > 0)
-			if(entry.length() - minLength < blanksRequired*(blankPenalty + 1))
+		if(blanksRequired > 0) {
+			if (entry.length() - minLength < blanksRequired * (blankPenalty + 1)) {
 				return false; //word not long enough
+			}
+		}
 
 		String newWord = "";
 		for(String s : entry.split("")) {
@@ -571,7 +572,7 @@ public class Game {
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;
-		if(tilePool.isEmpty())	tiles = "#";	
+		tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		//inform players that a new word has been made	
 		saveState();	
@@ -608,7 +609,7 @@ public class Game {
 	}
 
 	/**
-	* Adds a String descriptive of the current game state, e.g.
+	* Adds a String describing the current game state, e.g.
 	 * "257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]"
 	 * to the gameLog.
 	*/
@@ -636,8 +637,7 @@ public class Game {
 	
 	synchronized public Set<String> getPlayerList() {
 
-		Set<String> union = Collections.synchronizedSet(new HashSet<>());
-		union.addAll(words.keySet());
+		Set<String> union = new HashSet<>(words.keySet());
 		union.addAll(playerList.keySet());
 		union.addAll(robotList.keySet());
 		
@@ -649,7 +649,7 @@ public class Game {
 	*/
 	
 	public Set<String> getInactivePlayers() {
-		Set<String> union = getPlayerList();
+		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
 		union.removeAll(robotList.keySet());
 
@@ -684,7 +684,7 @@ public class Game {
 	* @param msg The message containing the information to be shared
 	*/
 	
-	synchronized public void notifyRoom(String msg) {
+	void notifyRoom(String msg) {
 		synchronized(playerList) {
 			for(ServerWorker player : playerList.values()) {
 				player.send(msg);
@@ -704,7 +704,7 @@ public class Game {
 	* @param message The message to be sent.
 	*/
 
-	synchronized void notifyEveryone(String message) {
+	void notifyEveryone(String message) {
 		server.broadcast(message);
 	}
 	

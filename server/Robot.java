@@ -25,7 +25,6 @@ class Robot {
 	private final AlphagramTrie dictionary;
 	
 	public boolean found = false;
-	private final Random rgen = new Random();
 	
 	/**
 	*
@@ -68,7 +67,6 @@ class Robot {
 		if(rest.length() == charsToTake) {
 			key += rest;
 			if(dictionary.getNode(key) != null) {
-				
 				searchForWord(dictionary.getNode(key), pool, 0);
 				return;
 			}
@@ -130,7 +128,9 @@ class Robot {
 	}
 	
 	/**
-	*
+	* Should probably randomize by word, not by player
+	 *
+	 * @return whether the attempt to steal was successful
 	*/
 	
 	boolean makeSteal(Hashtable<String, Vector<String>> words) {
@@ -139,10 +139,8 @@ class Robot {
 		for(String player : players) {
 			for(String shortWord : words.get(player)) {
 				if(trees.containsKey(shortWord)) {
-					for (TreeNode child : trees.get(shortWord).root.getChildren()) {
-
+					for(TreeNode child : trees.get(shortWord).root.getChildren()) {
 						String longWord = child.toString();
-
 						if(game.doSteal(player, shortWord, robotName, longWord)) {
 							return true;
 						}
