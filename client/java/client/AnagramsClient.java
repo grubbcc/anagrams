@@ -10,10 +10,12 @@ import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 import one.jpro.sound.*;
+import org.json.JSONArray;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
 /**
@@ -65,7 +67,7 @@ public class AnagramsClient extends JProApplication {
 	public static final String[] lexicons = {"CSW19", "NWL20"};
 	Preferences prefs;
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
-	private final String newPlayerSound = getClass().getResource("/new player sound.wav").toExternalForm();
+	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.wav").toExternalForm();
 	private AudioClip newPlayerClip;
 	boolean guest = false;
 
@@ -142,7 +144,7 @@ public class AnagramsClient extends JProApplication {
 		createGameButton.setPrefHeight(39);
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
 
-		Button settingsButton = new Button("Settings", new ImageView("/settings.png"));
+		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
 		settingsButton.setStyle("-fx-font: bold 18 arial;");
 		settingsButton.setPrefSize(155, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
@@ -216,14 +218,6 @@ public class AnagramsClient extends JProApplication {
 
 		anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
 		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-
-	/*	ImageView fullScreenIcon = new ImageView(new Image("fullscreen.png"));
-		Button fullScreenButton = new Button("", fullScreenIcon);
-		fullScreenButton.setOnAction(e -> getWebAPI().executeScript("toggleFullscreen()"));
-		AnchorPane.setRightAnchor(fullScreenButton, 50.0);
-		AnchorPane.setBottomAnchor(fullScreenButton, 50.0);
-		if(getWebAPI().isMobile())
-			anchor.getChildren().add(fullScreenButton);*/
 
 		Scene scene;
 		try {
@@ -326,6 +320,7 @@ public class AnagramsClient extends JProApplication {
 
 		prefs = Preferences.userNodeForPackage(getClass()).node(username);
 		explorer = new WordExplorer(prefs.get("lexicon", "CSW19"), this);
+
 		//set user colors
 		for (Colors color : Colors.values())
 			colors.put(color, prefs.get(color.key, color.defaultCode));
@@ -334,11 +329,96 @@ public class AnagramsClient extends JProApplication {
 		settingsMenu = new SettingsMenu(this);
 		messageLoop = new Thread(this::readMessageLoop);
 		messageLoop.start();
-	//	getWebAPI().executeScript("jpro.resize(window.innerHeight);");
 		borderPane.setDisable(false);
 		splitPane.setDisable(false);
+
+		if(prefs.getBoolean("showguide", true)) {
+			showStartupGuide();
+		}
 	}
 
+	/**
+	 * Creates and displays a MessageDialog with information on how to play and use the applicaiton
+	 */
+
+	private void showStartupGuide() {
+
+		String[] titles = {
+			"How to play (1/5)",
+			"How to play (2/5)",
+			"How to play (3/5)",
+			"How to play (4/5)",
+			"How to play (5/5)",
+
+			"Did you know? (1/6)",
+			"Did you know? (2/6)",
+			"Did you know? (3/6)",
+			"Did you know? (4/6)",
+			"Did you know? (5/6)",
+			"Did you know? (6/6)"
+		};
+		String[] intro = {
+			"Spell a word using tiles from the pool or add tiles to an existing word to form a longer one.",
+			"To steal a word, you must change the order of at least two of the letters.",
+			"Blanks can be used as any tile, but there is a cost: for each blank used (or changed), you must take <i>additional</i> tiles from the pool. You can set how many when you create a game.",
+			"The border of the text entry field will turn green if you have created a valid play according to the rules of Anagrams. (But it won't check whether the word is in the dictionary; that part is up to you!)",
+			"Each word is worth n&sup2; points where n is the length of the word. The player with the most points at the end of the game is the winner.",
+
+			"You can hover over the Players label of the Game Pane to see who's currently playing.",
+			"You can click on a player's name in the Players panel to see their profile (or to edit your own).",
+			"You can use the arrow keys (&#11013; and &#10145;), PgDn, PgUp, Home, and End to navigate through the postgame analysis window.",
+			"At the end of game (or while watching a game), you can click on any word to see how it can be stolen.",
+			"In the Word Explorer window, words are colored according to probability. The redder a word is, the more likely it is to occur.",
+			"You can right-click in the Word Explorer window to save the list to a file or view as an image.",
+
+		};
+
+		String[] images = {
+			"images/play.gif",
+			"images/steal.png",
+			"images/blank_penalty.png",
+			"images/valid_play.png",
+			"images/score.png",
+
+			"images/players.png",
+			"images/profile.png",
+			"images/possible_plays.png",
+			"images/word_explorer.png",
+			"images/word_explorer.png",
+			"images/word_tree.png"
+		};
+		MessageDialog dialog = new MessageDialog(this, titles[0]);
+		dialog.setText(intro[0]);
+		dialog.setImage(images[0]);
+		CheckBox continueShowing = new CheckBox("Show this guide on login");
+		continueShowing.setSelected(true);
+
+		if(!guest) {
+			dialog.buttonPane.getChildren().add(continueShowing);
+		}
+		dialog.addBackNextButtons();
+		AtomicInteger i = new AtomicInteger();
+		dialog.backButton.setOnAction(e -> {
+			int j = Math.floorMod(i.decrementAndGet(), intro.length);
+			dialog.setText(intro[j]);
+			dialog.setTitle(titles[j]);
+			dialog.setImage(images[j]);
+		});
+		dialog.nextButton.setOnAction(e -> {
+			int j = Math.floorMod(i.incrementAndGet(), intro.length);
+			dialog.setText(intro[j]);
+			dialog.setTitle(titles[j]);
+			dialog.setImage(images[j]);
+		});
+		dialog.addOkayButton();
+		dialog.okayButton.setText("Got it");
+		dialog.okayButton.setOnAction(e -> {
+			if(!continueShowing.isSelected())
+				prefs.putBoolean("showguide", false);
+			dialog.hide();
+		});
+		Platform.runLater(() -> dialog.show(true));
+	}
 
 
 	/**
@@ -561,7 +641,7 @@ public class AnagramsClient extends JProApplication {
 				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-	/*				if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
+				/*	if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
 						System.out.println("command received: " + line);
 					}*/
 
@@ -585,8 +665,7 @@ public class AnagramsClient extends JProApplication {
 							case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
 									tokens[7], tokens[8], tokens[9], tokens[10]);
 							case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
-							case "json" -> {if (explorer.isVisible()) explorer.setUpTree(finalLine.substring(5));}
-							case "def" -> {if (explorer.isVisible()) explorer.showDefinition(finalLine.replaceFirst("def ", ""));}
+							case "json" -> {if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.substring(5)));}
 
 							//gamePane commands
 							default -> {
@@ -641,7 +720,6 @@ public class AnagramsClient extends JProApplication {
 			}
 		}
 		catch (Exception ex) {
-     //       ex.printStackTrace();
 			if(stage.isShowing()) {
 				if(connected) {
 					logOut();
