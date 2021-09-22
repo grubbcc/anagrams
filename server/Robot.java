@@ -1,12 +1,6 @@
 package server;
 
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Vector;
-import java.util.Random;
-import java.util.Collections;
+import java.util.*;
 
 /**
 * An artificial intelligence that uses wordTrees to find words and make steals
@@ -14,18 +8,19 @@ import java.util.Collections;
 
 class Robot {
 
+	final String robotName;
+	final int skillLevel;
+
 	private final Game game;
-	public final String robotName;
-	public final int skillLevel;
 	private final int blankPenalty;
 	private final int minLength;
-	int blanksAvailable;
-	
 	private final HashMap<String, WordTree> trees = new HashMap<>();
 	private final AlphagramTrie dictionary;
-	
-	public boolean found = false;
-	
+	final private Random rgen = new Random();
+
+	private int blanksAvailable;
+	private boolean wordFound = false;
+
 	/**
 	*
 	*/
@@ -48,67 +43,76 @@ class Robot {
 		else
 			robotName = "Robot-Genius";
 	}
-	
-	/**
-	* Recursively generates all possible combinations of tiles from the tilePool whose length equals the minimum word length.
-	* Each combination is checked to see if a valid word can be formed using the remaining letters in the pool. The loop halts
-	* if and when the first valid word is found.
-	*
-	* @param key: the character address of the node being searched
-	* @param rest: the characters
-	* @param charsToTake tiles not yet found in the pool
-	*/
 
-	void makeWord(String key, String pool, String rest, int charsToTake) {
-		
-		if(found)
-			return;
-		
-		if(rest.length() == charsToTake) {
-			key += rest;
-			if(dictionary.getNode(key) != null) {
-				searchForWord(dictionary.getNode(key), pool, 0);
-				return;
-			}
+	/**
+	 *
+	 */
+
+	public void makePlay(String tilePool, Hashtable<String, Vector<String>> words) {
+
+		wordFound = false;
+		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
+
+		if (tilePool.length() >= 2 * minLength) {
+			searchInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
 		}
-		
-		for(int i = 0; i < rest.length() && i <= charsToTake; i++) {
-			if(found)
-				return;
-			makeWord(key + rest.substring(0,i), pool + rest.charAt(i), rest.substring(i+1), charsToTake-i);
+		else if (rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
+			searchInPool(dictionary.rootNode, "", tilePool.replace("?", ""), 0);
+		}
+		else {
+			searchForSteal(words);
 		}
 	}
-	
-	/**
-	* Given a node in the dictionary trie containing a known set of letters, recursively searches for words that can be constructed 
-	* using the remaining letters in the pool.
-	*/
 
-	void searchForWord(Node node, String remainingPool, int blanksRequired) {
-		
-		if(found)
-			return;
-		
-		for(String anagram : node.anagrams) {
-			if(anagram.length() >= minLength + blanksRequired*blankPenalty) {
-				found = true;
-				game.doMakeWord(robotName, anagram);
+	/**
+	 * Recursively searches for a word that can be formed from the letters in the pool.
+	 * If a node is discovered containing one or more anagrams, one is chosen at random,
+	 * and the method halts.
+	 *
+	 * @param node 				The node being searched
+	 * @param charsFound 		chars found so far (the 'address' of the current node)
+	 * @param poolRemaining 	chars left in the pool from which to form a word
+	 * @param blanksRequired 	Blanks needed to make this word
+	 */
+
+	private void searchInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
+		if(!wordFound) {
+			if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
+				if(!node.anagrams.isEmpty()) {
+					int num = rgen.nextInt(node.anagrams.size());
+					for(String anagram: node.anagrams) {
+						if (--num < 0) {
+							wordFound = true;
+							game.doMakeWord(robotName, anagram);
+							return;
+						}
+					}
+				}
 			}
-		}
-		
-		for(Map.Entry<Character,Node> child : node.children.entrySet()) {
-			if(remainingPool.contains(child.getKey() + "")) {
-				searchForWord(child.getValue(), remainingPool.replaceFirst(child.getKey() + "", ""), 0);
+
+			for (int i = 0; i < poolRemaining.length(); i++) {
+				char nextChar = poolRemaining.charAt(i);
+				if (node.children.containsKey(nextChar)) {
+					if (charsFound.length() + 1 + poolRemaining.length() - (i + 1) >= blanksRequired * (blankPenalty + 1) + minLength) {
+						searchInPool(node.children.get(nextChar), charsFound + nextChar, poolRemaining.substring(i + 1), blanksRequired);
+					}
+				}
+
+				if (blanksAvailable >= blanksRequired + 1 && charsFound.length() + 1 + poolRemaining.length() - i >= (blanksRequired + 1) * (blankPenalty + 1) + minLength) {
+					for (Map.Entry<Character, Node> child : node.children.headMap(nextChar).entrySet()) {
+						searchInPool(child.getValue(), charsFound + child.getKey(), poolRemaining.substring(i), blanksRequired + 1);
+					}
+				}
 			}
-			else {
-				blanksRequired++;
-				if(blanksAvailable >= blanksRequired && remainingPool.length() >= blanksRequired*blankPenalty) {
-					searchForWord(child.getValue(), remainingPool, blanksRequired);
+
+			if (blanksAvailable >= (blanksRequired + 1) && charsFound.length() + 1 >= (blanksRequired + 1) * (blankPenalty + 1) + minLength) {
+				for (Map.Entry<Character, Node> child : node.children.entrySet()) {
+					searchInPool(child.getValue(), charsFound + child.getKey(), "", blanksRequired + 1);
 				}
 			}
 		}
 	}
-	
+
 
 
 	/**
@@ -126,14 +130,15 @@ class Robot {
 	void removeTree(String stolenWord) {
 		trees.remove(stolenWord);
 	}
-	
+
 	/**
-	* Should probably randomize by word, not by player
+	 * Attempts to find a steal
 	 *
-	 * @return whether the attempt to steal was successful
-	*/
+	 * @param words All the words on the board organized by player
+	 */
 	
-	boolean makeSteal(Hashtable<String, Vector<String>> words) {
+	private void searchForSteal(Hashtable<String, Vector<String>> words) {
+
 		ArrayList<String> players = new ArrayList<>(words.keySet());
 		Collections.shuffle(players);
 		for(String player : players) {
@@ -142,13 +147,11 @@ class Robot {
 					for(TreeNode child : trees.get(shortWord).root.getChildren()) {
 						String longWord = child.toString();
 						if(game.doSteal(player, shortWord, robotName, longWord)) {
-							return true;
+							return;
 						}
 					}
 				}
 			}
 		}
-		return false;
 	}
-	
 }
