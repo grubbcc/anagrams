@@ -1,25 +1,28 @@
 package client;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
+import org.json.JSONObject;
+
+import java.util.*;
 
 public class TreeNode {
 
+    private final JSONObject data;
+    private final LinkedList<String> address;
     private final String word;
     final String shortTip;
     final String longTip;
     private double prob;
+    private final String definition;
     private TreeNode parent;
     private final LinkedHashMap<String, TreeNode> children = new LinkedHashMap<>();
 
-    /**
-     *
-     */
-
-    public TreeNode(String word, String shortTooltip, String longTooltip) {
-        this.word = word;
-        this.shortTip = shortTooltip;
-        this.longTip = longTooltip;
+    public TreeNode(JSONObject data) {
+        this.data = data;
+        address = new LinkedList<>(Arrays.asList(data.getString("id").split("\\.")));
+        word = address.removeLast();
+        shortTip = data.getString("shorttip");
+        longTip = data.getString("longtip");
+        definition = data.optString("def", "Definition not available");
     }
 
     /**
@@ -28,7 +31,30 @@ public class TreeNode {
 
     @Override
     public String toString() {
+        return data.toString();
+    }
+
+    /**
+     *
+     */
+
+    public String getWord() {
         return word;
+    }
+
+    /**
+     *
+     */
+
+    public LinkedList<String> getAddress() {
+        return address;
+    }
+    /**
+     *
+     */
+
+    public String getDefinition() {
+        return definition;
     }
 
 
