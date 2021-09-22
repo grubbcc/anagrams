@@ -169,22 +169,9 @@ public class Game {
 				}
 			}
 			
-			//decide what type of move the robot should make
+			//Robot attempts to make a play
 			if(!robotList.isEmpty() && think == 0) {
-
-				robotPlayer.found = false;
-				robotPlayer.blanksAvailable = tilePool.length() - tilePool.replace("?","").length();
-				
-				if(tilePool.length() >= 2*minLength) {
-					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
-				}
-
-				else if(rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
-					robotPlayer.makeWord("", "", tilePool.replace("?", ""), minLength);
-				}
-				else if(tilePool.length() < tileCount) {
-					robotPlayer.makeSteal(words);
-				}
+				robotPlayer.makePlay(tilePool, words);
 			}
 		}
 	}
@@ -370,14 +357,11 @@ public class Game {
 	* Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
 	*/
 
-	synchronized void drawTile() {
-
+	private void drawTile() {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];
 			tileCount++;
-
 			saveState();
-
 			notifyRoom("nexttiles " + gameID + " " + tilePool);
 		}
 	}
@@ -620,6 +604,7 @@ public class Game {
 			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
 		}
 	}
+
 
 	/**
 	 * Computes what plays can be made at this position, or (if already computed) retrieves from memory.
