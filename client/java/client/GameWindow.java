@@ -275,8 +275,15 @@ public class GameWindow extends PopWindow {
 
 
             textField.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (!newValue.matches("[a-zA-Z]*") || newValue.length() > 15)
+                if (!newValue.matches("[a-zA-Z]*")) {
                     Platform.runLater(() -> textField.setText(oldValue));
+                }
+                else if(newValue.length() > 15) {
+                    Platform.runLater(() -> {
+                        textField.setText(oldValue);
+                        textField.positionCaret(oldValue.length());
+                    });
+                }
                 else
                     updateWordBuilder(newValue.toUpperCase(), tilePool);
             });
@@ -285,8 +292,8 @@ public class GameWindow extends PopWindow {
             caret.translateXProperty().bind(textField.caretPositionProperty().multiply(20).add(4));
             caret.setViewOrder(Double.NEGATIVE_INFINITY);
             Timeline blinker = new Timeline(
-                    new KeyFrame(Duration.seconds(0.8), ae -> caret.setOpacity(1)),
-                    new KeyFrame(Duration.seconds(0.4),ae -> caret.setOpacity(0))
+                    new KeyFrame(Duration.seconds(1.0), ae -> caret.setOpacity(1)),
+                    new KeyFrame(Duration.seconds(0.5), ae -> caret.setOpacity(0))
             );
             blinker.setCycleCount(Animation.INDEFINITE);
             blinker.play();
@@ -922,7 +929,7 @@ public class GameWindow extends PopWindow {
                 width = word.length()*tileWidth + (word.length() - 1)*TILE_GAP;
                 drawWord();
 
-                setOnMouseClicked(event -> { ;
+                setOnMouseClicked(event -> {
                     if(gameOver || isWatcher) {
                         if(!explorer.isVisible()) {
                             explorer.show(false);
@@ -1296,7 +1303,8 @@ public class GameWindow extends PopWindow {
      * the method returns true and an instruction is sent to the server to remove the shortWord from the
      * given opponent and reward the current player with the longWord. Otherwise returns false.
      *
-     *@param shortWord The word that we are attempting to steal
+     *@param shortWord The word that we are attempting to steal. If shortWord is empty, the method
+     *                 will attempt to construct the longWord directly from the pool.
      *@param longWord The word which may or not be a valid steal of the shortWord
      */
 
@@ -1353,22 +1361,19 @@ public class GameWindow extends PopWindow {
      * Given two words, the shorter of which is a subset of the other, determines whether a rearrangement/permutation
      * of letters is necessary to form the longer.
      *
-     * @param shortWord a short word
-     * @param longWord a longer word
+     * @param shortWord     a short word (case must match longer word)
+     * @param longWord      a longer word (case must match shorter word)
      */
 
     public static boolean isRearrangement(String shortWord, String longWord) {
 
-        String shortString = shortWord;
-        String longString = longWord;
-
-        while(longString.length() >= shortString.length() && shortString.length() > 0) {
-            if (shortString.charAt(0) == longString.charAt(0)) {
-                shortString = shortString.substring(1);
+        while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
+            if (shortWord.charAt(0) == longWord.charAt(0)) {
+                shortWord = shortWord.substring(1);
             }
-            longString = longString.substring(1);
+            longWord = longWord.substring(1);
         }
 
-        return shortString.length() > longString.length();
+        return shortWord.length() > longWord.length();
     }
 }
