@@ -18,7 +18,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
-import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
@@ -118,7 +117,7 @@ class PlayerPane extends PopWindow {
         infoPane = new PopWindow(client.anchor);
         infoPane.setTitle("Markdown Guide");
         codePane.setPrefWidth(300);
-        ImageView markdownPane = new ImageView("/markdown.png");
+        ImageView markdownPane = new ImageView("/images/markdown.png");
         markdownPane.setFitHeight(550);
         markdownPane.setPreserveRatio(true);
         markdownPane.setSmooth(true);
@@ -231,7 +230,7 @@ class PlayerPane extends PopWindow {
         cancelButton.setPrefWidth(110);
         deleteAccountButton.setPrefWidth(110);
 
-        ImageView infoIcon = new ImageView("/info.png");
+        ImageView infoIcon = new ImageView("/images/info.png");
         infoIcon.setFitWidth(17);
         infoIcon.setFitHeight(17);
         Tooltip tooltip = new Tooltip("Show markdown guide");
@@ -271,9 +270,9 @@ class PlayerPane extends PopWindow {
                 confirmDialog.hide();
                 MessageDialog infoDialog = new MessageDialog(client, "Account deleted");
                 infoDialog.setText("Your account has been deleted. You will remain\n" +
-                        "logged in as a guest until you close the window.");
+                        "logged in as a guest until you close the application.");
                 infoDialog.addOkayButton();
-
+                Platform.runLater(() -> infoDialog.show(true));
             });
             confirmDialog.noButton.setOnAction(click -> confirmDialog.hide());
             Platform.runLater(() -> confirmDialog.show(true));

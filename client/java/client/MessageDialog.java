@@ -38,18 +38,13 @@ public class MessageDialog extends PopWindow {
             setScaleY(1.2);
         }
 
-        okayButton.setPrefWidth(50);
-        yesButton.setPrefWidth(50);
-        noButton.setPrefWidth(50);
-        backButton.setPrefWidth(50);
-        nextButton.setPrefWidth(50);
-
+        mainPane.setId("dialog");
         mainPane.setCenter(htmlView);
         mainPane.setBottom(buttonPane);
         buttonPane.setAlignment(Pos.BASELINE_CENTER);
-        buttonPane.setSpacing(5);
+        buttonPane.setSpacing(8);
         setContents(mainPane);
-        setMaxSize(400, 120);
+        setMaxSize(410, 120);
         setTitle(title);
     }
 

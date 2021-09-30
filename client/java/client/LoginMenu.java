@@ -95,7 +95,7 @@ public class LoginMenu extends PopWindow {
         codeField.setPromptText("Enter code from email");
 
         usernameField.getProperties().put("vkType", "text");
-        emailField.getProperties().put("vkType", "email");
+        emailField.getProperties().put("vkType", "text");
         passwordField.getProperties().put("vkType", "text");
         confirmField.getProperties().put("vkType", "text");
         codeField.getProperties().put("vkType", "numeric");
@@ -185,7 +185,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     * Action undergone when registerButton is activated.
+     * @param actionEvent a click on the regsterButton.
      */
 
     private void registerAction(ActionEvent actionEvent) {
@@ -223,6 +223,8 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Restores menu to original settings, retaining entered username
+     *
+     * @param actionEvent a click on the cancelButton
      */
 
     private void cancelAction(ActionEvent actionEvent) {
@@ -230,6 +232,7 @@ public class LoginMenu extends PopWindow {
         emailField.setText("");
         passwordField.setText("");
         confirmField.setText("");
+        codeField.setText("");
         instructionLabel.setText("Enter a username");
         warningLabel.setText("");
         warningLabel.setOnMouseClicked(null);
@@ -238,7 +241,7 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
-     *
+     * @param actionEvent a click on the guestButton
      */
 
     private void guestAction(ActionEvent actionEvent) {
@@ -269,7 +272,11 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
+     * Checks if there is an account with a password associated with the provided username.
+     * If there is, the user is prompted to enter their password. Otherwise, prompts the user
+     * to register, to log in as a guest, or to recover their username.
      *
+     * @param actionEvent a click on the loginButton
      */
 
     private void loginAction(ActionEvent actionEvent) {
@@ -311,7 +318,9 @@ public class LoginMenu extends PopWindow {
     }
 
     /**
+     * Checks whether the provided password matches the stored data
      *
+     * @return true if the password matches, false otherwise
      */
 
     private boolean checkPassword() {
@@ -331,6 +340,7 @@ public class LoginMenu extends PopWindow {
     /**
      * Asks the client to attempt login with this username.
      *
+     * @param guest whether the player has chosen to login in as a guest
      */
 
 
@@ -369,7 +379,10 @@ public class LoginMenu extends PopWindow {
 
 
     /**
+     * Attempts to send an email containing a 6-digit code to the provided email address
+     * in order to verify the account.
      *
+     * @param actionEvent a click on the sendButton
      */
 
     private void sendAction(ActionEvent actionEvent) {
@@ -381,7 +394,7 @@ public class LoginMenu extends PopWindow {
                     if (registeredEmail.equals(email)) {
                         MessageDialog dialog = new MessageDialog(client, "Invalid email");
 
-                        dialog.setText("This email address is already registered to a username\n + " +
+                        dialog.setText("This email address is already registered to a username\n" +
                                 "Please enter a different email address or click \"Forgot username?\"");
                         dialog.addOkayButton();
                         dialog.show(true);
@@ -449,13 +462,15 @@ public class LoginMenu extends PopWindow {
             prefs.node(username).put("email", emailField.getText());
             prefs.node(username).put("password", passwordField.getText());
 
-            login(false);
             MessageDialog dialog = new MessageDialog(client, "Registration successful");
             dialog.setText("<center>Congratulations, you have successfully registered the username\n" +
                     username + "." +
                     "\nYou may delete this account at any time by\n" +
                     "clicking your name in the right panel.</center>");
             dialog.addOkayButton();
+            dialog.closeButton.setOnAction(e -> {login(false); dialog.hide();});
+            dialog.okayButton.setOnAction(e -> {login(false); dialog.hide();});
+            hide();
             dialog.show(true);
         }
         else {
@@ -465,6 +480,8 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Prompts user to enter an email address for password recovery.
+     *
+     * @param click a click on the forgot password label
      */
 
     private void forgotPasswordAction(MouseEvent click) {
@@ -479,6 +496,8 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Prompts user to enter an email address for username recovery.
+     *
+     * @param click a click on the forgot username label
      */
 
     private void forgotUsernameAction(MouseEvent click) {
@@ -492,6 +511,8 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Attempts to send an confirmation email to the registrant.
+     *
+     * @param actionEvent A click on the sendUsername Button
      */
 
     private void sendUsername(ActionEvent actionEvent) {
@@ -540,6 +561,8 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Attempts to send an message containing the registered user's password to the associated email.
+     *
+     * @param actionEvent a click on the sendPassword Button
      */
 
     private void sendPassword(ActionEvent actionEvent) {
@@ -595,7 +618,7 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Checks if the email address has between 1 and 21 characters and does not start with "Robot".
-     * @return true if the username is valid, false otherwise
+     * @return true if the username is invalid, false otherwise
      */
 
     private static boolean isInvalidUsername(String username) {
@@ -604,7 +627,7 @@ public class LoginMenu extends PopWindow {
 
     /**
      * Checks if the contents of the emailField is a valid email address.
-     * @return true if the email address is valid, false otherwise
+     * @return true if the email address is invalid, false otherwise
      */
 
     public static boolean isInvalidEmailAddress(String email) {

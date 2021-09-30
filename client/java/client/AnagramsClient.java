@@ -361,7 +361,7 @@ public class AnagramsClient extends JProApplication {
 			"Spell a word using tiles from the pool or add tiles to an existing word to form a longer one.",
 			"To steal a word, you must change the order of at least two of the letters.",
 			"Blanks can be used as any tile, but there is a cost: for each blank used (or changed), you must take <i>additional</i> tiles from the pool. You can set how many when you create a game.",
-			"The border of the text entry field will turn green if you have created a valid play according to the rules of Anagrams. (But it won't check whether the word is in the dictionary; that part is up to you!)",
+			"The border of the text entry will turn green if you have created a valid play according to the rules of Anagrams. (But it won't check whether the word is in the dictionary; that part is up to you!)",
 			"Each word is worth n&sup2; points where n is the length of the word. The player with the most points at the end of the game is the winner.",
 
 			"You can hover over the Players label of the Game Pane to see who's currently playing.",
@@ -369,7 +369,7 @@ public class AnagramsClient extends JProApplication {
 			"You can use the arrow keys (&#11013; and &#10145;), PgDn, PgUp, Home, and End to navigate through the postgame analysis window.",
 			"At the end of game (or while watching a game), you can click on any word to see how it can be stolen.",
 			"In the Word Explorer window, words are colored according to probability. The redder a word is, the more likely it is to occur.",
-			"You can right-click in the Word Explorer window to save the list to a file or view as an image.",
+			"You can right-click in the Word Explorer window to save the word tree to a file or view it as an image like this one.",
 
 		};
 
@@ -390,7 +390,7 @@ public class AnagramsClient extends JProApplication {
 		MessageDialog dialog = new MessageDialog(this, titles[0]);
 		dialog.setText(intro[0]);
 		dialog.setImage(images[0]);
-		CheckBox continueShowing = new CheckBox("Show this guide on login");
+		CheckBox continueShowing = new CheckBox("Show this guide");
 		continueShowing.setSelected(true);
 
 		if(!guest) {
@@ -411,7 +411,7 @@ public class AnagramsClient extends JProApplication {
 			dialog.setImage(images[j]);
 		});
 		dialog.addOkayButton();
-		dialog.okayButton.setText("Got it");
+		dialog.okayButton.setText("I'm ready!");
 		dialog.okayButton.setOnAction(e -> {
 			if(!continueShowing.isSelected())
 				prefs.putBoolean("showguide", false);
@@ -641,9 +641,9 @@ public class AnagramsClient extends JProApplication {
 				if (tokens.length > 0) {
 
 					String cmd = tokens[0];
-				/*	if(!cmd.equals("note") && !cmd.equals("nexttiles")) {
-						System.out.println("command received: " + line);
-					}*/
+
+			//		if(!cmd.equals("note") && !cmd.equals("nexttiles"))
+			//			System.out.println("command received: " + line);
 
 					String finalLine = line;
 

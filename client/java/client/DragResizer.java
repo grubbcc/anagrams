@@ -223,11 +223,11 @@ public class DragResizer {
     }
 
     /**
-     *
+     * Reset
      */
 
     protected void mouseReleased(MouseEvent event) {
-        initMinHeight = false; //Reset each time
+        initMinHeight = false;
         draggingNorth = false; draggingEast = false; draggingSouth = false; draggingWest = false;
         region.setCursor(Cursor.DEFAULT);
         mouseLocation.set(null);

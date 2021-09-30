@@ -128,10 +128,7 @@ class GameMenu extends PopWindow {
             hide();
         });
 
-        setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER)
-                startButton.fire();
-        });
+        startButton.setDefaultButton(true);
 
         show(true);
         startButton.requestFocus();
@@ -176,7 +173,7 @@ class GameMenu extends PopWindow {
         String addRobot = robotChooser.isSelected() + "";
 
         if(addRobot.equals("true")) {
-            maxPlayers = Math.max(6, Integer.parseInt(maxPlayers) + 1) + "";
+            maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
         }
 
         client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));

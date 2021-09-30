@@ -41,7 +41,7 @@ public class GameWindow extends PopWindow {
     private final Button exitGameButton = new Button("Exit Game");
     private final TextField textField = new TextField();
     private final Pane wordBuilder = new Pane();
-    private final Line caret = new Line(0,6,0, 27);
+    private final Line caret = new Line(0, 6, 0, 27);
     private final StackPane textStack = new StackPane();
     private final Label infoPane = new Label();
 
@@ -78,8 +78,8 @@ public class GameWindow extends PopWindow {
     private final String username;
     public final boolean isWatcher;
     public final boolean allowsChat;
-    private final int minLength;
-    private final int blankPenalty;
+    final int minLength;
+    final int blankPenalty;
     private String tilePool = "";
     private final HashMap<String, GamePanel> players = new HashMap<>();
     boolean gameOver = false;
@@ -121,7 +121,7 @@ public class GameWindow extends PopWindow {
 
         //control panel
         controlPanel.setId("control-panel");
-        if(isMobile) controlPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+        if (isMobile) controlPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         controlPanel.setSpacing(isMobile ? 5 : 20);
         exitGameButton.setOnAction(e -> exitGame());
         notificationArea.setFont(Font.font("Arial", FontWeight.BOLD, isMobile ? 15 : 13));
@@ -138,9 +138,15 @@ public class GameWindow extends PopWindow {
         ColumnConstraints col2 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col3 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
 
-        RowConstraints row1 = new RowConstraints(); row1.setPercentHeight(36); row1.setFillHeight(true);
-        RowConstraints row2 = new RowConstraints(); row2.setPercentHeight(36); row2.setFillHeight(true);
-        RowConstraints row3 = new RowConstraints(); row3.setPercentHeight(28); row3.setFillHeight(true);
+        RowConstraints row1 = new RowConstraints();
+        row1.setPercentHeight(36);
+        row1.setFillHeight(true);
+        RowConstraints row2 = new RowConstraints();
+        row2.setPercentHeight(36);
+        row2.setFillHeight(true);
+        RowConstraints row3 = new RowConstraints();
+        row3.setPercentHeight(28);
+        row3.setFillHeight(true);
 
         gameGrid.getColumnConstraints().addAll(col1, col2, col3);
         gameGrid.getRowConstraints().addAll(row1, row2, row3);
@@ -188,7 +194,7 @@ public class GameWindow extends PopWindow {
             splitPane.getItems().add(chatPanel);
             splitPane.setDividerPosition(0, 0.85);
 
-            if(isMobile) {
+            if (isMobile) {
                 splitPane.setDividerPosition(0, 1.0);
                 hideButton.setPrefWidth(80);
                 hideButton.setAlignment(Pos.CENTER_RIGHT);
@@ -197,12 +203,11 @@ public class GameWindow extends PopWindow {
                 hideButton.translateXProperty().bind(translateXProperty().add(widthProperty()).subtract(89));
                 hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
                 hideButton.setOnAction(e -> {
-                    if(hideButton.getText().contains("show")) {
+                    if (hideButton.getText().contains("show")) {
                         splitPane.setDividerPosition(0, 0);
                         hideButton.setText("hide chat \u25BC");
                         hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(chatPanel.heightProperty()).subtract(12));
-                    }
-                    else {
+                    } else {
                         splitPane.setDividerPosition(0, 1.0);
                         hideButton.setText("show chat \u25B2");
                         hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
@@ -216,11 +221,13 @@ public class GameWindow extends PopWindow {
         this.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
         setContents(splitPane);
 
-        if(isMobile) {
+        if (isMobile) {
             setMovable(false);
             title.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-            maximizeButton.setScaleX(1.45); maximizeButton.setScaleY(1.45);
-            closeButton.setScaleX(1.45); closeButton.setScaleY(1.45);
+            maximizeButton.setScaleX(1.45);
+            maximizeButton.setScaleY(1.45);
+            closeButton.setScaleX(1.45);
+            closeButton.setScaleY(1.45);
 
             controlPanel.getChildren().remove(exitGameButton);
             minWidthProperty().bind(client.stage.widthProperty());
@@ -233,8 +240,7 @@ public class GameWindow extends PopWindow {
                 client.getWebAPI().executeScript("toggleFullscreen();");
                 Platform.runLater(() -> splitPane.setDividerPosition(0, dividerPosition));
             });
-        }
-        else {
+        } else {
             setPrefSize(1000, 674);
             textField.setPrefWidth(310);
             makeResizable();
@@ -277,15 +283,13 @@ public class GameWindow extends PopWindow {
             textField.textProperty().addListener((observable, oldValue, newValue) -> {
                 if (!newValue.matches("[a-zA-Z]*")) {
                     Platform.runLater(() -> textField.setText(oldValue));
-                }
-                else if(newValue.length() > 15) {
+                } else if (newValue.length() > 15) {
                     Platform.runLater(() -> {
                         textField.setText(oldValue);
                         textField.positionCaret(oldValue.length());
                     });
-                }
-                else
-                    updateWordBuilder(newValue.toUpperCase(), tilePool);
+                } else
+                    updateWordBuilder(newValue.toUpperCase());
             });
 
             caret.setStrokeWidth(2);
@@ -299,13 +303,12 @@ public class GameWindow extends PopWindow {
             blinker.play();
             wordBuilder.getChildren().add(caret);
 
-            if(isMobile) {
+            if (isMobile) {
                 StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
                 controlPanel.getChildren().remove(infoPane);
                 controlPanel.getChildren().addAll(textField, infoPane);
                 client.stack.getChildren().add(wordBuilder);
-            }
-            else {
+            } else {
                 textStack.getChildren().addAll(textField, wordBuilder);
                 controlPanel.getChildren().remove(infoPane);
                 controlPanel.getChildren().addAll(textStack, infoPane);
@@ -313,9 +316,9 @@ public class GameWindow extends PopWindow {
         }
 
         setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
+            if (e.getButton() == MouseButton.PRIMARY) {
                 if (e.getClickCount() == 2) {
-                    if(e.getSource() instanceof Pane) {
+                    if (e.getSource() instanceof Pane) {
                         maximizeButton.fire();
                     }
                 }
@@ -341,128 +344,52 @@ public class GameWindow extends PopWindow {
      * as blanks or as normal tiles according to the method's prediction of the user's most likely
      * play.
      *
-     * @param entry The contents of hte wordBuilder's text field
-     * @param pool The current tilePool
+     * @param entry The contents of the wordBuilder's text field
      */
 
-    private void updateWordBuilder(String entry, String pool) {
+    private void updateWordBuilder(String entry) {
 
         wordBuilder.getChildren().retainAll(caret);
-        if(entry.isEmpty()) {
+        if (entry.isEmpty()) {
             wordBuilder.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
             return;
         }
 
-        LinkedHashSet<String> words = new LinkedHashSet<>();
-        for (GamePanel gamePanel : gamePanels)
-            words.addAll(gamePanel.getWords());
-        words.add("");
-
-        String bestWord = "";
-        int bestScore = -1000;
-        boolean tooFewBlanksInPool = false;
-        boolean isRearrangement = true;
-        boolean stolen = false;
-
-        for(String word : words) {
-
-            String charsToSteal = word;
-            String tiles = tilePool;
-            int blanksToChange = 0;
-            int blanksToTakeFromPool = 0;
-            int missingFromPool = 0;
-
-            for(String s : entry.split("")) {
-                if(charsToSteal.toUpperCase().contains(s)) {
-                    charsToSteal = charsToSteal.replaceFirst(s, "");
+        //Find the best play
+        Play bestPlay = new Play("", entry, tilePool);
+        int bestScore = bestPlay.getScore();
+        for(GamePanel gamePanel : gamePanels) {
+            for(String word : gamePanel.getWords()) {
+                Play play = new Play(word, entry, tilePool);
+                int score = play.getScore();
+                if (score > bestScore) {
+                    bestPlay = play;
+                    bestScore = score;
                 }
-                else if(tiles.contains(s)) {
-                    tiles = tiles.replaceFirst(s, "");
-                }
-                else if(!charsToSteal.replaceAll("[A-Z]", "").isEmpty()) {
-                    charsToSteal = charsToSteal.replaceFirst("[a-z]", "");
-                    blanksToChange++;
-                }
-                else if(tiles.contains("?")) {
-                    tiles = tiles.replaceFirst("\\?", "");
-                    blanksToTakeFromPool++;
-                }
-                else {
-                    missingFromPool++;
-                }
-            }
-            int unstolen = charsToSteal.length();
-
-            int playabilityScore;
-            boolean rearrangement = false;
-
-            //playability must be at least 0 to be valid
-            if (word.isEmpty()) {
-                playabilityScore = entry.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
-            }
-            else {
-                playabilityScore = entry.length() - word.length() - blanksToChange*blankPenalty - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
-                rearrangement = isRearrangement(word.toUpperCase(), entry);
-            }
-
-            //see if this word is the best word
-            if (playabilityScore > bestScore) {
-                bestWord = word;
-                bestScore = playabilityScore;
-                tooFewBlanksInPool = missingFromPool > 0;
-                isRearrangement = rearrangement;
-                stolen = charsToSteal.isEmpty();
             }
         }
 
-        //designate letters as blanks or as normal tiles
-        String tiles = pool.concat(bestWord.toUpperCase());
-        String newWord = "";
-
-        for (String s : entry.split("")) {
-            if (tiles.contains(s)) {
-                tiles = tiles.replaceFirst(s, "");
-                newWord = newWord.concat(s);
-            }
-            else {
-                newWord = newWord.concat(s.toLowerCase());
-            }
-        }
-
-        //draw the tiles
+        //paint the tiles
         int x = 5;
-        for (Character tile : newWord.toCharArray()) {
+        for (Character tile : bestPlay.buildWord()) {
             Rectangle rect = new Rectangle(x, 5, 18, 22);
             rect.setArcWidth(2);
             rect.setArcHeight(2);
             rect.setFill(Color.YELLOW);
-
             Text text = new Text(x + 1, 26, String.valueOf(Character.toUpperCase(tile)));
             text.setFont(Font.font("Monospaced", FontWeight.BOLD, 28));
             text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
-
             wordBuilder.getChildren().addAll(rect, text);
             x += 20;
         }
 
-        //set a background color for the wordBuilder
-        if (entry.length() < GameWindow.this.minLength) {
-            wordBuilder.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
-        }
-        else if(bestWord.isEmpty()) {
-            if(bestScore < 0 || tooFewBlanksInPool)
-                wordBuilder.setBorder(new Border(new BorderStroke(Color.RED, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
-            else
-                wordBuilder.setBorder(new Border(new BorderStroke(Color.CHARTREUSE, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
-        }
-        else {
-            if(bestScore < 0 || tooFewBlanksInPool || !stolen || !isRearrangement)
-                wordBuilder.setBorder(new Border(new BorderStroke(Color.RED, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
-            else
-                wordBuilder.setBorder(new Border(new BorderStroke(Color.CHARTREUSE, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
-        }
-    }
+        //set a the wordBuilder's border color
+        Color borderColor = Color.BLACK;
+        if(entry.length() >= minLength)
+            borderColor = bestPlay.isValid() ? Color.CHARTREUSE : Color.RED;
+        wordBuilder.setBorder(new Border(new BorderStroke(borderColor, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
 
+    }
 
 
     /**
@@ -484,7 +411,7 @@ public class GameWindow extends PopWindow {
      */
 
     public void setDark(Boolean dark) {
-        if(dark)
+        if (dark)
             robotImage.setImage(whiteRobot);
         else
             robotImage.setImage(blackRobot);
@@ -498,13 +425,13 @@ public class GameWindow extends PopWindow {
     void allocateSpace() {
 
         double remainingSpace = getWidth() - 10;
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             remainingSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
         }
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
             double allocatedWidth = currentColumn.getMinWidth();
-            currentColumn.setPrefWidth(allocatedWidth + remainingSpace/3);
+            currentColumn.setPrefWidth(allocatedWidth + remainingSpace / 3);
         }
         Platform.runLater(() -> setTiles(tilePool));
     }
@@ -536,8 +463,8 @@ public class GameWindow extends PopWindow {
             getChildren().clear();
 
             for (int i = 1; i <= tilePool.length(); i++) {
-                double x = getWidth()/2 + 16*Math.sqrt(i) * Math.cos(Math.sqrt(i) * Math.PI * 4 / 3);
-                double y = 3 + getHeight()/2 + 16*Math.sqrt(i) * Math.sin(Math.sqrt(i) * Math.PI * 4 / 3);
+                double x = getWidth() / 2 + 16 * Math.sqrt(i) * Math.cos(Math.sqrt(i) * Math.PI * 4 / 3);
+                double y = 3 + getHeight() / 2 + 16 * Math.sqrt(i) * Math.sin(Math.sqrt(i) * Math.PI * 4 / 3);
 
                 Rectangle rect = new Rectangle(x - 1, y - 21, 20, 21);
                 rect.setArcWidth(2);
@@ -549,7 +476,7 @@ public class GameWindow extends PopWindow {
 
                 getChildren().addAll(rect, text);
             }
-            if(!getChildren().isEmpty()) {
+            if (!getChildren().isEmpty()) {
                 getChildren().get(0).setTranslateY(10);
                 getChildren().get(1).setTranslateY(10);
             }
@@ -590,7 +517,7 @@ public class GameWindow extends PopWindow {
 
         GamePanel() {
             setId("game-panel");
-            if(isMobile) pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            if (isMobile) pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             gamePanels.add(this);
 
             infoPane.getChildren().add(playerNameLabel);
@@ -620,7 +547,7 @@ public class GameWindow extends PopWindow {
         GamePanel(int column) {
             this();
             this.column = column;
-            if(column >= 0) {
+            if (column >= 0) {
                 scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             }
         }
@@ -637,7 +564,7 @@ public class GameWindow extends PopWindow {
             players.put(newPlayer, this);
             playerNameLabel.setText(playerName);
 
-            if(playerName.startsWith("Robot")) {
+            if (playerName.startsWith("Robot")) {
                 playerNameLabel.setGraphic(robotImage);
             }
             if (words.isEmpty() && !gameOver) {
@@ -656,7 +583,7 @@ public class GameWindow extends PopWindow {
 
         public void abandonSeat() {
             isOccupied = false;
-            if(column >= 0) {
+            if (column >= 0) {
                 pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), true);
             }
             if (words.isEmpty()) {
@@ -707,8 +634,8 @@ public class GameWindow extends PopWindow {
                 gameGrid.getColumnConstraints().get(column).setMinWidth(newWord.length() * 12 + (newWord.length() - 1) * WordLabel.TILE_GAP + 1);
             }
 
-            if(prevHeight + wordPane.getHgap() + tileHeight + PADDING > paneHeight) {
-                if (prevWidth + (wordPane.getVgap() + width + PADDING)/2 > paneWidth) {
+            if (prevHeight + wordPane.getHgap() + tileHeight + PADDING > paneHeight) {
+                if (prevWidth + (wordPane.getVgap() + width + PADDING) / 2 > paneWidth) {
                     if (!savingSpace.get()) {
                         makeSmall();
                         wordPane.getChildren().clear();
@@ -717,8 +644,7 @@ public class GameWindow extends PopWindow {
                             wordPane.getChildren().add(newLabel);
                             words.put(word, newLabel);
                         }
-                    }
-                    else if(column >= 0) {
+                    } else if (column >= 0) {
                         gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
                     }
                 }
@@ -745,15 +671,15 @@ public class GameWindow extends PopWindow {
          */
 
         void addWords(String[] wordsToAdd) {
-            double paneWidth = (gameGrid.getWidth() - 10)/3;
-            if(column < 0) paneWidth = getWidth();
+            double paneWidth = (gameGrid.getWidth() - 10) / 3;
+            if (column < 0) paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
             makeBig();
-            if(column >= 0) {
+            if (column >= 0) {
                 gameGrid.getColumnConstraints().get(column).setMinWidth(minPanelWidth);
             }
 
-            if(isMobile) {
+            if (isMobile) {
                 //check if any individual words are too large to fit using large tiles
                 for (String word : wordsToAdd) {
                     double width = word.length() * 16 + (word.length() - 1) * WordLabel.TILE_GAP + 1;
@@ -825,7 +751,8 @@ public class GameWindow extends PopWindow {
             }
 
             //widen the pane until there is room for small tiles
-            outer: while (true) {
+            outer:
+            while (true) {
                 x = -1 * hgap / 2 + paneWidth / 2;
                 y = 17 + PADDING;
                 for (String word : wordsToAdd) {
@@ -843,7 +770,7 @@ public class GameWindow extends PopWindow {
                     }
                 }
                 GameWindow.this.setPrefWidth(Math.max(1000, paneWidth + 366)); //actually sets the minimum width
-                if(!isMobile)
+                if (!isMobile)
                     GameWindow.this.setMinWidth(Math.max(GameWindow.this.getWidth(), paneWidth + 366)); //actually sets the current width
 
                 allocateSpace();
@@ -926,12 +853,12 @@ public class GameWindow extends PopWindow {
 
             WordLabel(String word) {
                 this.word = word;
-                width = word.length()*tileWidth + (word.length() - 1)*TILE_GAP;
+                width = word.length() * tileWidth + (word.length() - 1) * TILE_GAP;
                 drawWord();
 
                 setOnMouseClicked(event -> {
-                    if(gameOver || isWatcher) {
-                        if(!explorer.isVisible()) {
+                    if (gameOver || isWatcher) {
+                        if (!explorer.isVisible()) {
                             explorer.show(false);
                         }
                         explorer.lookUp(word);
@@ -949,7 +876,7 @@ public class GameWindow extends PopWindow {
 
                 for (Character tile : word.toCharArray()) {
 
-                    Rectangle rect = new Rectangle(x,0, tileWidth, tileHeight);
+                    Rectangle rect = new Rectangle(x, 0, tileWidth, tileHeight);
                     rect.setArcWidth(2);
                     rect.setArcHeight(2);
                     rect.setFill(Color.YELLOW);
@@ -988,7 +915,7 @@ public class GameWindow extends PopWindow {
             nextTiles = "";
         tilePool = nextTiles;
         tilePanel.showTiles();
-        updateWordBuilder(textField.getText().toUpperCase(), nextTiles);
+        updateWordBuilder(textField.getText().toUpperCase());
     }
 
     /**
@@ -997,7 +924,7 @@ public class GameWindow extends PopWindow {
      *
      * @param newPlayerName the name of the player to be added.
      * @return the GamePanel to which the player has been added or null if
-     *         none is available
+     * none is available
      */
 
     public GamePanel addPlayer(String newPlayerName) {
@@ -1008,7 +935,7 @@ public class GameWindow extends PopWindow {
         }
 
         //player reenters game after leaving
-        else if(players.containsKey(newPlayerName)) {
+        else if (players.containsKey(newPlayerName)) {
             return players.get(newPlayerName).takeSeat(newPlayerName);
         }
 
@@ -1077,7 +1004,7 @@ public class GameWindow extends PopWindow {
      */
 
     public void handleChat(String msg) {
-        if(chatBox.getText().isEmpty())
+        if (chatBox.getText().isEmpty())
             chatBox.appendText(msg);
         else
             chatBox.appendText("\n" + msg);
@@ -1095,27 +1022,48 @@ public class GameWindow extends PopWindow {
 
         controlPanel.getChildren().removeAll(textStack, textField, infoPane);
         controlPanel.getChildren().addAll(backToStartButton, backTenButton, backButton, showPlaysButton, forwardButton, forwardTenButton, forwardToEndButton, infoPane);
-        backToStartButton.setPrefWidth(25); backTenButton.setPrefWidth(25); backButton.setPrefWidth(25);
-        forwardButton.setPrefWidth(25); forwardTenButton.setPrefWidth(25); forwardToEndButton.setPrefWidth(25);
+        backToStartButton.setPrefWidth(25);
+        backTenButton.setPrefWidth(25);
+        backButton.setPrefWidth(25);
+        forwardButton.setPrefWidth(25);
+        forwardTenButton.setPrefWidth(25);
+        forwardToEndButton.setPrefWidth(25);
         showPlaysButton.textProperty().bind(Bindings.createStringBinding(() -> wordDisplay.visibleProperty().get() ? "Hide plays" : "Show plays", wordDisplay.visibleProperty()));
         showPlaysButton.setOnAction(e -> {
-            if(wordDisplay.isVisible()) {
+            if (wordDisplay.isVisible()) {
                 wordDisplay.hide();
-            }
-            else {
+            } else {
                 wordDisplay.show(false);
                 client.send("findplays " + gameID + " " + position);
             }
         });
 
-        backToStartButton.setOnAction(e -> {position = 0; showPosition(gameLog.get(position));});
-        backTenButton.setOnAction(e -> {position = Math.max(position - 10, 0); showPosition(gameLog.get(position));});
-        backButton.setOnAction(e -> {position = Math.max(position - 1, 0); showPosition(gameLog.get(position));});
-        forwardButton.setOnAction(e -> {position = Math.min(position + 1, maxPosition); showPosition(gameLog.get(position));});
-        forwardTenButton.setOnAction(e -> {position = Math.min(position + 10, maxPosition); showPosition(gameLog.get(position));});
-        forwardToEndButton.setOnAction(e -> {position = maxPosition; showPosition(gameLog.get(position));});
+        backToStartButton.setOnAction(e -> {
+            position = 0;
+            showPosition(gameLog.get(position));
+        });
+        backTenButton.setOnAction(e -> {
+            position = Math.max(position - 10, 0);
+            showPosition(gameLog.get(position));
+        });
+        backButton.setOnAction(e -> {
+            position = Math.max(position - 1, 0);
+            showPosition(gameLog.get(position));
+        });
+        forwardButton.setOnAction(e -> {
+            position = Math.min(position + 1, maxPosition);
+            showPosition(gameLog.get(position));
+        });
+        forwardTenButton.setOnAction(e -> {
+            position = Math.min(position + 10, maxPosition);
+            showPosition(gameLog.get(position));
+        });
+        forwardToEndButton.setOnAction(e -> {
+            position = maxPosition;
+            showPosition(gameLog.get(position));
+        });
 
-        if(!isMobile) {
+        if (!isMobile) {
             addEventFilter(KeyEvent.KEY_PRESSED, event -> {
 
                 if (!chatField.isFocused()) {
@@ -1197,7 +1145,7 @@ public class GameWindow extends PopWindow {
 
         public WordDisplay() {
             super(client.anchor);
-            setViewOrder(Double.NEGATIVE_INFINITY);
+            setViewOrder(-1000);
             AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
 
@@ -1245,13 +1193,13 @@ public class GameWindow extends PopWindow {
             stealsPanel.playerNameLabel.setText("Steals");
 
             //pool
-            if(!wordsInPool[0].isEmpty())
+            if (!wordsInPool[0].isEmpty())
                 poolPanel.addWords(wordsInPool);
 
             //steals
-            if(!possibleSteals[0].isEmpty()) {
+            if (!possibleSteals[0].isEmpty()) {
                 Tooltip[] tooltips = new Tooltip[possibleSteals.length];
-                for(int i = 0; i < possibleSteals.length; i++) {
+                for (int i = 0; i < possibleSteals.length; i++) {
                     String[] contents = possibleSteals[i].split(" -> ");
                     possibleSteals[i] = contents[1];
                     Tooltip tooltip = new Tooltip(contents[0]);
@@ -1260,7 +1208,7 @@ public class GameWindow extends PopWindow {
                 }
                 stealsPanel.addWords(possibleSteals);
                 int i = 0;
-                for(GamePanel.WordLabel label : stealsPanel.words.values()) {
+                for (GamePanel.WordLabel label : stealsPanel.words.values()) {
                     Tooltip.install(label, tooltips[i++]);
                 }
             }
@@ -1277,103 +1225,204 @@ public class GameWindow extends PopWindow {
      */
 
     private void makePlay(String input) {
-        if(input.length() >= minLength) {
-            for(Map.Entry<String, GamePanel> entry : players.entrySet()) {
+        if (input.length() >= minLength) {
+            for (Map.Entry<String, GamePanel> entry : players.entrySet()) {
                 String player = entry.getKey();
-                for(String shortWord : entry.getValue().getWords()) {
-                    if(shortWord.equalsIgnoreCase(input)) {
+                for (String shortWord : entry.getValue().getWords()) {
+                    if (shortWord.equalsIgnoreCase(input)) {
                         return; //word is already on the board
                     }
-                    else if(input.length() > shortWord.length()) {
-                        if(validPlay(shortWord, input)) {
+                    else if (input.length() > shortWord.length()) {
+                        //Attempt to steal
+                        Play play = new Play(shortWord, input, tilePool);
+                        if (play.isValid()) {
                             client.send("steal " + gameID + " " + player + " " + shortWord + " " + username + " " + input);
                             return;
                         }
                     }
                 }
             }
-            if(validPlay("", input)) {
+            //Attempt to form word from pool
+            Play play = new Play("", input, tilePool);
+            if (play.isValid()) {
                 client.send("makeword " + gameID + " " + username + " " + input);
             }
         }
     }
 
     /**
-     * Given a shortWord, determines whether a longer word can be constructed from the short word. If so,
-     * the method returns true and an instruction is sent to the server to remove the shortWord from the
-     * given opponent and reward the current player with the longWord. Otherwise returns false.
-     *
-     *@param shortWord The word that we are attempting to steal. If shortWord is empty, the method
-     *                 will attempt to construct the longWord directly from the pool.
-     *@param longWord The word which may or not be a valid steal of the shortWord
+     * An attempt to form a word, either by building from the pool or by stealing an existing word
      */
 
-    private boolean validPlay(String shortWord, String longWord) {
+    private class Play {
 
-        // charsToFind contains the letters that cannot be found in the existing word;
-        // they must be taken from the pool or a blank must be redesignated.
-        String charsToFind = longWord;
-        int blanksToChange = 0;
+        String shortWord;
+        String longWord;
+        String tiles;
 
-        //lowercase is used to represent blanks
-        //If the shortWord contains a tile not found in the longWord, it cannot be stolen unless that tile is a blank
-        for(String s : shortWord.split("")) {
-            if(charsToFind.contains(s.toUpperCase()))
-                charsToFind = charsToFind.replaceFirst(s.toUpperCase(), "");
-            else {
-                if(Character.isLowerCase(s.charAt(0)))
+        Play(String shortWord, String longWord, String tiles) {
+            this.shortWord = shortWord;
+            this.longWord = longWord;
+            this.tiles = tiles;
+
+        }
+
+        /**
+         *
+         * @return a measure of how "playable" this play is. All valid plays will have a score > 0
+         */
+
+        private int getScore() {
+
+            String charsToSteal = shortWord;
+            String tiles = tilePool;
+            int blanksToChange = 0;
+            int blanksToTakeFromPool = 0;
+            int missingFromPool = 0;
+
+            for(String s : longWord.split("")) {
+                if(charsToSteal.toUpperCase().contains(s)) {
+                    charsToSteal = charsToSteal.replaceFirst(s, "");
+                }
+                else if(tiles.contains(s)) {
+                    tiles = tiles.replaceFirst(s, "");
+                }
+                else if(charsToSteal.matches("[a-z]+")) {
+                    charsToSteal = charsToSteal.replaceFirst("[a-z]", "");
                     blanksToChange++;
-                else
-                    return false;
+                }
+                else if(tiles.contains("?")) {
+                    tiles = tiles.replaceFirst("\\?", "");
+                    blanksToTakeFromPool++;
+                }
+                else {
+                    missingFromPool++;
+                }
             }
-        }
+            int unstolen = charsToSteal.length();
 
-        int missingTiles = 0;
-        String tiles = tilePool;
-        for(String s : charsToFind.split("")) {
-            if(tiles.contains(s))
-                tiles = tiles.replaceFirst(s, "");
+            if (shortWord.isEmpty())
+                return longWord.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
+
             else
-                missingTiles++;
-        }
-        int blanksToTakeFromPool = missingTiles - blanksToChange;
-
-        int blanksInPool = tilePool.length() - tilePool.replace("?", "").length();
-        if(blanksInPool < blanksToTakeFromPool) {
-            return false; //not enough blanks in the pool
+                return longWord.length() - shortWord.length() - blanksToChange*blankPenalty - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
         }
 
-        //Calculate if the word is long enough, accounting for the blankPenalty
-        if(shortWord.isEmpty()) {
-            return longWord.length() >= minLength + (blankPenalty + 1) * missingTiles;
-        }
-        else {
-            if(longWord.length() - shortWord.length() < blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool) {
-                return false;
+        /**
+         * designate letters as blanks or as normal tiles
+         */
+
+        private char[] buildWord() {
+            String tiles = this.tiles + shortWord.toUpperCase();
+            String newWord = "";
+
+            for (String s : longWord.split("")) {
+                if (tiles.contains(s)) {
+                    tiles = tiles.replaceFirst(s, "");
+                    newWord = newWord.concat(s);
+                }
+                else {
+                    newWord = newWord.concat(s.toLowerCase());
+                }
             }
-            return isRearrangement(shortWord.toUpperCase(), longWord);
+            return newWord.toCharArray();
         }
 
-    }
 
+        /**
+         *
+         */
 
-    /**
-     * Given two words, the shorter of which is a subset of the other, determines whether a rearrangement/permutation
-     * of letters is necessary to form the longer.
-     *
-     * @param shortWord     a short word (case must match longer word)
-     * @param longWord      a longer word (case must match shorter word)
-     */
+        private boolean isValid() {
 
-    public static boolean isRearrangement(String shortWord, String longWord) {
+            String charsToUse = shortWord;
+            String entry = longWord;
+            String tiles = this.tiles;
+            int blanksToChange = 0;
+            int penalty = 0;
 
-        while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
-            if (shortWord.charAt(0) == longWord.charAt(0)) {
-                shortWord = shortWord.substring(1);
+            //search for characters in the word to be stolen
+            for(String s : charsToUse.split("")) {
+                if(entry.contains(s)) {
+                    //Transfer a tile from the shortWord to the longWord
+                    entry = entry.replaceFirst(s, "");
+                }
+                else if(Character.isLowerCase(s.charAt(0))) {
+                    if(!entry.contains(s.toUpperCase())) {
+                        //Redesignate a blank and transfer it to the longWord
+                        blanksToChange++;
+                        penalty += blankPenalty;
+                    }
+                    else {
+                        //Transfer the blank without redesignating
+                        entry = entry.replaceFirst(s.toUpperCase(),"");
+                    }
+                }
+                else {
+                    //The shortWord contains a letter not found in the longWord
+                    return false;
+                }
             }
-            longWord = longWord.substring(1);
+
+            //Search for the remaining tiles in the entry
+            int charsToFind = entry.length();
+            for(String s : entry.split("")) {
+                if(charsToFind > blanksToChange) {
+                    charsToFind--;
+                    //Add a tile from the pool
+                    if(tiles.contains(s)) {
+                        tiles = tiles.replaceFirst(s,"");
+                    }
+                    else if(tiles.contains("?")) {
+                        //Take a tile from the pool and designate it
+                        tiles = tiles.replaceFirst("\\?","");
+                        penalty += blankPenalty + 1;
+                    }
+                    else {
+                        //Not enough blanks in the pool
+                        return false;
+                    }
+                }
+                else if(blanksToChange > 0) {
+                    tiles = tiles.replaceFirst(s,"");
+                    charsToFind--;
+                    blanksToChange--;
+                }
+                else {
+                    //The entry contains a letter found neither in the shortWord nor the pool
+                    return false;
+                }
+            }
+
+            if(shortWord.isEmpty()) {
+                return longWord.length() - minLength >= penalty;
+            }
+            else if(longWord.length() - shortWord.length() >= Math.max(penalty, 1))  {
+                return isRearrangement(shortWord, longWord);
+            }
+            return false;
         }
 
-        return shortWord.length() > longWord.length();
+
+        /**
+         * Given two words, the shorter of which is a subset of the other, determines whether a rearrangement/permutation
+         * of letters is necessary to form the longer.
+         *
+         * @param shortWord     a short word (case must match longWord)
+         * @param longWord      a longer word (case must match that of shortWord)
+         */
+
+        private boolean isRearrangement(String shortWord, String longWord) {
+
+            while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
+                if (shortWord.charAt(0) == longWord.charAt(0)) {
+                    shortWord = shortWord.substring(1);
+                }
+                longWord = longWord.substring(1);
+            }
+
+            return shortWord.length() > longWord.length();
+        }
     }
 }
+
