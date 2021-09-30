@@ -385,103 +385,29 @@ public class Game {
 			return false;
 		}
 
-		// charsToFind contains the letters that cannot be found in the existing word;
-		// they must be taken from the pool or a blank must be redesignated.
-		String charsToFind = longWord;
-		int blanksToChange = 0;
-
-		//lowercase is used to represent blanks
-		//If the shortWord contains a tile not found in the longWord, it cannot be stolen unless that tile is a blank
-		for(String s : shortWord.split("")) {
-			if(charsToFind.contains(s.toUpperCase()))
-				charsToFind = charsToFind.replaceFirst(s.toUpperCase(), "");
-			else {
-				if(Character.isLowerCase(s.charAt(0))) {
-					blanksToChange++;
-				}
-				else
-					return false;
-			}
-		}
-
-		int missingTiles = 0;
-		String tiles = tilePool;
-		for(String s : charsToFind.split("")) {
-			if(tiles.contains(s))
-				tiles = tiles.replaceFirst(s, "");
-			else
-				missingTiles++;
-		}
-
-		int blanksInPool = tilePool.length() - tilePool.replace("?", "").length();
-		int blanksToTakeFromPool = missingTiles - blanksToChange;
-
-		if(blanksInPool < blanksToTakeFromPool)
-			return false; //not enough blanks in the pool
-
-		//Calculate if the word is long enough, accounting for the blankPenalty
-		if(missingTiles == 0) {
-			if (longWord.length() - shortWord.length() < 1) {
-				return false;
-			}
-		}
-		else if(longWord.length() - shortWord.length() < blankPenalty*blanksToChange + (blankPenalty + 1)*blanksToTakeFromPool) {
+		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
+		if(!play.isValid())
 			return false;
-		}
 
-		//steal is successful
-		String oldWord = shortWord;
-		String newWord = "";
-
-		for(String s : longWord.split("")) {
-
-			//move a non-blank from the old word to the new word
-			if (oldWord.contains(s)) {
-				oldWord = oldWord.replaceFirst(s, "");
-				newWord = newWord.concat(s);
-			}
-			//move a blank from the old word to the new word without redesignating it
-			else if (oldWord.contains(s.toLowerCase())) {
-				oldWord = oldWord.replaceFirst(s.toLowerCase(), "");
-				newWord = newWord.concat(s.toLowerCase());
-			}
-			else if(charsToFind.length() - blanksToChange > 0 ) {
-				//take a non-blank from the pool
-				if(tilePool.contains(s)) {
-					tilePool = tilePool.replaceFirst(s, "");
-					charsToFind = charsToFind.replaceFirst(s, "");
-					newWord = newWord.concat(s);
-				}
-				//take a blank from the pool and designate it
-				else {
-					tilePool = tilePool.replaceFirst("\\?", "");
-					newWord = newWord.concat(s.toLowerCase());
-				}
-			}
-			//move a blank from the old word to the new word and redesignate it
-			else {
-				oldWord = oldWord.replaceFirst("[a-z]","");
-				newWord = newWord.concat(s.toLowerCase());
-			}
-		}
-
+		String nextWord = play.nextWord();
 
 		for(Robot robot : robotList.values()) {
 			robot.removeTree(shortWord);
-			robot.makeTree(newWord);
+			robot.makeTree(nextWord);
 		}
 
 		words.get(shortPlayer).remove(shortWord);
-		words.get(longPlayer).add(newWord);
+		words.get(longPlayer).add(nextWord);
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0)
 			timeRemaining += 15;
 
-		tiles = tilePool.isEmpty() ? "#" : tilePool;
+		tilePool = play.nextTiles;
+		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		saveState();
 
-		notifyRoom("steal " + gameID + " " + shortPlayer + " " + shortWord + " " + longPlayer + " " + newWord + " " + tiles);
+		notifyRoom("steal " + gameID + " " + shortPlayer + " " + shortWord + " " + longPlayer + " " + nextWord + " " + tiles);
 
 		//if the shortPlayer has left the game and has no words, make room for another player to join
 		if(words.get(shortPlayer).isEmpty()) {
@@ -504,73 +430,44 @@ public class Game {
 	* the word is awarded to the player, the tiles are removed from the pool, and the players
 	* and watchers are notified.
 	*
-	* @param 	newWordPlayer	The name of the player attempting to make the word.
-	* @param 	entry 			The word the player is attempting to make.
-	* @return 					Whether the word is taken successfully
-	*/
+	* @param    newWordPlayer    The name of the player attempting to make the word.
+	* @param    entry            The word the player is attempting to make.
+	 */
 	
-	synchronized boolean doMakeWord(String newWordPlayer, String entry) {
+	synchronized void doMakeWord(String newWordPlayer, String entry) {
 
 		if(countdown > 0) {
-			return false;
+			return;
 		}
-		String tiles = tilePool;
-		int blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
-		int blanksRequired = 0;
-	
-		//If the tilePool does not contain a letter from the entry, a blank must be used
-		for(String s : entry.split("")) {
-			if(tiles.contains(s)) 
-				tiles = tiles.replaceFirst(s, "");
-			else
-				blanksRequired++;
-		}
-		
-		if(blanksAvailable < blanksRequired)
-			return false; //not enough blanks in pool
-		
-		if(blanksRequired > 0) {
-			if (entry.length() - minLength < blanksRequired * (blankPenalty + 1)) {
-				return false; //word not long enough
-			}
-		}
+		Play play = new Play("", entry, tilePool, minLength, blankPenalty);
+		if(!play.isValid())
+			return;
 
-		String newWord = "";
-		for(String s : entry.split("")) {
-			//move a non-blank tile to the new word
-			if(tilePool.contains(s)) {
-				tilePool = tilePool.replaceFirst(s, "");
-				newWord = newWord.concat(s);
-			}
-			//move a blank to the new word and designate it
-			else {
-				tilePool = tilePool.replaceFirst("\\?", "");
-				newWord = newWord.concat(s.toLowerCase());
-			}
-		}
-	
-		words.get(newWordPlayer).add(newWord);		
+		String nextWord = play.nextWord();
+
+		words.get(newWordPlayer).add(nextWord);
 
 		for(Robot robot : robotList.values())
-			robot.makeTree(newWord);
+			robot.makeTree(nextWord);
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;
-		tiles = tilePool.isEmpty() ? "#" : tilePool;
+		tilePool = play.nextTiles;
+		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		//inform players that a new word has been made	
 		saveState();	
 	
-		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + newWord + " " + tiles);
+		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + nextWord + " " + tiles);
 
-		return true;
 	}
-	
-	/**
-	* Initialize the tileBag with the chosen number of tiles sets.
-	*
-	* @param numSets The number of tile sets, each of which contains 100 tiles
-	*/
+
+
+		/**
+        * Initialize the tileBag with the chosen number of tiles sets.
+        *
+        * @param numSets The number of tile sets, each of which contains 100 tiles
+        */
 
 	private void setUpTileBag(int numSets) {
 		tileBag = new char[numSets*100];

@@ -65,7 +65,6 @@ public class WordTree {
 
 		if(charsToFind.length > 0) {
 			Character firstChar = charsToFind[0];
-
 			for(Map.Entry<Character,Node> child : node.children.headMap(firstChar, true).entrySet()) {
 				if(child.getKey().equals(firstChar))
 					find(child.getValue(), Arrays.copyOfRange(charsToFind, 1, charsToFind.length), otherCharsFound);
@@ -198,25 +197,22 @@ public class WordTree {
 
 	public static boolean isSteal(String shortWord, String longWord) {
 
-		String shortString = shortWord;
-		String longString = longWord;
-
-		if(!isSubset(shortString, longString))
+		if(!isSubset(shortWord, longWord))
 			return false;
-		else {
-			while(longString.length() >= shortString.length() && shortString.length() > 0) {
 
-				if(shortString.charAt(0) != longString.charAt(0)) {
-					longString = longString.substring(1);
-				}
-				else {
-					shortString = shortString.substring(1);
-					longString = longString.substring(1);
-				}
+		while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
+
+			if(shortWord.charAt(0) != longWord.charAt(0)) {
+				longWord = longWord.substring(1);
 			}
-
-			return shortString.length() > longString.length();
+			else {
+				shortWord = shortWord.substring(1);
+				longWord = longWord.substring(1);
+			}
 		}
+
+		return shortWord.length() > longWord.length();
+
 	}
 
 

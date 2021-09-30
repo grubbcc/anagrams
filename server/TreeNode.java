@@ -2,6 +2,10 @@ package server;
 
 import java.util.LinkedList;
 
+/**
+ *
+ */
+
 public class TreeNode {
 
     private final String word;
