@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Scale;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -77,7 +76,7 @@ class SettingsMenu extends PopWindow {
         closeButton.setOnAction(e -> {revertChanges(); hide();});
 
         setContents(grid);
-        setMaxSize(310,320);
+        setMaxSize(340,320);
         setTitle("Settings");
 
         OKButton.requestFocus();
@@ -148,7 +147,9 @@ class SettingsMenu extends PopWindow {
             setColor(client.colors.get(color));
             colorChoosers.put(color, this);
 
-            getColumnConstraints().add(new ColumnConstraints(110));
+            getColumnConstraints().add(new ColumnConstraints(132));
+            getColumnConstraints().add(new ColumnConstraints(120));
+            getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
             setHgap(4);
 
             comboBox.setColor(colorCode);
@@ -225,7 +226,8 @@ class SettingsMenu extends PopWindow {
                     if(textField.equals(textFieldG)) G = Integer.parseInt(textField.getText());
                     if(textField.equals(textFieldB)) B = Integer.parseInt(textField.getText());
 
-                    comboBox.setColor(String.format("#%02x%02x%02x", R, G, B));
+                    colorCode = String.format("#%02x%02x%02x", R, G, B);
+                    comboBox.setColor(colorCode);
                     newColors.put(color, colorCode);
                 }
             };

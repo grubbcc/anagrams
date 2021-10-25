@@ -60,7 +60,6 @@ public class WordExplorer extends PopWindow {
 
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.35); setScaleY(1.35);
-            setStyle(".split-pane > .split-pane-divider {-fx-padding: 0 1.0em 0 1.0em;}");
         }
 
         //Top panel
@@ -270,6 +269,7 @@ public class WordExplorer extends PopWindow {
 
         private CustomTreeCell () {
             setPickOnBounds(false);
+
             setOnMouseClicked(e -> {
                 if (!isEmpty()) {
                     if(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -278,9 +278,6 @@ public class WordExplorer extends PopWindow {
                         pause.setOnFinished(ef -> goButton.disarm());
                         pause.play();
                         lookUp(getText());
-                    }
-                    else {
-                        messagePane.setText(getItem().getDefinition());
                     }
                 }
             });
@@ -295,16 +292,17 @@ public class WordExplorer extends PopWindow {
             super.updateItem(item, empty);
 
             if(!empty) {
-
                 setText(item.getWord());
-                doProbabilities(item);
                 if(item.getParent() != null ) {
-                    Tooltip tooltip = new Tooltip(item.longTip + "   " + round(100 * item.getProb(), 1) + "%");
+                    Tooltip tooltip = new Tooltip(item.longSteal + "   " + item.getProb() + "%");
                     tooltip.setShowDelay(Duration.seconds(0.5));
                     setTooltip(tooltip);
                 }
+                if(isSelected()) {
+                    messagePane.setText(getItem().getDefinition());
+                }
 
-                setStyle("-cell-background: hsb(0, " + round(100*item.getProb(), 0) + "%, 100%);");
+                setStyle("-cell-background: hsb(0, " + item.getProb() + "%, 100%);");
 
             }
             else {
@@ -340,23 +338,6 @@ public class WordExplorer extends PopWindow {
     }
 
     /**
-     * Assigns probabilities to possible steals assuming a full bag of three tile sets.
-     *
-     * @param parent the TreeNode containing the word whose steals are to be calculated
-     */
-
-    public void doProbabilities(TreeNode parent) {
-        double norm = 0;
-
-        for(TreeNode child : parent.getChildren()) {
-            norm += ProbCalc.getProbability(child.shortTip);
-        }
-        for(TreeNode child : parent.getChildren()) {
-            child.setProb(parent.getProb()*ProbCalc.getProbability(child.shortTip)/norm);
-        }
-    }
-
-    /**
      * Recursively performs a depth-first search of the word tree, saving the
      * words visited to a String.
      *
@@ -366,7 +347,7 @@ public class WordExplorer extends PopWindow {
 
     public void generateWordList(String prefix, TreeNode node) {
         for(TreeNode child : node.getChildren()) {
-            wordList = wordList.concat(prefix + child.toString() + "\\n");
+            wordList = wordList.concat(prefix + child.getWord() + "\\n");
             generateWordList(prefix + "  ", child);
         }
     }
@@ -382,7 +363,7 @@ public class WordExplorer extends PopWindow {
         client.getWebAPI().executeScript(
           "var pom = document.createElement('a'); " +
             "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + wordList + "')); " +
-            "pom.setAttribute('download', '" + rootNode.toString() + ".txt'); " +
+            "pom.setAttribute('download', '" + rootNode.getWord() + ".txt'); " +
             "if (document.createEvent) { " +
                 "var event = document.createEvent('MouseEvents'); " +
                 "event.initEvent('click', true, true); " +
@@ -401,15 +382,6 @@ public class WordExplorer extends PopWindow {
     private void viewListAsImage() {
         WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('JSON', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
         WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
-    }
-
-    /**
-     *
-     */
-
-    private static double round (double value, double precision) {
-        int scale = (int) Math.pow(10, precision);
-        return (double) Math.round(value * scale) / scale;
     }
 
 }

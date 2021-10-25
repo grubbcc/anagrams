@@ -4,7 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -117,7 +116,7 @@ class GameMenu extends PopWindow {
 
         setTitle("Game Options");
         setContents(grid);
-        setMaxSize(320, 350);
+        setMaxSize(335, 340);
 
         startButton.setPrefWidth(75.0);
         startButton.setPrefHeight(25.0);

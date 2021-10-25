@@ -5,6 +5,11 @@ import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
@@ -12,7 +17,9 @@ import javafx.stage.Stage;
 import one.jpro.sound.*;
 import org.json.JSONArray;
 
+import java.awt.*;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,7 +32,6 @@ import java.util.prefs.Preferences;
 
 public class AnagramsClient extends JProApplication {
 
-    private final String serverName = "127.0.0.1";
 	private final int port = 8118;
 	private final String version = "0.9.9";
 
@@ -70,6 +76,7 @@ public class AnagramsClient extends JProApplication {
 	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.wav").toExternalForm();
 	private AudioClip newPlayerClip;
 	boolean guest = false;
+
 
 	/**
 	 *
@@ -122,13 +129,13 @@ public class AnagramsClient extends JProApplication {
 
 		createAndShowGUI();
 
-			if(connect() ) {
-				System.out.println("Connected to server on port " + port);
-				if(loginMenu == null) {
-					loginMenu = new LoginMenu(this);
-					loginMenu.show(true);
-				}
+		if(connect() ) {
+			System.out.println("Connected to server on port " + port);
+			if(loginMenu == null) {
+				loginMenu = new LoginMenu(this);
+				loginMenu.show(true);
 			}
+		}
 
 	}
 
@@ -140,18 +147,20 @@ public class AnagramsClient extends JProApplication {
 
 		//control panel
 		Button createGameButton = new Button("Create Game");
-		createGameButton.setStyle("-fx-font: bold 18 arial;");
+		createGameButton.setStyle("-fx-font-size: 18");
+//		createGameButton.setStyle("-fx-font: bold 18 Arial;");
 		createGameButton.setPrefHeight(39);
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
 
 		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
-		settingsButton.setStyle("-fx-font: bold 18 arial;");
-		settingsButton.setPrefSize(155, 33);
+		settingsButton.setStyle("-fx-font-size: 18");
+//		settingsButton.setStyle("-fx-font: bold 18 Arial;");
+		settingsButton.setPrefSize(162, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
 
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
-        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(155));
+        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(162));
 		controlPanel.getChildren().addAll(createGameButton, settingsButton);
 
 		//games panel
@@ -163,7 +172,7 @@ public class AnagramsClient extends JProApplication {
 		gamesScrollPane.setContent(gamesPanel);
 
 		//players panel
-		playersPanel.setPrefWidth(155);
+		playersPanel.setPrefWidth(162);
 		playersPanel.setId("players-panel");
 		playersScrollPane.setFitToHeight(true);
 		playersScrollPane.setFitToWidth(true);
@@ -175,15 +184,14 @@ public class AnagramsClient extends JProApplication {
 		//chat panel
 		chatBox.setEditable(false);
 		TextField chatField = new TextField();
-		chatField.setStyle("-fx-font: " + (getWebAPI().isMobile() ? 18 : 16) + " arial;");
+		chatField.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
 		chatField.setPromptText("Type here to chat");
-		chatField.getProperties().put("vkType", "text");
 		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
 		chatPanel.setBottom(chatField);
 		chatScrollPane.setFitToHeight(true);
 		chatScrollPane.setFitToWidth(true);
 		chatScrollPane.setContent(chatBox);
-		chatBox.setStyle("-fx-font: " + (getWebAPI().isMobile() ? 18 : 16) + " arial;");
+		chatBox.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
 		chatBox.appendText("Welcome to Anagrams version " + version + "!");
 		chatPanel.setCenter(chatScrollPane);
 
@@ -282,16 +290,16 @@ public class AnagramsClient extends JProApplication {
 
         double luminance = 0.2126*R + 0.7152*G + 0.0722*B;
 
-        return luminance > 40 ? "black" : "white";
+        return luminance > 43 ? "black" : "white";
     }
 
 	/**
-	 *
+	 * Connect to the AnagramsServer instance running on the local host
 	 */
 
 	public boolean connect() {
 		try {
-			Socket socket = new Socket(serverName, port);
+			Socket socket = new Socket(InetAddress.getLocalHost().getHostAddress(), port);
 			this.serverOut = socket.getOutputStream();
 			this.serverIn = socket.getInputStream();
 			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
@@ -412,6 +420,7 @@ public class AnagramsClient extends JProApplication {
 		});
 		dialog.addOkayButton();
 		dialog.okayButton.setText("I'm ready!");
+		dialog.okayButton.setMinWidth(Region.USE_COMPUTED_SIZE);
 		dialog.okayButton.setOnAction(e -> {
 			if(!continueShowing.isSelected())
 				prefs.putBoolean("showguide", false);

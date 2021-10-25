@@ -58,8 +58,8 @@ public class LoginMenu extends PopWindow {
     private String code;
 
     private final Properties props = new Properties();
-    private final String from;
-    private final String password;
+    private final String from = "admin@anagrams.site";
+    private final String password = prefs.get("password", "password unavailable");
 
     private final Session session = Session.getInstance(props, new Authenticator() {
         @Override
@@ -85,27 +85,19 @@ public class LoginMenu extends PopWindow {
         props.put("mail.smtp.host", "mail.anagrams.site");
         props.put("mail.smtp.port", "587");
 
-        from = "admin@anagrams.site";
-        password = prefs.get("password", "password unavailable");
-
         usernameField.setPromptText("Username");
         emailField.setPromptText("Email address");
         passwordField.setPromptText("Password");
         confirmField.setPromptText("Confirm password");
         codeField.setPromptText("Enter code from email");
-
-        usernameField.getProperties().put("vkType", "text");
-        emailField.getProperties().put("vkType", "text");
-        passwordField.getProperties().put("vkType", "text");
-        confirmField.getProperties().put("vkType", "text");
         codeField.getProperties().put("vkType", "numeric");
 
         warningLabel.setStyle("-fx-text-fill: red;");
 
         usernameField.setPrefWidth(300);
-        registerButton.setPrefWidth(90);
-        loginButton.setPrefWidth(90);
-        guestButton.setPrefWidth(90);
+        registerButton.setPrefWidth(85);
+        loginButton.setPrefWidth(85);
+        guestButton.setPrefWidth(100);
         submitButton.setPrefWidth(90);
         sendButton.setPrefWidth(90);
         sendPasswordButton.setPrefWidth(90);
@@ -124,7 +116,7 @@ public class LoginMenu extends PopWindow {
 
         codeField.textProperty().addListener((observable, oldValue, newValue) -> {
             codeField.setText(codeField.getText().replaceAll("[^0-9]", ""));
-            confirmButton.setDisable(codeField.getText().length() == 0);
+            confirmButton.setDisable(codeField.getText().isEmpty());
         });
 
         registerButton.setDisable(true);
@@ -250,7 +242,7 @@ public class LoginMenu extends PopWindow {
             if (prefs.nodeExists(username)) {
                 if (prefs.node(username).get("password", null) != null) {
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
-                    dialog.setText("<center>The username you entered has already been<br> registered." +
+                    dialog.setText("<center>The username you entered has already been<br> registered. " +
                             "Please choose a different name<br> or log in using the password.</center>");
                     dialog.addOkayButton();
                     Platform.runLater(() -> dialog.show(true));
@@ -442,8 +434,8 @@ public class LoginMenu extends PopWindow {
                 mex.printStackTrace();
             }
 
-            instructionLabel.setText("A confirmation email has been sent to\n" + email + ".\n" +
-                    "Enter the 6-digit code to verify.");
+            instructionLabel.setText("<center>A confirmation email has been sent to\n" + email + ".\n" +
+                    "Enter the 6-digit code to verify.<center>");
             warningLabel.setText("");
             grid.getChildren().removeAll(emailField, usernameField, passwordField, confirmField, sendButton);
             grid.getChildren().addAll(codeField, confirmButton);

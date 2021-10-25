@@ -124,8 +124,10 @@ public class GameWindow extends PopWindow {
         if (isMobile) controlPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         controlPanel.setSpacing(isMobile ? 5 : 20);
         exitGameButton.setOnAction(e -> exitGame());
-        notificationArea.setFont(Font.font("Arial", FontWeight.BOLD, isMobile ? 15 : 13));
-        infoPane.setFont(Font.font("Arial", FontWeight.BOLD, isMobile ? 15 : 13));
+        notificationArea.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
+//        notificationArea.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, isMobile ? 15 : 13));
+        infoPane.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
+ //       infoPane.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, isMobile ? 15 : 13));
         infoPane.setText(lexicon + (isMobile ? "" : "      Minimum length = " + minLength));
         controlPanel.getChildren().addAll(notificationArea, exitGameButton, infoPane);
 
@@ -179,7 +181,6 @@ public class GameWindow extends PopWindow {
             ScrollPane chatScrollPane = new ScrollPane();
             chatBox.setEditable(false);
             chatField.setPromptText("Type here to chat");
-            chatField.getProperties().put("vkType", "text");
             chatField.setOnAction(ae -> {
                 client.send("gamechat " + gameID + " " + username + ": " + chatField.getText());
                 chatField.clear();
@@ -223,7 +224,8 @@ public class GameWindow extends PopWindow {
 
         if (isMobile) {
             setMovable(false);
-            title.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            title.setStyle("-fx-font-size: 16;");
+       //     title.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 16));
             maximizeButton.setScaleX(1.45);
             maximizeButton.setScaleY(1.45);
             closeButton.setScaleX(1.45);
@@ -267,7 +269,6 @@ public class GameWindow extends PopWindow {
                 textField.clear();
             });
             textField.setPromptText("Enter a word here to play");
-            textField.getProperties().put("vkType", "text");
             textField.setId("text-field");
 
             wordBuilder.visibleProperty().bind(textField.focusedProperty());
@@ -377,13 +378,13 @@ public class GameWindow extends PopWindow {
             rect.setArcHeight(2);
             rect.setFill(Color.YELLOW);
             Text text = new Text(x + 1, 26, String.valueOf(Character.toUpperCase(tile)));
-            text.setFont(Font.font("Monospaced", FontWeight.BOLD, 28));
+            text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
             text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
             wordBuilder.getChildren().addAll(rect, text);
             x += 20;
         }
 
-        //set a the wordBuilder's border color
+        //set the wordBuilder's border color
         Color borderColor = Color.BLACK;
         if(entry.length() >= minLength)
             borderColor = bestPlay.isValid() ? Color.CHARTREUSE : Color.RED;
@@ -472,7 +473,7 @@ public class GameWindow extends PopWindow {
                 rect.setFill(Color.YELLOW);
 
                 Text text = new Text(x, y + 1, tilePool.charAt(i - 1) + "");
-                text.setFont(Font.font("Monospaced", FontWeight.BOLD, 28));
+                text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
 
                 getChildren().addAll(rect, text);
             }
@@ -882,7 +883,7 @@ public class GameWindow extends PopWindow {
                     rect.setFill(Color.YELLOW);
 
                     Text text = new Text(x + 1, tileHeight - 1, String.valueOf(Character.toUpperCase(tile)));
-                    text.setFont(Font.font("Monospaced", FontWeight.BOLD, tileFontSize));
+                    text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize));
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
                     getChildren().addAll(rect, text);
@@ -1269,7 +1270,7 @@ public class GameWindow extends PopWindow {
 
         /**
          *
-         * @return a measure of how "playable" this play is. All valid plays will have a score > 0
+         * @return a measure of how "playable" this play is. All valid plays will have a score >= 0
          */
 
         private int getScore() {

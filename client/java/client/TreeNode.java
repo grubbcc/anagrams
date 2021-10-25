@@ -9,8 +9,8 @@ public class TreeNode {
     private final JSONObject data;
     private final LinkedList<String> address;
     private final String word;
-    final String shortTip;
-    final String longTip;
+    final String shortSteal;
+    final String longSteal;
     private double prob;
     private final String definition;
     private TreeNode parent;
@@ -20,8 +20,9 @@ public class TreeNode {
         this.data = data;
         address = new LinkedList<>(Arrays.asList(data.getString("id").split("\\.")));
         word = address.removeLast();
-        shortTip = data.getString("shorttip");
-        longTip = data.getString("longtip");
+        shortSteal = data.getString("shortsteal");
+        longSteal = data.getString("longsteal");
+        prob = data.getDouble("prob");
         definition = data.optString("def", "Definition not available");
     }
 
@@ -57,6 +58,13 @@ public class TreeNode {
         return definition;
     }
 
+    /**
+     *
+     */
+
+    void setProb(double prob) {
+        this.prob = prob;
+    }
 
     /**
      *
@@ -64,14 +72,6 @@ public class TreeNode {
 
     public double getProb() {
         return prob;
-    }
-
-    /**
-     *
-     */
-
-    public void setProb(double prob) {
-        this.prob = prob;
     }
 
     /**
