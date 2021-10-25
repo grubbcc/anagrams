@@ -1,5 +1,8 @@
 /* universal */
 .root {
+    -fx-font-family:        Arial;
+    -fx-font-weight:        bold;
+
 	-main-screen:           blue;
 	-main-screen-text:      blue;
 	-players-list:          blue;
@@ -12,38 +15,44 @@
 	-chat-area-text:        blue;
 }
 
+.choice-box {
+    -fx-mark-color: transparent;
+    -fx-focused-mark-color: transparent;
+}
+
 .choice-box:mobile .context-menu {
     -fx-scale-x: 1.45;
     -fx-scale-y: 1.45;
 }
 
+.arrow, .arrow-button {
+    -fx-background-color: black;
+}
+
 .scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
     -fx-background-color: transparent;
 }
-.check-box {
-    -fx-font-weight: bold;
-}
 .label {
     -fx-label-padding: 3;
-    -fx-font-weight: bold;
 }
 .choice-box, .choice-box .context-menu {
     -fx-pref-width: 108;
 }
 
 .button {
-    -fx-font-weight: bold;
     -fx-padding: 3;
     -fx-content-display: right;
     -fx-graphic-text-gap: 15;
 }
 .text-field {
+    -fx-font-weight: normal;
     -fx-background-color: #E5E5E5;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
     -fx-prompt-text-fill: #333333;
 }
 .text-area {
+    -fx-font-weight: normal;
     -fx-background-color: -chat-area;
     -fx-text-fill: -chat-area-text;
 }
@@ -63,6 +72,8 @@
 }
 #games-panel > *  {
     -fx-background-color: -game-foreground;
+    -fx-border-color: -game-background;
+    -fx-border-width: 3;
     -fx-padding: 5;
     -fx-hgap: 3;
     -fx-vgap: 3;
@@ -85,7 +96,7 @@
     -fx-font-weight: normal;
     -fx-font-size: 16;
 }
-#players-panel .scroll-pane .label:hover{
+#players-panel .scroll-pane .label:hover {
     -fx-font-weight: bold;
 }
 
@@ -97,7 +108,7 @@
     -fx-padding: 8;
 }
 #game-background .label {
-    -fx-font: 14, Arial, Bold, normal;
+    -fx-font-size: 14px; //needs testing
     -fx-text-fill: -game-background-text;
     -fx-padding: 4;
 }
@@ -119,11 +130,11 @@
     -fx-background-color: -game-foreground;
 }
 #game-panel .label {
-    -fx-font: bold 22px "Arial";
+    -fx-font-size: 22px;
     -fx-text-fill: -game-foreground-text;
 }
 #game-panel:mobile .label {
-    -fx-font: bold 19px "Arial";
+    -fx-font-size: 19px;
 }
 #game-panel:abandoned .label {
     -fx-text-fill: darkgray;
@@ -155,6 +166,16 @@
     -fx-padding: 2;
 }
 
+/* dialog */
+#dialog:mobile {
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+#dialog .button {
+    -fx-pref-width: 70;
+}
+
 /* settings menu */
 #color-pane {
     -fx-pref-width: 80;
@@ -176,7 +197,7 @@
 #color-combo-box {
     -fx-pref-height: 18;
     -fx-pref-width: 70;
-    -fx-padding: 1;
+    -fx-padding: 1, 1, 5, 1; //needs testing
 }
 #color-combo-box .arrow-button {
     -fx-padding: 1;
