@@ -125,9 +125,7 @@ public class GameWindow extends PopWindow {
         controlPanel.setSpacing(isMobile ? 5 : 20);
         exitGameButton.setOnAction(e -> exitGame());
         notificationArea.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
-//        notificationArea.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, isMobile ? 15 : 13));
         infoPane.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
- //       infoPane.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, isMobile ? 15 : 13));
         infoPane.setText(lexicon + (isMobile ? "" : "      Minimum length = " + minLength));
         controlPanel.getChildren().addAll(notificationArea, exitGameButton, infoPane);
 
@@ -197,7 +195,7 @@ public class GameWindow extends PopWindow {
 
             if (isMobile) {
                 splitPane.setDividerPosition(0, 1.0);
-                hideButton.setPrefWidth(80);
+                hideButton.setPrefWidth(85);
                 hideButton.setAlignment(Pos.CENTER_RIGHT);
                 hideButton.setPadding(Insets.EMPTY);
                 hideButton.setFocusTraversable(false);
@@ -225,7 +223,6 @@ public class GameWindow extends PopWindow {
         if (isMobile) {
             setMovable(false);
             title.setStyle("-fx-font-size: 16;");
-       //     title.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 16));
             maximizeButton.setScaleX(1.45);
             maximizeButton.setScaleY(1.45);
             closeButton.setScaleX(1.45);
@@ -1204,7 +1201,6 @@ public class GameWindow extends PopWindow {
                     String[] contents = possibleSteals[i].split(" -> ");
                     possibleSteals[i] = contents[1];
                     Tooltip tooltip = new Tooltip(contents[0]);
-                    tooltip.setShowDelay(Duration.seconds(0.5));
                     tooltips[i] = tooltip;
                 }
                 stealsPanel.addWords(possibleSteals);

@@ -226,8 +226,8 @@ class PlayerPane extends PopWindow {
         Button deleteAccountButton = new Button("Delete account");
 
         editBioButton.setPrefWidth(110);
-        confirmButton.setPrefWidth(110);
-        cancelButton.setPrefWidth(110);
+        confirmButton.setPrefWidth(130);
+        cancelButton.setPrefWidth(90);
         deleteAccountButton.setPrefWidth(110);
 
         ImageView infoIcon = new ImageView("/images/info.png");

@@ -82,6 +82,7 @@ public class LoginMenu extends PopWindow {
 
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.ssl.protocols","TLSv1.2");
         props.put("mail.smtp.host", "mail.anagrams.site");
         props.put("mail.smtp.port", "587");
 
@@ -90,7 +91,7 @@ public class LoginMenu extends PopWindow {
         passwordField.setPromptText("Password");
         confirmField.setPromptText("Confirm password");
         codeField.setPromptText("Enter code from email");
-        codeField.getProperties().put("vkType", "numeric");
+//        codeField.getProperties().put("vkType", "numeric");
 
         warningLabel.setStyle("-fx-text-fill: red;");
 
@@ -421,6 +422,7 @@ public class LoginMenu extends PopWindow {
                 emailExecutor.execute(() -> {
                     try {
                         Transport.send(message);
+                        System.out.println("Sent message successfully....");
                     }
                     catch (MessagingException e) {
                         e.printStackTrace();
@@ -428,14 +430,13 @@ public class LoginMenu extends PopWindow {
                 });
                 emailExecutor.shutdown();
 
-                System.out.println("Sent message successfully....");
             }
             catch (MessagingException mex) {
                 mex.printStackTrace();
             }
 
-            instructionLabel.setText("<center>A confirmation email has been sent to\n" + email + ".\n" +
-                    "Enter the 6-digit code to verify.<center>");
+            instructionLabel.setText("A confirmation email has been sent to\n" + email + ".\n" +
+                    "Enter the 6-digit code to verify.");
             warningLabel.setText("");
             grid.getChildren().removeAll(emailField, usernameField, passwordField, confirmField, sendButton);
             grid.getChildren().addAll(codeField, confirmButton);

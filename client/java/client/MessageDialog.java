@@ -31,7 +31,6 @@ public class MessageDialog extends PopWindow {
 
     public MessageDialog(AnagramsClient client, String title) {
         super(client.stack);
-        htmlView.setPrefSize(USE_PREF_SIZE, USE_PREF_SIZE);
 
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.2);

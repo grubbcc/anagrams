@@ -1,6 +1,7 @@
 package client;
 
 import com.jpro.webapi.JProApplication;
+import com.sun.javafx.scene.control.LabeledText;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -11,16 +12,17 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.TouchEvent;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 import one.jpro.sound.*;
 import org.json.JSONArray;
 
-import java.awt.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
@@ -72,6 +74,7 @@ public class AnagramsClient extends JProApplication {
 
 	public static final String[] lexicons = {"CSW19", "NWL20"};
 	Preferences prefs;
+
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
 	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.wav").toExternalForm();
 	private AudioClip newPlayerClip;
@@ -148,13 +151,11 @@ public class AnagramsClient extends JProApplication {
 		//control panel
 		Button createGameButton = new Button("Create Game");
 		createGameButton.setStyle("-fx-font-size: 18");
-//		createGameButton.setStyle("-fx-font: bold 18 Arial;");
 		createGameButton.setPrefHeight(39);
 		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
 
 		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
 		settingsButton.setStyle("-fx-font-size: 18");
-//		settingsButton.setStyle("-fx-font: bold 18 Arial;");
 		settingsButton.setPrefSize(162, 33);
 		settingsButton.setOnAction(e -> settingsMenu.show(false));
 
@@ -179,7 +180,7 @@ public class AnagramsClient extends JProApplication {
 		playersScrollPane.setContent(playersListPane);
 		playersPanel.setTop(playersHeader);
 		playersPanel.setCenter(playersScrollPane);
-		playersHeader.setTooltip(new Tooltip("Click a player's name to view profile")); //needs testing
+		playersHeader.setTooltip(new Tooltip("Click a player's name to view profile"));
 
 		//chat panel
 		chatBox.setEditable(false);
@@ -194,18 +195,6 @@ public class AnagramsClient extends JProApplication {
 		chatBox.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
 		chatBox.appendText("Welcome to Anagrams version " + version + "!");
 		chatPanel.setCenter(chatScrollPane);
-
-	/*	Clipboard clipboard = Clipboard.getSystemClipboard();
-		ClipboardContent content = new ClipboardContent();
-		ContextMenu contextMenu = new ContextMenu();
-		MenuItem copyItem = new MenuItem("Copy");
-		copyItem.setOnAction(e -> {
-			content.putString(chatBox.getSelectedText());
-			clipboard.setContent(content);
-		});
-		MenuItem selectAllItem = new MenuItem("Select All");
-		selectAllItem.setOnAction(e -> chatBox.selectAll());
-		contextMenu.getItems().addAll(copyItem, selectAllItem);*/
 
 		//main layout
 		borderPane.setTop(controlPanel);
@@ -223,6 +212,14 @@ public class AnagramsClient extends JProApplication {
 		AnchorPane.setBottomAnchor(splitPane, 0.0);
 		AnchorPane.setLeftAnchor(splitPane, 0.0);
 		AnchorPane.setTopAnchor(splitPane, 0.0);
+
+/*		stage.addEventFilter(TouchEvent.TOUCH_PRESSED, e -> {
+			if(e.getTarget() instanceof LabeledText) {
+				Label label = (Label)e.getTarget();
+				if(label.getTooltip() != null)
+					label.getTooltip().show(stage);
+			}
+		});*/
 
 		anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
 		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);

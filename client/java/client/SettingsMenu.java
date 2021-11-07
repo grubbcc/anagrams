@@ -4,8 +4,11 @@ import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.css.PseudoClass;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.input.TouchEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
@@ -50,6 +53,7 @@ class SettingsMenu extends PopWindow {
 
         //selectors
         lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
         soundChooser.setPadding(new Insets(0,9,0,7));
 
@@ -79,6 +83,7 @@ class SettingsMenu extends PopWindow {
         setMaxSize(340,320);
         setTitle("Settings");
 
+        client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
         OKButton.requestFocus();
     }
 
@@ -147,13 +152,12 @@ class SettingsMenu extends PopWindow {
             setColor(client.colors.get(color));
             colorChoosers.put(color, this);
 
-            getColumnConstraints().add(new ColumnConstraints(132));
+            getColumnConstraints().add(new ColumnConstraints(120));
             getColumnConstraints().add(new ColumnConstraints(120));
             getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
             setHgap(4);
 
-            comboBox.setColor(colorCode);
-            comboBox.setOnAction(e -> setColor(comboBox.getSelectionModel().getSelectedItem()));
+            setColor(colorCode);
 
             add(new Label(color.display), 0, 0);
             add(new ColorPane(), 1, 0);
@@ -172,6 +176,8 @@ class SettingsMenu extends PopWindow {
             textFieldR.setText(R + "");
             textFieldG.setText(G + "");
             textFieldB.setText(B + "");
+
+            comboBox.getButtonCell().setBackground(new Background(new BackgroundFill(Color.web(colorCode), CornerRadii.EMPTY, Insets.EMPTY)));
 
             this.colorCode = colorCode;
             newColors.put(color, colorCode);
@@ -227,7 +233,7 @@ class SettingsMenu extends PopWindow {
                     if(textField.equals(textFieldB)) B = Integer.parseInt(textField.getText());
 
                     colorCode = String.format("#%02x%02x%02x", R, G, B);
-                    comboBox.setColor(colorCode);
+                    setColor(colorCode);
                     newColors.put(color, colorCode);
                 }
             };
@@ -245,20 +251,13 @@ class SettingsMenu extends PopWindow {
              */
 
             ColorComboBox() {
-
                 setCellFactory(lv -> new ColorCell());
                 setId("color-combo-box");
                 setVisibleRowCount(30);
                 getItems().addAll(colorCodes);
                 setButtonCell(new ColorCell());
-            }
-
-            /**
-             */
-
-            public void setColor(String colorCode) {
-
-                getButtonCell().setBackground(new Background(new BackgroundFill(Color.web(colorCode), CornerRadii.EMPTY, Insets.EMPTY)));
+                pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
+                setOnAction(e -> setColor(getSelectionModel().getSelectedItem()));
             }
 
             /**
@@ -267,6 +266,12 @@ class SettingsMenu extends PopWindow {
 
             public class ColorCell extends ListCell<String> {
 
+                String colorCode;
+
+                public ColorCell() {
+                    if(client.getWebAPI().isMobile())
+                        addEventFilter(TouchEvent.TOUCH_RELEASED, event -> setColor(colorCode));
+                }
                 /**
                  */
 
@@ -276,6 +281,7 @@ class SettingsMenu extends PopWindow {
                     super.updateItem(color, empty);
 
                     if(!empty) {
+                        this.colorCode = color;
                         setBackground(new Background(new BackgroundFill(Color.web(color), CornerRadii.EMPTY, Insets.EMPTY)));
                     }
                 }

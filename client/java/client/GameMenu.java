@@ -2,11 +2,13 @@ package client;
 
 import javafx.collections.FXCollections;
 import javafx.css.PseudoClass;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.stage.WindowEvent;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ class GameMenu extends PopWindow {
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.45); setScaleY(1.45);
             pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            playersSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             lengthsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             setsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             blanksSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
@@ -116,7 +119,7 @@ class GameMenu extends PopWindow {
 
         setTitle("Game Options");
         setContents(grid);
-        setMaxSize(335, 340);
+        setMaxSize(320, 340);
 
         startButton.setPrefWidth(75.0);
         startButton.setPrefHeight(25.0);
@@ -130,7 +133,9 @@ class GameMenu extends PopWindow {
         startButton.setDefaultButton(true);
 
         show(true);
+        client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
         startButton.requestFocus();
+
     }
 
     /**

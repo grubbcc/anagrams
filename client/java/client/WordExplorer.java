@@ -2,6 +2,7 @@ package client;
 
 import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
+import javafx.css.PseudoClass;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -70,9 +71,7 @@ public class WordExplorer extends PopWindow {
             pause.setOnFinished(ef -> goButton.disarm());
             pause.play();
         });
-        textField.setPrefSize(170, 20);
 
-        goButton.setPrefSize(55, 20);
         goButton.setOnAction(e -> {
             String query = textField.getText().replaceAll("[^A-Za-z]","");
             if (query.length() < 4)
@@ -83,9 +82,8 @@ public class WordExplorer extends PopWindow {
 
         lexiconSelector.setPrefSize(75, 20);
         lexiconSelector.setValue(lexicon);
-        lexiconSelector.setOnAction(e -> {
-            this.lexicon = lexiconSelector.getValue();
-        });
+        lexiconSelector.setOnAction(e -> this.lexicon = lexiconSelector.getValue());
+        lexiconSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         controlPanel.setId("control-panel");
         controlPanel.getChildren().addAll(textField, goButton, lexiconSelector);
 
@@ -97,6 +95,7 @@ public class WordExplorer extends PopWindow {
         MenuItem imageOption = new MenuItem("View List as Image");
         imageOption.setOnAction(e -> viewListAsImage());
         contextMenu.getItems().addAll(textOption, imageOption);
+        contextMenu.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
 
         //Prevent treeView from capturing drag events
         treePanel.addEventFilter(MouseEvent.ANY, event -> {
@@ -108,11 +107,9 @@ public class WordExplorer extends PopWindow {
         //Message panel
         messagePanel.setCenter(messagePane);
         messagePanel.setId("message-area");
-        treeSummaryScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        treeSummaryScrollPane.setPrefWidth(125);
-        messagePanel.setPrefHeight(110);
         messagePanel.setStyle("-fx-background-color: rgb(20,250,20)");
         messagePane.setStyle("-fx-background-color: rgb(20,250,20);" + "-fx-text-fill: black");
+        treeSummaryScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         messagePane.setEditable(false);
         messagePane.setWrapText(true);
 
@@ -295,7 +292,6 @@ public class WordExplorer extends PopWindow {
                 setText(item.getWord());
                 if(item.getParent() != null ) {
                     Tooltip tooltip = new Tooltip(item.longSteal + "   " + item.getProb() + "%");
-                    tooltip.setShowDelay(Duration.seconds(0.5));
                     setTooltip(tooltip);
                 }
                 if(isSelected()) {
@@ -323,8 +319,8 @@ public class WordExplorer extends PopWindow {
         if(!counts.isEmpty()) {
             GridPane treeSummary = new GridPane();
             treeSummary.getColumnConstraints().add(new ColumnConstraints(45));
-            treeSummary.getColumnConstraints().add(new ColumnConstraints(74));
-            treeSummary.addRow(0, new Label(" length"), new Label(" num words  "));
+            treeSummary.getColumnConstraints().add(new ColumnConstraints(55));
+            treeSummary.addRow(0, new Label(" length"), new Label(" words"));
 
             for (Integer key : counts.keySet()) {
                 treeSummary.addRow(key, new Label(" " + key), new Label(" " + counts.get(key)));
