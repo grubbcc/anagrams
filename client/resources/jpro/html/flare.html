@@ -126,7 +126,7 @@ WordTree visualizations. It has been adapted from:
 
     document.getElementById('steals').onclick = function () {
         var text = g.selectAll("text").text(function() {
-            return d3.select(this).attr("shorttip");
+            return d3.select(this).attr("steal");
         });
     }
 
@@ -235,7 +235,6 @@ WordTree visualizations. It has been adapted from:
         var link = g.selectAll(".link").data(root.descendants().slice(1)).enter()
         link.append("path")
             .attr("class", "link")
-            .attr("id", d => d.data.shorttip)
             .attr("d", function(d) {
                 return "M" + project(d.x, d.y)
                     + "C" + project(d.x, (d.y + d.parent.y) / 2)
@@ -261,12 +260,12 @@ WordTree visualizations. It has been adapted from:
             .attr("angle", d => d.children ? d.x + 180 : d.x)
             .attr("word", d => d.id.substring(d.id.lastIndexOf(".") + 1))
             .attr("def", d => d.data.def)
-            .attr("shorttip", d => d.depth == 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.shorttip)
+            .attr("steal", d => d.depth == 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.shortsteal)
             .text(function(d) {
                 if(document.getElementById("words").checked || d.depth == 0)
                     return this.getAttribute("word");
                 else
-                    return d.data.shorttip;
+                    return d.data.shortsteal;
             })
 
             .on("mouseover", function() {
@@ -280,12 +279,10 @@ WordTree visualizations. It has been adapted from:
                     .attr("class", "tooltip")
                     .style("opacity", 1e-6);
 
-                //Create an invisible copy of the node for detecting mouse exit
+                //Create an transparent copy of the node for detecting mouse exit
                 d3.select(this.parentNode)
                     .clone(true).style("opacity", 1e-6).raise()
-                    .on("mouseout", function(d) {
-                        console.log(tip.node().getBoundingClientRect());
-                        console.log(g.attr("transform"));
+                    .on("mouseout", function() {
                         background.transition()
                            .duration(300)
                            .style("opacity", 0)
@@ -295,7 +292,7 @@ WordTree visualizations. It has been adapted from:
                            .style("opacity", 0)
                            .remove();
                         d3.select(this).remove();
-                    })
+                })
 
                 //set tooltip text
                 tip.html(this.getAttribute("def"));
@@ -318,19 +315,19 @@ WordTree visualizations. It has been adapted from:
                 }
 
                 //display tooltip
+                let tipSize = tip.node().getBBox();
                 tip
                    .attr("transform", d => this.parentNode.getAttribute("transform") +
                        " translate(" + project(this.getAttribute("angle"), this.getComputedTextLength()/2) + ")" +
-                       " translate(-150 0)" )
+                       " translate(-" + tipSize.width/2 + " 0)" )
                    .style("opacity", .9);
 
-                let tipSize = tip.node().getBBox();
                 background
                    .attr("width", tipSize.width + 4)
                    .attr("height", tipSize.height + 4)
                    .attr("transform", d => this.parentNode.getAttribute("transform") +
                        " translate(" + project(this.getAttribute("angle"), this.getComputedTextLength()/2) + ")" +
-                       " translate(-152 -15)")
+                       " translate(-" + (tipSize.width/2 + 2) + " -15)")
                    .style("opacity", .9);
 
             })
