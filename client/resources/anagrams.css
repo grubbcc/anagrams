@@ -61,6 +61,8 @@
     -fx-background-radius: 1;
     -fx-background-color: white;
     -fx-text-fill: black;
+    -fx-font-weight: normal;
+    -fx-show-delay: 500ms;
 }
 
 /* main window */
@@ -79,7 +81,7 @@
     -fx-vgap: 3;
 }
 #games-panel .button {
-    -fx-pref-width: 70;
+    -fx-pref-width: 83;
     -fx-pref-height: 25;
 }
 #games-panel .label {
@@ -199,6 +201,9 @@
     -fx-pref-width: 70;
     -fx-padding: 1, 1, 5, 1; //needs testing
 }
+#color-combo-box .arrow, .arrow-button {
+    -fx-background-color: transparent;
+}
 #color-combo-box .arrow-button {
     -fx-padding: 1;
 }
@@ -207,4 +212,8 @@
 }
 #color-combo-box .list-view .list-cell:hover {
     -fx-border-color: black;
+}
+#color-combo-box:mobile .list-view {
+    -fx-scale-x: 1.45;
+    -fx-scale-y: 1.45;
 }
