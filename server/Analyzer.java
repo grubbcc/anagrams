@@ -267,7 +267,7 @@ class Analyzer {
 		
 		for(String shortWord : trees.keySet()) {
 
-			for (TreeNode child : trees.get(shortWord).root.getChildren()) {
+			for (TreeNode child : trees.get(shortWord).rootNode.getChildren()) {
 
 				String longWord = child.toString();
 				if(longWord.length() <= shortWord.length() + tilePool.length()) {

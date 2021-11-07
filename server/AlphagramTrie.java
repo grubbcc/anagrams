@@ -31,7 +31,7 @@ public class AlphagramTrie {
 		this.lexicon = lexicon;
 
 		try {
-			InputStream stream = getClass().getResourceAsStream("wordlists/" + lexicon + ".txt");
+			InputStream stream = getClass().getResourceAsStream("/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			for(String stringRead = reader.readLine(); stringRead != null; stringRead = reader.readLine()) {
 				String[] entry = stringRead.split("\\s+", 2);
@@ -56,7 +56,7 @@ public class AlphagramTrie {
 	 * alphabetical ordering of the letters in a word.)
 	 *
 	 * @param subalphagram: the suffix letters of the current alphagram which have not been added to the trie
-	 * @param node: the node whose path represents the prefix letters which have already been added
+	 * @param node			the node whose path represents the prefix letters which have already been added
 	 */
 
 	private void insertWord(String subalphagram, Node node) {
@@ -79,7 +79,7 @@ public class AlphagramTrie {
 			nextChild.definitions.put(currentWord, currentDefinition);
 		}
 		else {
-			//This node is not the end of a word. Remove the first letter and
+			//This node is not the end of a word. Remove the first letter and continue
 			insertWord(subalphagram.substring(1), nextChild);
 		}
 	}

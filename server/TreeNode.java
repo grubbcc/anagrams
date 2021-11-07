@@ -9,16 +9,18 @@ import java.util.LinkedList;
 public class TreeNode {
 
     private final String word;
-    private final String tooltip;
+    private final String longSteal;
+    private String shortSteal;
+    private double prob = 0;
     private final LinkedList<TreeNode> children = new LinkedList<>();
 
     /**
      *
      */
 
-    public TreeNode(String word, String tooltip) {
+    public TreeNode(String word, String steal) {
         this.word = word.toUpperCase();
-        this.tooltip = tooltip;
+        this.longSteal = steal;
     }
 
     /**
@@ -34,10 +36,25 @@ public class TreeNode {
      *
      */
 
-    public String getTooltip() {
-        return tooltip;
+    public String getLongSteal() {
+        return longSteal;
     }
 
+    /**
+     *
+     */
+
+    public void setShortSteal(String shortSteal) {
+        this.shortSteal = shortSteal;
+    }
+
+    /**
+     *
+     */
+
+    public String getShortSteal() {
+        return shortSteal;
+    }
 
 
     /**
@@ -54,5 +71,21 @@ public class TreeNode {
 
     public LinkedList<TreeNode> getChildren() {
         return children;
+    }
+
+    /**
+     *
+     */
+
+    public void setProb(double prob) {
+        this.prob = prob;
+    }
+
+    /**
+     *
+     */
+
+    public double getProb() {
+        return prob;
     }
 }

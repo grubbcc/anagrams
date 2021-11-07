@@ -12,9 +12,9 @@ import java.util.HashMap;
 
 public class Node {
 
-	public HashSet<String> anagrams = new HashSet<>();
-	public HashMap<String, String> definitions = new HashMap<>();
+	final HashSet<String> anagrams = new HashSet<>();
+	final HashMap<String, String> definitions = new HashMap<>();
 
-	public TreeMap<Character, Node> children = new TreeMap<>();
+	final TreeMap<Character, Node> children = new TreeMap<>();
 
 }

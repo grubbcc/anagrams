@@ -257,7 +257,7 @@ public class Game {
 	*/
 	
 	synchronized void removePlayer(String playerToRemove) {
-		
+
 		playerList.remove(playerToRemove);
 
 		if(words.containsKey(playerToRemove)) {
@@ -357,7 +357,7 @@ public class Game {
 	* Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
 	*/
 
-	private void drawTile() {
+	synchronized private void drawTile() {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];
 			tileCount++;
@@ -495,7 +495,7 @@ public class Game {
 	 * to the gameLog.
 	*/
 
-	private void saveState() {
+	synchronized private void saveState() {
 		if(!gameOver) {
 			String tiles = tilePool.isEmpty() ? "#" : tilePool;
 			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
@@ -530,7 +530,7 @@ public class Game {
 	* @return a set of all players who have left the game but still have at least one word.
 	*/
 	
-	public Set<String> getInactivePlayers() {
+	synchronized public Set<String> getInactivePlayers() {
 		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
 		union.removeAll(robotList.keySet());
@@ -544,7 +544,7 @@ public class Game {
 	 * player1 [HELLO, WORLD] player2 []
 	*/
 
-	private String getFormattedWordList() {
+	synchronized private String getFormattedWordList() {
 		StringBuilder wordList = new StringBuilder();
 		Set<String> union = getPlayerList();
 

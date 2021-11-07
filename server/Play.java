@@ -12,7 +12,6 @@ class Play {
     private final int minLength;
     private final int blankPenalty;
 
-    private String nextWord = "";
     String nextTiles;
     private String blanks = "";
 
@@ -64,6 +63,7 @@ class Play {
                 else {
                     //Transfer the blank without redesignating
                     entry = entry.replaceFirst(s.toUpperCase(), "");
+                    blanks += s.toUpperCase();
                 }
             }
             else {
@@ -118,8 +118,9 @@ class Play {
      */
 
     String nextWord() {
+        String nextWord = longWord;
         for(String s : blanks.split(""))
-            nextWord = longWord.replaceFirst(s, s.toLowerCase());
+            nextWord = nextWord.replaceFirst(s, s.toLowerCase());
         return nextWord;
     }
 

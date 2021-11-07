@@ -1,8 +1,7 @@
 package server;
 
+import java.net.*;
 import java.util.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;

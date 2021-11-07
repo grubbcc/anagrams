@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 
 class WordFinder {
 
-    private int blankPenalty = 0;
-    private int minLength = 0;
+    private final int blankPenalty;
+    private final int minLength;
     private String tilePool;
     private final AlphagramTrie dictionary;
     private int blanksAvailable = 0;
@@ -138,8 +138,8 @@ class WordFinder {
     /**
      * Finds all (up to 30) possible first-order steals (i.e. steals that are not steals of steals).
      *
-     * @param words All the words currently on the board
-     * @return a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
+     * @param   words   All the words currently on the board
+     * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
 
     synchronized private String searchForSteals(String[] words) {
@@ -148,13 +148,13 @@ class WordFinder {
 
         outer: for(String shortWord : words) {
             trees.putIfAbsent(shortWord, new WordTree(shortWord.replaceAll("[a-z]", ""), dictionary));
-            for (TreeNode child : trees.get(shortWord).root.getChildren()) {
+            for (TreeNode child : trees.get(shortWord).rootNode.getChildren()) {
                 String entry = child.toString();
 
                 if (entry.length() <= shortWord.length() + tilePool.length() && entry.length() > shortWord.length()) {
                     Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                     if (play.isValid()) {
-                        possibleSteals.append(shortWord).append(" + ").append(child.getTooltip()).append(" -> ").append(play.nextWord()).append(",");
+                        possibleSteals.append(shortWord).append(" + ").append(child.getLongSteal()).append(" -> ").append(play.nextWord()).append(",");
                         if(++numWordsFound >= 30) {
                             break outer;
                         }

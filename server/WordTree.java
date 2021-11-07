@@ -23,7 +23,7 @@ import java.util.TreeSet;
 public class WordTree {
 
 	final AlphagramTrie trie;
-	TreeNode root;
+	final TreeNode rootNode;
 	String rootWord;
 	private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
 	final JSONArray jsonArray = new JSONArray();
@@ -34,10 +34,12 @@ public class WordTree {
 
 	public WordTree(String rootWord, AlphagramTrie trie) {
 		this.rootWord = rootWord.toUpperCase();
-		root = new TreeNode(rootWord, "");
+		rootNode = new TreeNode(rootWord, "");
+		rootNode.setShortSteal("");
+		rootNode.setProb(1);
 		this.trie = trie;
 
-		treeNodeList.add(root);
+		treeNodeList.add(rootNode);
 
 		char[] rootChars = rootWord.toCharArray();
 		Arrays.sort(rootChars);
@@ -46,7 +48,8 @@ public class WordTree {
 		while(treeNodeList.size() > 1)
 			buildTree();
 
-		root.getChildren().sort(new TreeNodeComparator().reversed());
+		sort(rootNode);
+
 		if(!trie.contains(rootWord)) {
 			this.rootWord = rootWord.toLowerCase();
 		}
@@ -128,26 +131,47 @@ public class WordTree {
 	}
 
 	/**
+	 * Traverses the tree recursively and sorts the children of each node
 	 *
-	 *'[{"id":"grubb", "tooltip": ""},{"id":"grubb.BUGBEAR", tooltip: "AE"}]'
-	 * Recursively generates a JSON-formatted list for making a "flare" diagram
+	 * @param node The node whose children are to be sorted
 	 */
 
-	public void generateJSON(String prefix, String tooltip, TreeNode node) {
+	private void sort(TreeNode node) {
+		node.getChildren().sort(new TreeNodeComparator().reversed());
+		for(TreeNode child : node.getChildren()) {
+			sort(child);
+		}
+	}
+
+	/**
+	 *
+	 * Recursively generates a JSON-formatted list for displaying a word tree diagram
+	 * 	 *'[{"id":"grubb", "longsteal": ""},{"id":"grubb.BUGBEAR", longsteal: "AE"}]'
+	 */
+
+	public void generateJSON(String prefix, TreeNode node, double prob) {
 
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", prefix);
-		jsonObject.put("shorttip", tooltip);
-		jsonObject.put("longtip", node.getTooltip());
+		jsonObject.put("shortsteal", node.getShortSteal());
+		jsonObject.put("longsteal", node.getLongSteal());
+		jsonObject.put("prob", ProbCalc.round(100 * prob, 1));
 		jsonObject.put("def", trie.getDefinition(node.toString()));
 		jsonArray.put(jsonObject);
 
-		for(TreeNode child : node.getChildren()) {
-			String nextTooltip = child.getTooltip();
-			for(char c : node.getTooltip().toCharArray()) {
-				nextTooltip = nextTooltip.replaceFirst(c + "", "");
+		double norm = 0;
+		for (TreeNode child : node.getChildren()) {
+
+			String nextSteal = child.getLongSteal();
+			for (String s : node.getLongSteal().split("")) {
+				nextSteal = nextSteal.replaceFirst(s, "");
 			}
-			generateJSON(prefix + "." + child.toString(), nextTooltip, child);
+			child.setShortSteal(nextSteal);
+			child.setProb(ProbCalc.getProbability(nextSteal));
+			norm += child.getProb();
+		}
+		for (TreeNode child : node.getChildren()) {
+			generateJSON(prefix + "." + child.toString(), child, prob*child.getProb()/norm);
 		}
 	}
 
@@ -188,8 +212,8 @@ public class WordTree {
 	}
 
 	/**
-	 * Given two words, determines whether one's letters can be rearranged, with the addition of at least
-	 * one letter not found in the word, to form the second word.
+	 * Given two words, one longer than the other, determines whether one's letters can be rearranged,
+	 * with the addition of at least one letter not found in the shorter word, to form the longer one.
 	 *
 	 * @param shortWord a shorter word
 	 * @param longWord a longer word
@@ -202,13 +226,10 @@ public class WordTree {
 
 		while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
 
-			if(shortWord.charAt(0) != longWord.charAt(0)) {
-				longWord = longWord.substring(1);
-			}
-			else {
+			if (shortWord.charAt(0) == longWord.charAt(0)) {
 				shortWord = shortWord.substring(1);
-				longWord = longWord.substring(1);
 			}
+			longWord = longWord.substring(1);
 		}
 
 		return shortWord.length() > longWord.length();

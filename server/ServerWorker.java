@@ -196,7 +196,7 @@ public class ServerWorker extends Thread {
 						case "newgame" -> handleCreateGame(tokens);
 						case "lookup" -> {
 							WordTree tree = new WordTree(tokens[2], server.getDictionary(tokens[1]));
-							tree.generateJSON(tree.rootWord, "", tree.root);
+							tree.generateJSON(tree.rootWord, tree.rootNode, 1);
 							send("json " + tree.jsonArray.toString());
 						}
 						default -> System.out.println("Error: Command not recognized: " + line);
