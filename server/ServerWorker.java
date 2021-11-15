@@ -3,6 +3,7 @@ package server;
 import java.net.Socket;
 import java.io.*;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
 * Handles tasks for the client on the server side.
@@ -17,11 +18,15 @@ public class ServerWorker extends Thread {
 	private InputStream inputStream;
 	private BufferedReader reader;
 
+	private final AtomicBoolean connected = new AtomicBoolean(false);
+
+
 	/**
 	*
 	*/
 	
 	public ServerWorker(Server server, Socket clientSocket) {
+
 		this.server = server;
 		this.clientSocket = clientSocket;
 	}
@@ -33,19 +38,23 @@ public class ServerWorker extends Thread {
 
 	@Override
 	public void run() {
-		try {
-			handleClientSocket();
-		}
-		catch (IOException e) {
-			System.out.println(username + " has disconnected.");
+		connected.set(true);
+		while(connected.get()) {
 			try {
-				handleLogoff();
+				handleClientSocket();
 			}
-			catch (IOException ioException) {
-				ioException.printStackTrace();
+			catch (IOException e) {
+				System.out.println(username + " has disconnected.");
+				try {
+					handleLogoff();
+				}
+				catch (IOException ioException) {
+					ioException.printStackTrace();
+				}
 			}
 		}
 	}
+
 
 	/**
 	* Checks to see whether the user has entered a valid username
@@ -114,7 +123,8 @@ public class ServerWorker extends Thread {
 	*/
 	
 	private void handleLogoff() throws IOException {
-		
+		connected.set(false);
+
 		if(username != null) {
 			server.removeWorker(username);
 		}
@@ -150,11 +160,10 @@ public class ServerWorker extends Thread {
 		boolean hasRobot = Boolean.parseBoolean(params[10]);
 		int skillLevel = Integer.parseInt(params[11]);
 		
-		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers);
+		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers, hasRobot, skillLevel);
 		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
 		newGame.addPlayer(this);
-		if(hasRobot)
-			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon)));
+
 		server.addGame(gameID, newGame);
 	}
 

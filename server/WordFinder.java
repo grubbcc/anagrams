@@ -17,7 +17,7 @@ class WordFinder {
     private int blanksAvailable = 0;
 
     private final HashSet<String> wordsInPool = new HashSet<>();
-    private final HashMap<String, WordTree> trees = new HashMap<>();
+    HashMap<String, WordTree> trees = new HashMap<>();
 
     /**
      *

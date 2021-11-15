@@ -12,7 +12,7 @@ public class Game {
 
 	private final Hashtable<String, ServerWorker> playerList = new Hashtable<>();
 	private final Hashtable<String, ServerWorker> watcherList = new Hashtable<>();
-	private final Hashtable<String, Robot> robotList = new Hashtable<>();
+//	private final Hashtable<String, Robot> robotList = new Hashtable<>();
 
 	final String gameID;
 	private static final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
@@ -20,14 +20,14 @@ public class Game {
 	private String tilePool = "";
 	private int tileCount = 0;
 	boolean gameOver = false;
-	public final Hashtable<String, Vector<String>> words = new Hashtable<>();
-	
+	final Hashtable<String, Vector<String>> words = new Hashtable<>();
+
 	private final int maxPlayers;
 	private final int numSets;
 	final int minLength;
 	final int blankPenalty;
 	private final int delay;
-
+	private final boolean hasRobot;
 
 	final String lexicon;
 	private final String speed;
@@ -60,7 +60,7 @@ public class Game {
 	*
 	*/
 
-	public Game(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers) {
+	public Game(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot, int skillLevel) {
 		
 		this.server = server;
 		this.gameID = gameID;
@@ -72,7 +72,11 @@ public class Game {
 		this.speed = speed;
 		this.allowsChat = allowChat;
 		this.allowsWatchers = allowsWatchers;
-	
+		this.hasRobot = hasRobot;
+
+		if(hasRobot)
+			addRobot(new Robot(skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
+
 		setUpTileBag(numSets);
 		
 		if(speed.equals("slow"))
@@ -134,7 +138,7 @@ public class Game {
 			}
 
 			//check if game should be paused
-			if(tilePool.length() >= 30 && robotList.isEmpty()) {
+			if(tilePool.length() >= 30 && hasRobot) {
 				pauseGame(); //pause game due to inactivity
 				return;
 			}
@@ -159,7 +163,7 @@ public class Game {
 			//decide whether robot should attempt a move
 			if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
 				drawTile();
-				if(!robotList.isEmpty()) {
+				if(hasRobot) {
 					if (tilePool.length() >= 29) {
 						think = 2; //robot starts thinking of a play
 					}
@@ -170,8 +174,8 @@ public class Game {
 			}
 			
 			//Robot attempts to make a play
-			if(!robotList.isEmpty() && think == 0) {
-				robotPlayer.makePlay(tilePool, words);
+			if(hasRobot && think == 0) {
+				robotPlayer.makePlay(Game.this, tilePool, words);
 			}
 		}
 	}
@@ -205,6 +209,9 @@ public class Game {
 		notifyEveryone("endgame " + gameID);
 
 		wordFinder = new WordFinder(minLength, blankPenalty, server.getDictionary(lexicon));
+		if(hasRobot) {
+			wordFinder.trees.putAll(robotPlayer.trees);
+		}
 	}
 	
 	/**
@@ -343,13 +350,12 @@ public class Game {
 	
 	synchronized void addRobot(Robot newRobot) {
 
-		robotList.put(newRobot.robotName, newRobot);
 		robotPlayer = newRobot;
 		words.put(newRobot.robotName, new Vector<>());
 
 		saveState();
 
-		//inform everyone of the newPlayer
+		//inform everyone of the newRobot
 		notifyEveryone("takeseat " + gameID + " " + newRobot.robotName);
 	}
 	
@@ -391,10 +397,10 @@ public class Game {
 
 		String nextWord = play.nextWord();
 
-		for(Robot robot : robotList.values()) {
-			robot.removeTree(shortWord);
-			robot.makeTree(nextWord);
-		}
+
+			robotPlayer.removeTree(shortWord);
+			robotPlayer.makeTree(nextWord);
+
 
 		words.get(shortPlayer).remove(shortWord);
 		words.get(longPlayer).add(nextWord);
@@ -447,8 +453,7 @@ public class Game {
 
 		words.get(newWordPlayer).add(nextWord);
 
-		for(Robot robot : robotList.values())
-			robot.makeTree(nextWord);
+		robotPlayer.makeTree(nextWord);
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;
@@ -521,7 +526,8 @@ public class Game {
 
 		Set<String> union = new HashSet<>(words.keySet());
 		union.addAll(playerList.keySet());
-		union.addAll(robotList.keySet());
+		if(hasRobot)
+			union.add(robotPlayer.robotName);
 		
 		return union;
 	}
@@ -533,7 +539,8 @@ public class Game {
 	synchronized public Set<String> getInactivePlayers() {
 		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
-		union.removeAll(robotList.keySet());
+		if(hasRobot)
+			union.removeAll(Collections.singleton(robotPlayer.robotName));
 
 		return union;
 	}

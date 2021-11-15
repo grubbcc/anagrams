@@ -11,10 +11,10 @@ class Robot {
 	final String robotName;
 	final int skillLevel;
 
-	private final Game game;
+	private  Game game;
 	private final int blankPenalty;
 	private final int minLength;
-	private final HashMap<String, WordTree> trees = new HashMap<>();
+	final HashMap<String, WordTree> trees = new HashMap<>();
 	private final AlphagramTrie dictionary;
 	final private Random rgen = new Random();
 
@@ -24,13 +24,12 @@ class Robot {
 	*
 	*/
 	
-	public Robot(Game game, int skillLevel, AlphagramTrie dictionary) {
+	public Robot(int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
 		
 		this.dictionary = dictionary;
 
-		this.game = game;
-		this.blankPenalty = game.blankPenalty;
-		this.minLength = game.minLength;
+		this.minLength = minLength;
+		this.blankPenalty = blankPenalty;
 		this.skillLevel = skillLevel;
 		
 		if(skillLevel == 1)
@@ -47,18 +46,16 @@ class Robot {
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
 
-	public void makePlay(String tilePool, Hashtable<String, Vector<String>> words) {
+	public void makePlay(Game game, String tilePool, Hashtable<String,Vector<String>> words) {
 
+		this.game=game;
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
-		if (tilePool.length() >= 2 * minLength) {
+		if (tilePool.length() >= 2 * minLength || rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
 			searchInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
 		}
-		else if (rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
-			searchInPool(dictionary.rootNode, "", tilePool.replace("?", ""), 0);
-		}
 		else {
-			searchForSteal(words);
+			searchForSteal(game, words);
 		}
 	}
 
@@ -67,7 +64,7 @@ class Robot {
 	 * If a node is discovered containing one or more anagrams, one is chosen at random,
 	 * and the method halts.
 	 *
-	 * @param node 				The node being searched
+	 * @param node				The node being searched
 	 * @param charsFound 		chars found so far (the 'address' of the current node)
 	 * @param poolRemaining 	chars left in the pool from which to form a word
 	 * @param blanksRequired 	Blanks needed to make this word
@@ -134,7 +131,7 @@ class Robot {
 	 * @param words All the words on the board grouped by player
 	 */
 	
-	private void searchForSteal(Hashtable<String, Vector<String>> words) {
+	private void searchForSteal(Game game, Hashtable<String,Vector<String>> words) {
 
 		ArrayList<String> players = new ArrayList<>(words.keySet());
 		Collections.shuffle(players);
