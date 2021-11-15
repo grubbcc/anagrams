@@ -119,7 +119,7 @@ class GameMenu extends PopWindow {
 
         setTitle("Game Options");
         setContents(grid);
-        setMaxSize(320, 340);
+        setMaxSize(335, 340);
 
         startButton.setPrefWidth(75.0);
         startButton.setPrefHeight(25.0);

@@ -152,7 +152,7 @@ class SettingsMenu extends PopWindow {
             setColor(client.colors.get(color));
             colorChoosers.put(color, this);
 
-            getColumnConstraints().add(new ColumnConstraints(120));
+            getColumnConstraints().add(new ColumnConstraints(130));
             getColumnConstraints().add(new ColumnConstraints(120));
             getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
             setHgap(4);
