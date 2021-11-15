@@ -17,6 +17,9 @@ import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -82,7 +85,7 @@ public class LoginMenu extends PopWindow {
 
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.ssl.protocols","TLSv1.2");
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         props.put("mail.smtp.host", "mail.anagrams.site");
         props.put("mail.smtp.port", "587");
 
@@ -184,7 +187,7 @@ public class LoginMenu extends PopWindow {
     private void registerAction(ActionEvent actionEvent) {
         try {
             if(prefs.nodeExists(usernameField.getText())) {
-                if (prefs.node(usernameField.getText()).get("password", null) != null) {
+                if (prefs.node(usernameField.getText()).getByteArray("password", null) != null) {
 
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
 
@@ -241,7 +244,7 @@ public class LoginMenu extends PopWindow {
         String username = usernameField.getText();
         try {
             if (prefs.nodeExists(username)) {
-                if (prefs.node(username).get("password", null) != null) {
+                if (prefs.node(username).getByteArray("password", null) != null) {
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
                     dialog.setText("<center>The username you entered has already been<br> registered. " +
                             "Please choose a different name<br> or log in using the password.</center>");
@@ -277,7 +280,7 @@ public class LoginMenu extends PopWindow {
 
         try {
             if (prefs.nodeExists(username)) {
-                if (prefs.node(username).get("password", null) == null) {
+                if (prefs.node(username).getByteArray("password", null) == null) {
                     MessageDialog dialog = new MessageDialog(client, "Username not recognized");
                     dialog.setText("<center>The username you entered has not been registered <br>" +
                             "Please register or choose \"Play as guest\".</center>");
@@ -320,7 +323,7 @@ public class LoginMenu extends PopWindow {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        if(prefs.node(username).get("password", "").equals(password)) {
+        if(password.equals(new String(Base64.getDecoder().decode((prefs.node(username).getByteArray("password", new byte[10])))))) {
             return true;
         }
         else {
@@ -453,7 +456,7 @@ public class LoginMenu extends PopWindow {
         if(entry.equals(code)) {
             String username = usernameField.getText();
             prefs.node(username).put("email", emailField.getText());
-            prefs.node(username).put("password", passwordField.getText());
+            prefs.node(username).putByteArray("password", Base64.getEncoder().encode(passwordField.getText().getBytes()));
 
             MessageDialog dialog = new MessageDialog(client, "Registration successful");
             dialog.setText("<center>Congratulations, you have successfully registered the username\n" +
@@ -484,7 +487,7 @@ public class LoginMenu extends PopWindow {
         warningLabel.setText("");
         warningLabel.setOnMouseClicked(null);
 
-        instructionLabel.setText("Enter your email address. If there is an associated\npassword, it will be sent to you.");
+        instructionLabel.setText("Enter your email address. If there is an\nassociated password, it will be sent to you.");
     }
 
     /**
@@ -573,7 +576,7 @@ public class LoginMenu extends PopWindow {
                             message.setFrom(new InternetAddress(from));
                             message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
                             message.setSubject("Password recovery");
-                            message.setText("Your password for Anagrams is " + prefs.node(user).get("password", "unavailable"));
+                            message.setText("Your password for Anagrams is " + new String(Base64.getDecoder().decode((prefs.node(user).getByteArray("password", new byte[10])))));
 
                             ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
                             emailExecutor.execute(() -> {
