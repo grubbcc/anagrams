@@ -49,7 +49,7 @@ Version 0.9.8 - June 25, 2021
 
 Version 0.9.7 - February 15, 2021
 
-    • Enabled online play(finall!)
+    • Enabled online play(finally!)
     • Migrated to JavaFX for improved graphical improvement.
     • Added tree visualization widget.
     • Fixed a bug that would cause game panels to disappear prematurely.
