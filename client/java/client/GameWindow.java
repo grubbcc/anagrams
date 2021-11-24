@@ -68,6 +68,7 @@ public class GameWindow extends PopWindow {
     private final Image blackRobot = new Image(getClass().getResourceAsStream("/images/black robot.png"));
     private final Image whiteRobot = new Image(getClass().getResourceAsStream("/images/white robot.png"));
     private final ImageView robotImage = new ImageView(blackRobot);
+    private final Timeline blinker = new Timeline();
     final WordDisplay wordDisplay;
 
     private final boolean isMobile;
@@ -81,7 +82,7 @@ public class GameWindow extends PopWindow {
     final int minLength;
     final int blankPenalty;
     private String tilePool = "";
-    private final HashMap<String, GamePanel> players = new HashMap<>();
+    private final WeakHashMap<String, GamePanel> players = new WeakHashMap<>();
     boolean gameOver = false;
 
     //fields for postgame analysis
@@ -94,7 +95,7 @@ public class GameWindow extends PopWindow {
      */
 
     GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
-        super(client.anchor);
+        super(client.anchor.get());
 
         this.client = client;
         explorer = client.explorer;
@@ -111,7 +112,7 @@ public class GameWindow extends PopWindow {
         minPanelWidth = isMobile ? 75 : 175;
         minPanelHeight = isMobile ? 100 : 175;
 
-        wordClip = AudioClip.getAudioClip(wordSound, client.stage);
+        wordClip = AudioClip.getAudioClip(wordSound, client.stage.get());
         client.gameWindows.put(gameID, this);
         wordDisplay = new WordDisplay();
 
@@ -179,7 +180,7 @@ public class GameWindow extends PopWindow {
             ScrollPane chatScrollPane = new ScrollPane();
             chatBox.setEditable(false);
             chatField.setPromptText("Type here to chat");
-            chatField.setOnAction(ae -> {
+           chatField.setOnAction(ae -> {
                 client.send("gamechat " + gameID + " " + username + ": " + chatField.getText());
                 chatField.clear();
             });
@@ -201,7 +202,7 @@ public class GameWindow extends PopWindow {
                 hideButton.setFocusTraversable(false);
                 hideButton.translateXProperty().bind(translateXProperty().add(widthProperty()).subtract(89));
                 hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
-                hideButton.setOnAction(e -> {
+         /*       hideButton.setOnAction(e -> {
                     if (hideButton.getText().contains("show")) {
                         splitPane.setDividerPosition(0, 0);
                         hideButton.setText("hide chat \u25BC");
@@ -211,8 +212,8 @@ public class GameWindow extends PopWindow {
                         hideButton.setText("show chat \u25B2");
                         hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
                     }
-                });
-                client.anchor.getChildren().add(hideButton);
+                });*/
+                client.anchor.get().getChildren().add(hideButton);
                 Platform.runLater(hideButton::toFront);
             }
         }
@@ -229,10 +230,10 @@ public class GameWindow extends PopWindow {
             closeButton.setScaleY(1.45);
 
             controlPanel.getChildren().remove(exitGameButton);
-            minWidthProperty().bind(client.stage.widthProperty());
-            maxWidthProperty().bind(client.stage.widthProperty());
-            minHeightProperty().bind(client.stage.heightProperty());
-            maxHeightProperty().bind(client.stage.heightProperty());
+            minWidthProperty().bind(client.stage.get().widthProperty());
+            maxWidthProperty().bind(client.stage.get().widthProperty());
+            minHeightProperty().bind(client.stage.get().heightProperty());
+            maxHeightProperty().bind(client.stage.get().heightProperty());
             client.getWebAPI().registerJavaFunction("toggleFullscreenIcon", e -> maximizeButton.toggle());
             maximizeButton.setOnAction(e -> {
                 double dividerPosition = splitPane.getDividerPositions()[0];
@@ -259,23 +260,24 @@ public class GameWindow extends PopWindow {
         }
 
         if (!isWatcher) {
-            homePanel.takeSeat(username);
+            if(gameLog.isEmpty()) {
+                homePanel.takeSeat(username);
 
             textField.setOnAction(e -> {
                 makePlay(textField.getText().toUpperCase());
                 textField.clear();
             });
-            textField.setPromptText("Enter a word here to play");
-            textField.setId("text-field");
+                textField.setPromptText("Enter a word here to play");
+                textField.setId("text-field");
 
-            wordBuilder.visibleProperty().bind(textField.focusedProperty());
-            wordBuilder.setPrefWidth(310);
-            wordBuilder.setPrefHeight(33);
-            wordBuilder.setMaxWidth(310);
-            wordBuilder.setMaxHeight(33);
+                wordBuilder.visibleProperty().bind(textField.focusedProperty());
+                wordBuilder.setPrefWidth(310);
+                wordBuilder.setPrefHeight(33);
+                wordBuilder.setMaxWidth(310);
+                wordBuilder.setMaxHeight(33);
 
-            wordBuilder.setBackground(new Background(new BackgroundFill(Color.web("#E5E5E5"), CornerRadii.EMPTY, Insets.EMPTY)));
-            wordBuilder.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
+                wordBuilder.setBackground(new Background(new BackgroundFill(Color.web("#E5E5E5"), CornerRadii.EMPTY, Insets.EMPTY)));
+                wordBuilder.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
 
 
             textField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -290,22 +292,23 @@ public class GameWindow extends PopWindow {
                     updateWordBuilder(newValue.toUpperCase());
             });
 
-            caret.setStrokeWidth(2);
-            caret.translateXProperty().bind(textField.caretPositionProperty().multiply(20).add(4));
-            caret.setViewOrder(Double.NEGATIVE_INFINITY);
-            Timeline blinker = new Timeline(
-                    new KeyFrame(Duration.seconds(1.0), ae -> caret.setOpacity(1)),
-                    new KeyFrame(Duration.seconds(0.5), ae -> caret.setOpacity(0))
-            );
-            blinker.setCycleCount(Animation.INDEFINITE);
-            blinker.play();
-            wordBuilder.getChildren().add(caret);
+                caret.setStrokeWidth(2);
+                caret.translateXProperty().bind(textField.caretPositionProperty().multiply(20).add(4));
+                caret.setViewOrder(Double.NEGATIVE_INFINITY);
+                blinker.getKeyFrames().addAll(
+                        new KeyFrame(Duration.seconds(1.0), ae -> caret.setOpacity(1)),
+                        new KeyFrame(Duration.seconds(0.5), ae -> caret.setOpacity(0))
+                );
+                blinker.setCycleCount(Animation.INDEFINITE);
+                blinker.play();
+                wordBuilder.getChildren().add(caret);
+            }
 
             if (isMobile) {
                 StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
                 controlPanel.getChildren().remove(infoPane);
                 controlPanel.getChildren().addAll(textField, infoPane);
-                client.stack.getChildren().add(wordBuilder);
+                client.stack.get().getChildren().add(wordBuilder);
             } else {
                 textStack.getChildren().addAll(textField, wordBuilder);
                 controlPanel.getChildren().remove(infoPane);
@@ -398,7 +401,9 @@ public class GameWindow extends PopWindow {
         hide();
         wordDisplay.hide();
         explorer.hide();
-        client.anchor.getChildren().remove(hideButton);
+        blinker.stop();
+        client.anchor.get().getChildren().remove(hideButton);
+//        Arrays.stream(getClass().getDeclaredFields()).toList().forEach(obj ->  obj = null);
         client.exitGame(gameID, isWatcher);
     }
 
@@ -795,7 +800,7 @@ public class GameWindow extends PopWindow {
 
         void removeWord(String wordToRemove) {
             WordLabel labelToRemove = words.remove(wordToRemove);
-            FadeTransition ft = new FadeTransition(Duration.millis(800), labelToRemove);
+           FadeTransition ft = new FadeTransition(Duration.millis(800), labelToRemove);
             ft.setToValue(0);
             ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(labelToRemove));
             ft.play();
@@ -1014,6 +1019,7 @@ public class GameWindow extends PopWindow {
 
     public void endGame() {
         gameOver = true;
+        blinker.stop();
 
         maxPosition = gameLog.size() - 1;
         position = maxPosition;
@@ -1142,9 +1148,9 @@ public class GameWindow extends PopWindow {
          */
 
         public WordDisplay() {
-            super(client.anchor);
+            super(client.anchor.get());
             setViewOrder(-1000);
-            AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
+            AnchorPane.setLeftAnchor(this, client.stage.get().getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
 
             poolPanel.infoPane.getChildren().remove(poolPanel.playerScoreLabel);
