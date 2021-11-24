@@ -17,8 +17,6 @@ import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
@@ -76,7 +74,7 @@ public class LoginMenu extends PopWindow {
      */
 
     public LoginMenu(AnagramsClient client) {
-        super(client.stack);
+        super(client.stack.get());
         this.client = client;
 
         if(client.getWebAPI().isMobile()) {
@@ -178,6 +176,7 @@ public class LoginMenu extends PopWindow {
         setMaxSize(300, 210);
         setTitle("Log in");
         setContents(grid);
+        show(true);
     }
 
     /**

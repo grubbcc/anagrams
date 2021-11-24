@@ -1,7 +1,6 @@
 package client;
 
 import com.jpro.webapi.JProApplication;
-import com.sun.javafx.scene.control.LabeledText;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -12,7 +11,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.TouchEvent;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
@@ -20,10 +18,11 @@ import one.jpro.sound.*;
 import org.json.JSONArray;
 
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.sql.Connection;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
@@ -37,16 +36,15 @@ public class AnagramsClient extends JProApplication {
 	private final int port = 8118;
 	private final String version = "0.9.9";
 
-	boolean connected;
+	private final AtomicBoolean connected = new AtomicBoolean(false);
 	private InputStream serverIn;
 	private OutputStream serverOut;
 	BufferedReader bufferedIn;
 
-	Stage stage;
+	WeakReference<Stage> stage;
 	private Thread messageLoop;
 
-	private LoginMenu loginMenu;
-	private SettingsMenu settingsMenu;
+//	private SettingsMenu settingsMenu;
 	WordExplorer explorer;
 
 	private final FlowPane gamesPanel = new FlowPane();
@@ -59,17 +57,17 @@ public class AnagramsClient extends JProApplication {
 	private final ScrollPane playersScrollPane = new ScrollPane();
 
 	private final SplitPane splitPane = new SplitPane();
-	final AnchorPane anchor = new AnchorPane(splitPane);
-	final StackPane stack = new StackPane(anchor);
+	WeakReference<AnchorPane> anchor = new WeakReference<>(new AnchorPane(splitPane));
+	WeakReference<StackPane> stack = new WeakReference<>(new StackPane(anchor.get()));
 
 	private final TextArea chatBox = new TextArea();
 	private final BorderPane chatPanel = new BorderPane();
 	private final ScrollPane chatScrollPane = new ScrollPane();
 	private final PlayerPane playerPane = new PlayerPane(this);
 
-	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
-	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
-	private final HashMap<String, Label> playersList = new HashMap<>();
+	WeakHashMap<String, GameWindow> gameWindows = new WeakHashMap<>();
+	private WeakHashMap<String, GamePane> gamePanes = new WeakHashMap<>();
+	private final WeakHashMap<String, Label> playersList = new WeakHashMap<>();
 	public String username;
 
 	public static final String[] lexicons = {"CSW19", "NWL20"};
@@ -122,7 +120,7 @@ public class AnagramsClient extends JProApplication {
 
 	@Override
 	public void start(Stage stage) {
-		this.stage = stage;
+		this.stage = new WeakReference<>(stage);
 		System.out.println("Welcome to Anagrams!");
 
 		newPlayerClip = AudioClip.getAudioClip(newPlayerSound, stage);
@@ -134,10 +132,8 @@ public class AnagramsClient extends JProApplication {
 
 		if(connect() ) {
 			System.out.println("Connected to server on port " + port);
-			if(loginMenu == null) {
-				loginMenu = new LoginMenu(this);
-				loginMenu.show(true);
-			}
+			new LoginMenu(this);
+
 		}
 
 	}
@@ -157,7 +153,7 @@ public class AnagramsClient extends JProApplication {
 		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
 		settingsButton.setStyle("-fx-font-size: 18");
 		settingsButton.setPrefSize(162, 33);
-		settingsButton.setOnAction(e -> settingsMenu.show(false));
+		settingsButton.setOnAction(e -> new SettingsMenu(this));
 
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
@@ -221,12 +217,12 @@ public class AnagramsClient extends JProApplication {
 			}
 		});*/
 
-		anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
-		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+		anchor.get().setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
+		anchor.get().setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
 		Scene scene;
 		try {
-			scene = new Scene(stack);
+			scene = new Scene(stack.get());
 		}
 		catch(IllegalArgumentException e) {
 			getWebAPI().executeScript("window.location.reload(false)");
@@ -235,21 +231,21 @@ public class AnagramsClient extends JProApplication {
 		scene.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
 
 		//main stage
-		stage.setTitle("Anagrams");
+		stage.get().setTitle("Anagrams");
 
 		if(getWebAPI().isMobile()) {
 			gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
 			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
-				stage.setWidth(Double.parseDouble(newWidth));
+				stage.get().setWidth(Double.parseDouble(newWidth));
 			});
 			getWebAPI().registerJavaFunction("setHeight", newHeight -> {
-				stage.setHeight(Double.parseDouble(newHeight));
+				stage.get().setHeight(Double.parseDouble(newHeight));
 			});
 		}
 
-		stage.setScene(scene);
+		stage.get().setScene(scene);
 		setColors();
-		stage.show();
+		stage.get().show();
 
 		getWebAPI().addInstanceCloseListener(this::logOut);
 	}
@@ -265,7 +261,7 @@ public class AnagramsClient extends JProApplication {
 			newStyle += color.css + "-text: " + getTextColor(colors.get(color)) + "; ";
 		}
 
-		stage.getScene().getRoot().setStyle(newStyle);
+		stage.get().getScene().getRoot().setStyle(newStyle);
 		for(GameWindow gameWindow : gameWindows.values()) {
 			gameWindow.setStyle(newStyle);
 			gameWindow.setDark(getTextColor(colors.get(Colors.GAME_FOREGROUND)).equals("white"));
@@ -300,7 +296,7 @@ public class AnagramsClient extends JProApplication {
 			this.serverOut = socket.getOutputStream();
 			this.serverIn = socket.getInputStream();
 			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
-			connected = true;
+			connected.set(true);
 			return true;
 		}
 		catch (IOException ioe) {
@@ -331,7 +327,7 @@ public class AnagramsClient extends JProApplication {
 			colors.put(color, prefs.get(color.key, color.defaultCode));
 		setColors();
 
-		settingsMenu = new SettingsMenu(this);
+	//	settingsMenu = new SettingsMenu(this);
 		messageLoop = new Thread(this::readMessageLoop);
 		messageLoop.start();
 		borderPane.setDisable(false);
@@ -598,7 +594,7 @@ public class AnagramsClient extends JProApplication {
 		newLabel.setOnMouseClicked(click -> {
 			playerPane.displayPlayerInfo(newPlayerName);
 			if(!playerPane.isVisible()) {
-				playerPane.setTranslateX(stage.getWidth() - 453);
+				playerPane.setTranslateX(stage.get().getWidth() - 453);
 				playerPane.setTranslateY(newLabel.getLayoutY() + 66);
 				playerPane.setPrefSize(300, 240);
 				playerPane.setMinSize(300, 140);
@@ -639,103 +635,107 @@ public class AnagramsClient extends JProApplication {
 
 	private void readMessageLoop() {
 		System.out.println("reading messages");
-		try {
-			String line;
-			while((line = this.bufferedIn.readLine()) != null) {
+		while(connected.get()) {
+			try {
+				String line;
+				while ((line = this.bufferedIn.readLine()) != null) {
 
-				String[] tokens = line.split(" ");
-				if (tokens.length > 0) {
+					String[] tokens = line.split(" ");
+					if (tokens.length > 0) {
 
-					String cmd = tokens[0];
+						String cmd = tokens[0];
 
-			//		if(!cmd.equals("note") && !cmd.equals("nexttiles"))
-			//			System.out.println("command received: " + line);
+//						if(!cmd.equals("note") && !cmd.equals("nexttiles"))
+//								System.out.println("command received: " + line);
 
-					String finalLine = line;
+						String finalLine = line;
 
-					Platform.runLater(() -> {
-						switch (cmd) {
-							//other commands
-							case "alert" -> {
-								MessageDialog dialog = new MessageDialog(this, "Alert");
-								dialog.setText(finalLine.split("@")[1]);
-								dialog.addOkayButton();
-								dialog.show(true);
-							}
-							case "loginplayer" -> addPlayer(tokens[1]);
-							case "logoffplayer" -> removePlayer(tokens[1]);
-							case "chat" -> {
-								String msg = finalLine.replaceFirst("chat ", "");
-								chatBox.appendText("\n" + msg);
-							}
-							case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
-									tokens[7], tokens[8], tokens[9], tokens[10]);
-							case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
-							case "json" -> {if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.substring(5)));}
+						Platform.runLater(() -> {
+							switch (cmd) {
+								//other commands
+								case "alert" -> {
+									MessageDialog dialog = new MessageDialog(this, "Alert");
+									dialog.setText(finalLine.split("@")[1]);
+									dialog.addOkayButton();
+									dialog.show(true);
+								}
+								case "loginplayer" -> addPlayer(tokens[1]);
+								case "logoffplayer" -> removePlayer(tokens[1]);
+								case "chat" -> {
+									String msg = finalLine.replaceFirst("chat ", "");
+									chatBox.appendText("\n" + msg);
+								}
+								case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
+										tokens[7], tokens[8], tokens[9], tokens[10]);
+								case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
+								case "json" -> {
+									if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.substring(5)));
+								}
 
-							//gamePane commands
-							default -> {
-								GamePane gamePane = gamePanes.get(tokens[1]);
-								if(gamePane != null) {
-									switch(cmd) {
-										case "takeseat" -> {
-											gamePane.addPlayer(tokens[2]);
-											if(gameWindows.containsKey(tokens[1]))
-												if (!gameWindows.get(tokens[1]).gameOver)
-													gameWindows.get(tokens[1]).addPlayer(tokens[2]);
-										}
-										case "removeplayer" -> {
-											gamePane.removePlayer(tokens[2]);
-											if(gameWindows.containsKey(tokens[1])) {
-												gameWindows.get(tokens[1]).removePlayer(tokens[2]);
+								//gamePane commands
+								default -> {
+									GamePane gamePane = gamePanes.get(tokens[1]);
+									if (gamePane != null) {
+										switch (cmd) {
+											case "takeseat" -> {
+												gamePane.addPlayer(tokens[2]);
+												if (gameWindows.containsKey(tokens[1]))
+													if (!gameWindows.get(tokens[1]).gameOver)
+														gameWindows.get(tokens[1]).addPlayer(tokens[2]);
 											}
-										}
-										case "note" -> {
-											gamePane.notificationLabel.setText(finalLine.split("@")[1]);
-											if(gameWindows.containsKey(tokens[1])) {
-												gameWindows.get(tokens[1]).setNotificationArea(finalLine.split("@")[1]);
+											case "removeplayer" -> {
+												gamePane.removePlayer(tokens[2]);
+												if (gameWindows.containsKey(tokens[1])) {
+													gameWindows.get(tokens[1]).removePlayer(tokens[2]);
+												}
 											}
-										}
-										case "endgame" -> gamePane.endGame();
-										case "gamelog" -> gamePane.gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
+											case "note" -> {
+												gamePane.notificationLabel.setText(finalLine.split("@")[1]);
+												if (gameWindows.containsKey(tokens[1])) {
+													gameWindows.get(tokens[1]).setNotificationArea(finalLine.split("@")[1]);
+												}
+											}
+											case "endgame" -> gamePane.endGame();
+											case "gamelog" -> gamePane.gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
 
-										//gameWindow commands
-										default -> {
-											GameWindow gameWindow = gameWindows.get(tokens[1]);
-											if(gameWindow != null) {
-												switch(cmd) {
-													case "nexttiles" -> gameWindow.setTiles(tokens[2]);
-													case "makeword" -> gameWindow.makeWord(tokens[2], tokens[3], tokens[4]);
-													case "steal" -> gameWindow.doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
-													case "abandonseat" -> gameWindow.removePlayer(tokens[2]);
-													case "gamechat" -> gameWindow.handleChat(finalLine.replaceFirst("gamechat " + tokens[1] + " ", ""));
-													case "removeword" -> gameWindow.removeWord(tokens[2], tokens[3]);
-													case "gamestate" -> gameWindow.showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
-													case "plays" -> gameWindow.showPlays(finalLine);
+											//gameWindow commands
+											default -> {
+												GameWindow gameWindow = gameWindows.get(tokens[1]);
+												if (gameWindow != null) {
+													switch (cmd) {
+														case "nexttiles" -> gameWindow.setTiles(tokens[2]);
+														case "makeword" -> gameWindow.makeWord(tokens[2], tokens[3], tokens[4]);
+														case "steal" -> gameWindow.doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
+														case "abandonseat" -> gameWindow.removePlayer(tokens[2]);
+														case "gamechat" -> gameWindow.handleChat(finalLine.replaceFirst("gamechat " + tokens[1] + " ", ""));
+														case "removeword" -> gameWindow.removeWord(tokens[2], tokens[3]);
+														case "gamestate" -> gameWindow.showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
+														case "plays" -> gameWindow.showPlays(finalLine);
 
-													default -> System.out.println("Command not recognized: " + finalLine);
+														default -> System.out.println("Command not recognized: " + finalLine);
+													}
 												}
 											}
 										}
 									}
 								}
 							}
-						}
-					});
+						});
+					}
 				}
-			}
-		}
-		catch (Exception ex) {
-			if(stage.isShowing()) {
-				if(connected) {
-					logOut();
+
+			} catch (Exception ex) {
+				if (stage.get().isShowing()) {
+					if (connected.get()) {
+						logOut();
+					}
+					MessageDialog dialog = new MessageDialog(this, "Connection error");
+					dialog.setText("The connection to the server has been lost. Try to reconnect?");
+					dialog.addYesNoButtons();
+					dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
+					dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
+					Platform.runLater(() -> dialog.show(true));
 				}
-				MessageDialog dialog = new MessageDialog(this, "Connection error");
-				dialog.setText("The connection to the server has been lost. Try to reconnect?");
-				dialog.addYesNoButtons();
-				dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
-				dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
-				Platform.runLater(() -> dialog.show(true));
 			}
 		}
 	}
@@ -746,6 +746,7 @@ public class AnagramsClient extends JProApplication {
 	 */
 
 	public void logOut() {
+		connected.set(false);
 		try {
 			if(messageLoop != null) messageLoop.interrupt();
 
@@ -754,11 +755,20 @@ public class AnagramsClient extends JProApplication {
 			serverIn.close();
 			if(guest)
 				prefs.removeNode();
-			connected = false;
+
 			System.out.println(username + " has just logged out.");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
+		}
+		finally {
+			//Prepare for garbage collection
+			gameWindows.values().forEach(GameWindow::exitGame);
+			gamePanes.values().forEach(GamePane::endGame);
+	//		gamePanes = null;
+	//		gameWindows = null;
+	//		Arrays.stream(getClass().getDeclaredFields()).toList().forEach(obj ->  obj = null);
+			System.gc(); //for testing only
 		}
 	}
 
@@ -773,7 +783,7 @@ public class AnagramsClient extends JProApplication {
 		try {
 			serverOut.write((cmd + "\n").getBytes());
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			System.out.println("Command " + cmd + " not transmitted.");
 		}
 	}

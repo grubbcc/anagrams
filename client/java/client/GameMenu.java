@@ -50,7 +50,7 @@ class GameMenu extends PopWindow {
      */
 
     public GameMenu(AnagramsClient client) {
-        super(client.stack);
+        super(client.stack.get());
         this.client = client;
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.45); setScaleY(1.45);
@@ -133,7 +133,7 @@ class GameMenu extends PopWindow {
         startButton.setDefaultButton(true);
 
         show(true);
-        client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
+        client.stage.get().requestFocus(); //Prevents IllegalStateException in touchscreen mode
         startButton.requestFocus();
 
     }

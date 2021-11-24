@@ -95,7 +95,7 @@ class PlayerPane extends PopWindow {
      */
 
     PlayerPane(AnagramsClient client) {
-        super(client.anchor);
+        super(client.anchor.get());
 
         this.client = client;
 
@@ -114,7 +114,7 @@ class PlayerPane extends PopWindow {
         setContents(contents);
         makeResizable();
 
-        infoPane = new PopWindow(client.anchor);
+        infoPane = new PopWindow(client.anchor.get());
         infoPane.setTitle("Markdown Guide");
         codePane.setPrefWidth(300);
         ImageView markdownPane = new ImageView("/images/markdown.png");

@@ -30,7 +30,7 @@ public class MessageDialog extends PopWindow {
      */
 
     public MessageDialog(AnagramsClient client, String title) {
-        super(client.stack);
+        super(client.stack.get());
 
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.2);

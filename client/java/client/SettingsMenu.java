@@ -33,7 +33,7 @@ class SettingsMenu extends PopWindow {
      */
 
     public SettingsMenu(AnagramsClient client) {
-        super(client.stack);
+        super(client.stack.get());
         this.client = client;
 
         newColors = client.colors.clone();
@@ -82,8 +82,9 @@ class SettingsMenu extends PopWindow {
         setContents(grid);
         setMaxSize(340,320);
         setTitle("Settings");
+        show(false);
 
-        client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
+        client.stage.get().requestFocus(); //Prevents IllegalStateException in touchscreen mode
         OKButton.requestFocus();
     }
 
