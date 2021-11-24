@@ -2,7 +2,6 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -57,63 +56,62 @@ public class ServerWorker extends Thread {
 
 
 	/**
-	* Checks to see whether the user has entered a valid username
+	* Informs new user of other players and games in progress. Informs other players of new user.
 	*/
 	
-	private void handleLogin(String username) {
-		if(server.getUsernames().contains(username)) {
-			send("Sorry, that username is currently being used.");
+	private void handleLogin(String username) throws IOException {
+
+		//Prevents duplicate usernames
+		ServerWorker duplicate = server.getWorker(username);
+		if(duplicate != null) duplicate = this;
+
+		send("ok login");
+		this.username = username;
+		System.out.println("User logged in successfully: " + username);
+		//use this space to send alert messages or chat messages upon login
+
+		for (String s : server.chatLog) {
+			send("chat " + s);
 		}
-		else {
-			send("ok login");
-			this.username = username;
-			System.out.println("User logged in successfully: " + username);
-			//use this space to send alert messages or chat messages upon login
 
-			Iterator<String> it = server.chatLog.iterator();
-			StringBuilder chatLog = new StringBuilder(username + " has just joined the game.");
-			while(it.hasNext()) {
-				send("chat " + it.next());
+		//notify new player of other players
+		synchronized (server.getUsernames()) {
+			for (String playerName : server.getUsernames()) {
+				send("loginplayer " + playerName);
 			}
+		}
 
-			//notify new player of other players
-			synchronized (server.getUsernames()) {
-				for (String playerName : server.getUsernames()) {
-					send("loginplayer " + playerName);
+		//notify new player of games
+		synchronized (server.getGames()) {
+			for(Game game : server.getGames()) {
+				send("addgame " + game.getGameParams());
+				for(String playerName : game.getPlayerList()) {
+					send("takeseat " + game.gameID + " " + playerName);
+				}
+				for(String inactivePlayer : game.getInactivePlayers()) {
+					send("abandonseat " + game.gameID + " " + inactivePlayer);
+				}
+				if(game.gameOver) {
+					for(String gameState : game.gameLog) {
+						send("gamelog " + game.gameID + " " + gameState);
+					}
+					send("note " + game.gameID + " @" + "Game over");
+					send("endgame " + game.gameID);
+				}
+				else if(game.paused) {
+					send("note " + game.gameID + " @" + "Game paused");
+				}
+				else if(game.timeRemaining > 0) {
+					String message = "Time remaining: " + game.timeRemaining;
+					send("note " + game.gameID + " @" + message);
 				}
 			}
-
-			//notify new player of games
-			synchronized (server.getGames()) {
-				for(Game game : server.getGames()) {
-					send("addgame " + game.getGameParams());
-					for(String playerName : game.getPlayerList()) {
-						send("takeseat " + game.gameID + " " + playerName);
-					}
-					for(String inactivePlayer : game.getInactivePlayers()) {
-						send("abandonseat " + game.gameID + " " + inactivePlayer);
-					}
-					if(game.gameOver) {
-						for(String gameState : game.gameLog) {
-							send("gamelog " + game.gameID + " " + gameState);
-						}
-						send("note " + game.gameID + " @" + "Game over");
-						send("endgame " + game.gameID);
-					}
-					else if(game.paused) {
-						send("note " + game.gameID + " @" + "Game paused");
-					}
-					else if(game.timeRemaining > 0) {
-						String message = "Time remaining: " + game.timeRemaining;
-						send("note " + game.gameID + " @" + message);
-					}
-				}
-			}
-
-			//notify other players of the new player
-			server.addWorker(username, this);
-			server.broadcast("loginplayer " + username);
 		}
+
+		//notify other players of the new player
+		server.addWorker(username, this);
+		server.broadcast("loginplayer " + username);
+
 
 	}
 
@@ -163,6 +161,8 @@ public class ServerWorker extends Thread {
 		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers, hasRobot, skillLevel);
 		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
 		newGame.addPlayer(this);
+		if(hasRobot)
+			newGame.addRobot(new Robot(skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
 
 		server.addGame(gameID, newGame);
 	}

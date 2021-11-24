@@ -12,7 +12,6 @@ public class Game {
 
 	private final Hashtable<String, ServerWorker> playerList = new Hashtable<>();
 	private final Hashtable<String, ServerWorker> watcherList = new Hashtable<>();
-//	private final Hashtable<String, Robot> robotList = new Hashtable<>();
 
 	final String gameID;
 	private static final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
@@ -74,9 +73,6 @@ public class Game {
 		this.allowsWatchers = allowsWatchers;
 		this.hasRobot = hasRobot;
 
-		if(hasRobot)
-			addRobot(new Robot(skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
-
 		setUpTileBag(numSets);
 		
 		if(speed.equals("slow"))
@@ -127,11 +123,11 @@ public class Game {
 			if(countdown > 0) {
 				if(tileCount < minLength) {
 					String message = "Game will begin in " + countdown + " seconds";
-					notifyEveryone("note " + gameID + " @" + message);
+					server.broadcast("note " + gameID + " @" + message);
 				}
 				else if (timeRemaining > 0) {
 					String message = "Game will resume in " + countdown + " seconds";
-					notifyEveryone("note " + gameID + " @" + message);
+					server.broadcast("note " + gameID + " @" + message);
 				}
 				countdown--;
 				return;
@@ -147,7 +143,7 @@ public class Game {
 			//update timer and check for game over
 			if(timeRemaining > 0) {
 				String message = "Time remaining: " + timeRemaining--;
-				notifyEveryone("note " + gameID + " @" + message);				
+				server.broadcast("note " + gameID + " @" + message);
 
 				think--;
 				if(tileCount >= tileBag.length && tilePool.isEmpty()) {
@@ -187,7 +183,7 @@ public class Game {
 	private synchronized void pauseGame() {
 		paused = true;
 		String message = "Game paused";
-		notifyEveryone("note " + gameID + " @" + message);
+		server.broadcast("note " + gameID + " @" + message);
 	}
 
 	/**
@@ -201,12 +197,12 @@ public class Game {
 
 		saveState();
 
-		notifyEveryone("note " + gameID + " @" + "Game over");
+		server.broadcast("note " + gameID + " @" + "Game over");
 
 		for(String gameState : gameLog) {
 			notifyRoom("gamelog " + gameID + " " + gameState);
 		}
-		notifyEveryone("endgame " + gameID);
+		server.broadcast("endgame " + gameID);
 
 		wordFinder = new WordFinder(minLength, blankPenalty, server.getDictionary(lexicon));
 		if(hasRobot) {
@@ -251,12 +247,12 @@ public class Game {
 			saveState();
 
 			//inform everyone of the newPlayer
-			notifyEveryone("takeseat " + gameID + " " + newPlayer.getUsername());
+			server.broadcast("takeseat " + gameID + " " + newPlayer.getUsername());
 		}
 	}
 
 	/**
-	* Remove a player from the playerList and inform the other other players.
+	* Remove a player from the playerList and inform the other players.
 	* If there are no more players or watchers left, sends a signal to the server
 	* to end the game.
 	*
@@ -265,35 +261,35 @@ public class Game {
 	
 	synchronized void removePlayer(String playerToRemove) {
 
-		playerList.remove(playerToRemove);
+		if(playerList.containsKey(playerToRemove)) {
+			playerList.remove(playerToRemove);
+
+			if(playerList.isEmpty()) {
+				gameTimer.cancel();
+				if(timeRemaining > 0) {
+					String message = "Time remaining: " + timeRemaining;
+					server.broadcast("note " + gameID + " @" + message);
+				}
+				if(watcherList.isEmpty()) {
+					deleteTimer.cancel();
+					deleteTimer = new Timer();
+					deleteTimer.schedule(new DeleteTask(), 180000);
+				}
+			}
+		}
 
 		if(words.containsKey(playerToRemove)) {
 			if (words.get(playerToRemove).isEmpty()) {
 				words.remove(playerToRemove);
-				notifyEveryone("removeplayer " + gameID + " " + playerToRemove);
+				server.broadcast("removeplayer " + gameID + " " + playerToRemove);
 			}
 			else {
 				notifyRoom("abandonseat " + gameID + " " + playerToRemove);
 			}
 		}
 
-
 		saveState();
 
-		if(playerList.isEmpty()) {
-			gameTimer.cancel();
-			if(timeRemaining > 0) {
-				String message = "Time remaining: " + timeRemaining;
-				notifyEveryone("note " + gameID + " @" + message);
-			}
-			if(watcherList.isEmpty()) {
-				deleteTimer.cancel();
-				deleteTimer = new Timer();
-				deleteTimer.schedule(new DeleteTask(), 180000);
-
-				System.out.println("Beginning countdown. Game will disappear in 3 minutes.");
-			}
-		}
 	}
 	
 	
@@ -332,13 +328,15 @@ public class Game {
 	*/
 	
 	synchronized void removeWatcher(String watcherToRemove) {
-		watcherList.remove(watcherToRemove);
+		if(watcherList.containsKey(watcherToRemove)) {
+			watcherList.remove(watcherToRemove);
 
-		if(playerList.isEmpty() && watcherList.isEmpty()) {
-			deleteTimer.cancel();
-			deleteTimer = new Timer();
-			deleteTimer.schedule(new DeleteTask(), 180000);
-			System.out.println("Beginning countdown; game will disappear in 3 minutes");
+			if (playerList.isEmpty() && watcherList.isEmpty()) {
+				deleteTimer.cancel();
+				deleteTimer = new Timer();
+				deleteTimer.schedule(new DeleteTask(), 180000);
+				System.out.println("Beginning countdown; game will disappear in 3 minutes");
+			}
 		}
 	}
 
@@ -356,7 +354,7 @@ public class Game {
 		saveState();
 
 		//inform everyone of the newRobot
-		notifyEveryone("takeseat " + gameID + " " + newRobot.robotName);
+		server.broadcast("takeseat " + gameID + " " + newRobot.robotName);
 	}
 	
 	/**
@@ -419,10 +417,10 @@ public class Game {
 		if(words.get(shortPlayer).isEmpty()) {
 			if (!shortPlayer.startsWith("Robot")) {
 				if (server.getWorker(shortPlayer) == null) { //player is not logged in
-					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);
+					server.broadcast("removeplayer " + gameID + " " + shortPlayer);
 				}
 				else if (!playerList.containsKey(shortPlayer)) { //player has left the game
-					notifyEveryone("removeplayer " + gameID + " " + shortPlayer);
+					server.broadcast("removeplayer " + gameID + " " + shortPlayer);
 				}
 			}
 		}
@@ -526,7 +524,7 @@ public class Game {
 
 		Set<String> union = new HashSet<>(words.keySet());
 		union.addAll(playerList.keySet());
-		if(hasRobot)
+		if(robotPlayer != null)
 			union.add(robotPlayer.robotName);
 		
 		return union;
@@ -539,7 +537,7 @@ public class Game {
 	synchronized public Set<String> getInactivePlayers() {
 		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
-		if(hasRobot)
+		if(robotPlayer != null)
 			union.removeAll(Collections.singleton(robotPlayer.robotName));
 
 		return union;
@@ -586,15 +584,5 @@ public class Game {
 		}
 	}
 
-	/**
-	* Informs players and watchers of time remaining and other game events.
-	* The token "@" is used to mark the start of the message.
-	*
-	* @param message The message to be sent.
-	*/
-
-	void notifyEveryone(String message) {
-		server.broadcast(message);
-	}
 	
 }
