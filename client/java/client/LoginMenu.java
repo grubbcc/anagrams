@@ -74,7 +74,7 @@ public class LoginMenu extends PopWindow {
      */
 
     public LoginMenu(AnagramsClient client) {
-        super(client.stack.get());
+        super(client.stack);
         this.client = client;
 
         if(client.getWebAPI().isMobile()) {

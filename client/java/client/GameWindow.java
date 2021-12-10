@@ -95,7 +95,7 @@ public class GameWindow extends PopWindow {
      */
 
     GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
-        super(client.anchor.get());
+        super(client.anchor);
 
         this.client = client;
         explorer = client.explorer;
@@ -112,7 +112,7 @@ public class GameWindow extends PopWindow {
         minPanelWidth = isMobile ? 75 : 175;
         minPanelHeight = isMobile ? 100 : 175;
 
-        wordClip = AudioClip.getAudioClip(wordSound, client.stage.get());
+        wordClip = AudioClip.getAudioClip(wordSound, client.stage);
         client.gameWindows.put(gameID, this);
         wordDisplay = new WordDisplay();
 
@@ -213,7 +213,7 @@ public class GameWindow extends PopWindow {
                         hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
                     }
                 });*/
-                client.anchor.get().getChildren().add(hideButton);
+                client.anchor.getChildren().add(hideButton);
                 Platform.runLater(hideButton::toFront);
             }
         }
@@ -230,10 +230,10 @@ public class GameWindow extends PopWindow {
             closeButton.setScaleY(1.45);
 
             controlPanel.getChildren().remove(exitGameButton);
-            minWidthProperty().bind(client.stage.get().widthProperty());
-            maxWidthProperty().bind(client.stage.get().widthProperty());
-            minHeightProperty().bind(client.stage.get().heightProperty());
-            maxHeightProperty().bind(client.stage.get().heightProperty());
+            minWidthProperty().bind(client.stage.widthProperty());
+            maxWidthProperty().bind(client.stage.widthProperty());
+            minHeightProperty().bind(client.stage.heightProperty());
+            maxHeightProperty().bind(client.stage.heightProperty());
             client.getWebAPI().registerJavaFunction("toggleFullscreenIcon", e -> maximizeButton.toggle());
             maximizeButton.setOnAction(e -> {
                 double dividerPosition = splitPane.getDividerPositions()[0];
@@ -308,7 +308,7 @@ public class GameWindow extends PopWindow {
                 StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
                 controlPanel.getChildren().remove(infoPane);
                 controlPanel.getChildren().addAll(textField, infoPane);
-                client.stack.get().getChildren().add(wordBuilder);
+                client.stack.getChildren().add(wordBuilder);
             } else {
                 textStack.getChildren().addAll(textField, wordBuilder);
                 controlPanel.getChildren().remove(infoPane);
@@ -402,7 +402,7 @@ public class GameWindow extends PopWindow {
         wordDisplay.hide();
         explorer.hide();
         blinker.stop();
-        client.anchor.get().getChildren().remove(hideButton);
+        client.anchor.getChildren().remove(hideButton);
 //        Arrays.stream(getClass().getDeclaredFields()).toList().forEach(obj ->  obj = null);
         client.exitGame(gameID, isWatcher);
     }
@@ -413,7 +413,7 @@ public class GameWindow extends PopWindow {
      * @param dark whether the game foreground has a luminance < 40.
      */
 
-    public void setDark(Boolean dark) {
+    void setDark(Boolean dark) {
         if (dark)
             robotImage.setImage(whiteRobot);
         else
@@ -474,7 +474,7 @@ public class GameWindow extends PopWindow {
                 rect.setArcHeight(2);
                 rect.setFill(Color.YELLOW);
 
-                Text text = new Text(x, y + 1, tilePool.charAt(i - 1) + "");
+                Text text = new Text(x, y - 2, tilePool.charAt(i - 1) + "");
                 text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
 
                 getChildren().addAll(rect, text);
@@ -1148,9 +1148,9 @@ public class GameWindow extends PopWindow {
          */
 
         public WordDisplay() {
-            super(client.anchor.get());
+            super(client.anchor);
             setViewOrder(-1000);
-            AnchorPane.setLeftAnchor(this, client.stage.get().getWidth() - 453);
+            AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
 
             poolPanel.infoPane.getChildren().remove(poolPanel.playerScoreLabel);

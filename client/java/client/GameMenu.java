@@ -2,13 +2,11 @@ package client;
 
 import javafx.collections.FXCollections;
 import javafx.css.PseudoClass;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.stage.WindowEvent;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -50,7 +48,7 @@ class GameMenu extends PopWindow {
      */
 
     public GameMenu(AnagramsClient client) {
-        super(client.stack.get());
+        super(client.stack);
         this.client = client;
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.45); setScaleY(1.45);
@@ -133,7 +131,7 @@ class GameMenu extends PopWindow {
         startButton.setDefaultButton(true);
 
         show(true);
-        client.stage.get().requestFocus(); //Prevents IllegalStateException in touchscreen mode
+        client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
         startButton.requestFocus();
 
     }

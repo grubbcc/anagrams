@@ -50,7 +50,7 @@ public class WordExplorer extends PopWindow {
      */
 
     public WordExplorer(String lexicon, AnagramsClient client) {
-        super(client.anchor.get());
+        super(client.anchor);
         this.client = client;
         setViewOrder(Double.NEGATIVE_INFINITY);
 
