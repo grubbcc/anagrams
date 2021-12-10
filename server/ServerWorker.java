@@ -2,7 +2,6 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
 * Handles tasks for the client on the server side.
@@ -16,8 +15,6 @@ public class ServerWorker extends Thread {
 	private OutputStream outputStream;
 	private InputStream inputStream;
 	private BufferedReader reader;
-
-	private final AtomicBoolean connected = new AtomicBoolean(false);
 
 
 	/**
@@ -37,19 +34,14 @@ public class ServerWorker extends Thread {
 
 	@Override
 	public void run() {
-		connected.set(true);
-		while(connected.get()) {
+
+		while(!interrupted()) {
 			try {
 				handleClientSocket();
 			}
 			catch (IOException e) {
+				interrupt();
 				System.out.println(username + " has disconnected.");
-				try {
-					handleLogoff();
-				}
-				catch (IOException ioException) {
-					ioException.printStackTrace();
-				}
 			}
 		}
 	}
@@ -59,11 +51,15 @@ public class ServerWorker extends Thread {
 	* Informs new user of other players and games in progress. Informs other players of new user.
 	*/
 	
-	private void handleLogin(String username) throws IOException {
+	private void handleLogin(String username) {
 
 		//Prevents duplicate usernames
 		ServerWorker duplicate = server.getWorker(username);
-		if(duplicate != null) duplicate = this;
+		if(duplicate != null) {
+			duplicate.send("logoffplayer " + username);
+			server.removeWorker(username);
+			System.out.println("Removing duplicate user: " + username);
+		}
 
 		send("ok login");
 		this.username = username;
@@ -112,21 +108,19 @@ public class ServerWorker extends Thread {
 		server.addWorker(username, this);
 		server.broadcast("loginplayer " + username);
 
-
 	}
+
 
 
 	/**
 	*
 	*/
 	
-	private void handleLogoff() throws IOException {
-		connected.set(false);
+	void handleLogoff() throws IOException {
 
 		if(username != null) {
-			server.removeWorker(username);
+			server.logoffPlayer(username);
 		}
-
 		outputStream.flush();
 		reader.close();
 
@@ -134,9 +128,8 @@ public class ServerWorker extends Thread {
 		outputStream.close();
 		clientSocket.close();
 
+		System.out.println(username + " has disconnected");
 		interrupt();
-		
-		System.out.println(username + " has just logged off");
 
 	}
 	
@@ -187,7 +180,7 @@ public class ServerWorker extends Thread {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-			//System.out.println("command received: " + line);
+//			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
 			if (tokens.length > 0) {

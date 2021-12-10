@@ -1,18 +1,24 @@
 package server;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ *
+ */
+
 public class Server extends Thread {
 	
 	private static final int serverPort = 8118;
 	private static final String[] lexicons = {"NWL20", "CSW19"};
-	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
-	private final Hashtable<String, Game> gameList = new Hashtable<>();
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
+	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
 	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
 
 	/**
@@ -31,9 +37,9 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public void endGame(String gameToEnd) {
-		gameList.remove(gameToEnd);
-		broadcast("removegame " + gameToEnd);
+	public void removeGame(String gameID) {
+		gameList.remove(gameID);
+		broadcast("removegame " + gameID);
 	}
 	
 	/**
@@ -48,30 +54,31 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public Collection<ServerWorker> getWorkers() {
-		return workerList.values();
-	}
-	
-	/**
-	*
-	*/
-	
 	public void addWorker(String username, ServerWorker worker) {
 		workerList.put(username, worker);
 	}
-	
+
+	/**
+	 * Quietly remove this worker.
+	 * @param username The name of the worker to be removed
+	 */
+
+	synchronized public void removeWorker(String username) {
+		workerList.remove(username);
+	}
+
 	/**
 	*
 	*/
 	
-	public void removeWorker(String username) {
+	synchronized public void logoffPlayer(String username) {
 		workerList.remove(username);
-		synchronized(gameList) {
-			for(Game game : gameList.values()) {
-				game.removePlayer(username);
-				game.removeWatcher(username);
-			}
+
+		for(Game game : gameList.values()) {
+			game.removePlayer(username);
+			game.removeWatcher(username);
 		}
+
 		broadcast("logoffplayer " + username);
 	}
 
@@ -97,6 +104,21 @@ public class Server extends Thread {
 	
 	public Collection<Game> getGames() {
 		return gameList.values();
+	}
+
+	/**
+	 *
+	 */
+
+	public int getRobotCount() {
+		Iterator<Game> it = gameList.values().iterator();
+		int robotCount = 0;
+		while (it.hasNext()) {
+			if(it.next().hasRobot) {
+				robotCount++;
+			}
+		}
+		return robotCount;
 	}
 	
 	/**

@@ -1,5 +1,7 @@
 package server;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.*;
 
 /**
@@ -26,7 +28,7 @@ public class Game {
 	final int minLength;
 	final int blankPenalty;
 	private final int delay;
-	private final boolean hasRobot;
+	final boolean hasRobot;
 
 	final String lexicon;
 	private final String speed;
@@ -88,15 +90,35 @@ public class Game {
 	}
 	
 	/**
-	* Destroys the game after three minutes of inactivity.
+	* Deletes the game after three minutes of inactivity and saves the log to file.
 	*/
 	
 	private class DeleteTask extends TimerTask {
 		
 		@Override
 		public void run() {
-			server.endGame(gameID);
+			server.removeGame(gameID);
 			deleteTimer.cancel();
+
+			if (gameLog.size() > 20) {
+				try {
+					PrintStream logger = new PrintStream(new FileOutputStream("gamelogs/log" + gameID + ".txt"));
+					logger.println("gameID " + gameID);
+					logger.println("lexicon " + lexicon);
+					logger.println("numSets " + numSets);
+					logger.println("minLength " + minLength);
+					logger.println("blankPenalty " + blankPenalty);
+					logger.println("speed " + speed);
+					logger.println();
+					for (String gameState : gameLog) {
+						logger.println(gameState);
+					}
+					logger.close();
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	
@@ -469,7 +491,7 @@ public class Game {
 		/**
         * Initialize the tileBag with the chosen number of tiles sets.
         *
-        * @param numSets The number of tile sets, each of which contains 100 tiles
+        * @param numSets The number of tile sets, each of which consists of 100 tiles
         */
 
 	private void setUpTileBag(int numSets) {

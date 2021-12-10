@@ -3,7 +3,7 @@ package server;
 import java.io.*;
 import java.util.Arrays;
 
-/***
+/**
  * Stores a list of words as a trie data structure for fast lookup.
  * See: https://en.wikipedia.org/wiki/Trie
  * Words are indexed according to a unique alphabetical ordering ("alphagram") so that
@@ -23,7 +23,8 @@ public class AlphagramTrie {
 	 * Creates a root node to serve as the base of the trie.
 	 * Reads the words from the file, formats them, and adds them to the trie.
 	 *
-	 * @param lexicon the name of the word list
+	 * @param lexicon the name of the word list. This should be stored in a file called <lexicon>.txt
+	 *                with one word per line and definition (optional) separated by white space.
 	 */
 
 	public AlphagramTrie(String lexicon) {
@@ -149,24 +150,9 @@ public class AlphagramTrie {
 	 */
 
 	public static String alphabetize(String entry) {
-
 		char[] chars = entry.toCharArray();
 		Arrays.sort(chars);
 		return new String(chars);
-
 	}
 
-	/**
-	 * For testing only
-	 */
-
-	public static void main(String[] args) {
-
-		String lexicon = "CSW19";
-		AlphagramTrie trie = new AlphagramTrie(lexicon);
-
-		System.out.println(trie.contains("chalupa"));
-		System.out.println(trie.getDefinition("chalupa"));
-
-	}
 }
