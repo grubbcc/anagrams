@@ -30,7 +30,7 @@ public class WordExplorer extends PopWindow {
     private String lexicon;
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
-    private final String[] lexicons = {"CSW19", "NWL20"};
+    private final String[] lexicons = {"CSW21", "NWL20"};
     private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
     private final TextArea messagePane = new TextArea();
@@ -268,15 +268,14 @@ public class WordExplorer extends PopWindow {
             setPickOnBounds(false);
 
             setOnMouseClicked(e -> {
-                if (!isEmpty()) {
-                    if(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
-                        goButton.arm();
-                        PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
-                        pause.setOnFinished(ef -> goButton.disarm());
-                        pause.play();
-                        lookUp(getText());
-                    }
+            if (!isEmpty() && e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
+                    goButton.arm();
+                    PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+                    pause.setOnFinished(ef -> goButton.disarm());
+                    pause.play();
+                    lookUp(getText());
                 }
+
             });
         }
 
@@ -376,8 +375,9 @@ public class WordExplorer extends PopWindow {
      */
 
     private void viewListAsImage() {
-        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('JSON', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
-        WebAPI.getWebAPI(getScene()).openURLAsTab("/flare.html");
+        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('lexicon', '" + lexicon + "')");
+        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('json', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
+        WebAPI.getWebAPI(getScene()).openURLAsTab("/tree.html");
     }
 
 }

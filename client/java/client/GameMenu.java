@@ -77,7 +77,7 @@ class GameMenu extends PopWindow {
         Label blankPenaltyLabel = new Label("Blank penalty");
         blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must take\n this many additional tiles"));
         Label wordListLabel = new Label("Word list");
-        wordListLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW19 = International"));
+        wordListLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
         Label speedLabel = new Label("Speed");
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
 
@@ -86,7 +86,7 @@ class GameMenu extends PopWindow {
         lengthsSelector.getSelectionModel().select(client.prefs.get("min_length", "7"));
         setsSelector.getSelectionModel().select(client.prefs.get("num_sets", "1"));
         blanksSelector.getSelectionModel().select(client.prefs.get("blank_penalty", "2"));
-        lexiconSelector.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        lexiconSelector.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
         speedSelector.getSelectionModel().select(client.prefs.get("speed", "medium"));
         skillLevelSelector.getSelectionModel().select(client.prefs.get("robot_skill", "standard"));
         skillLevelSelector.disableProperty().bind(robotChooser.selectedProperty().not());

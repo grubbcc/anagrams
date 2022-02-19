@@ -63,7 +63,7 @@ public class GameWindow extends PopWindow {
     private final GamePanel homePanel = new GamePanel();
     private final WordExplorer explorer;
     private final TilePanel tilePanel = new TilePanel();
-    private final String wordSound = getClass().getResource("/sounds/steal sound.wav").toExternalForm();
+    private final String wordSound = getClass().getResource("/sounds/steal sound.mp3").toExternalForm();
     private final AudioClip wordClip;
     private final Image blackRobot = new Image(getClass().getResourceAsStream("/images/black robot.png"));
     private final Image whiteRobot = new Image(getClass().getResourceAsStream("/images/white robot.png"));

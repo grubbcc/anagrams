@@ -10,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
@@ -20,8 +21,8 @@ import org.json.JSONArray;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
@@ -32,6 +33,7 @@ import java.util.prefs.Preferences;
 
 public class AnagramsClient extends JProApplication {
 
+	private final String host = InetAddress.getLocalHost().getHostAddress();
 	private final int port = 8118;
 	private final String version = "0.9.9";
 
@@ -43,7 +45,7 @@ public class AnagramsClient extends JProApplication {
 	Stage stage;
 	private Thread messageLoop;
 
-//	private SettingsMenu settingsMenu;
+	//	private SettingsMenu settingsMenu;
 	WordExplorer explorer;
 
 	private final FlowPane gamesPanel = new FlowPane();
@@ -52,7 +54,7 @@ public class AnagramsClient extends JProApplication {
 	private final Label playersHeader = new Label("Players logged in");
 	private final VBox playersListPane = new VBox();
 	private final BorderPane borderPane = new BorderPane();
-	private final BorderPane playersPanel = new BorderPane();
+	private final BorderPane sidePanel = new BorderPane();
 	private final ScrollPane playersScrollPane = new ScrollPane();
 
 	private final SplitPane splitPane = new SplitPane();
@@ -69,13 +71,16 @@ public class AnagramsClient extends JProApplication {
 	private final HashMap<String, Label> playersList = new HashMap<>();
 	public String username;
 
-	public static final String[] lexicons = {"CSW19", "NWL20"};
+	public static final String[] lexicons = {"CSW21", "NWL20"};
 	Preferences prefs;
 
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
-	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.wav").toExternalForm();
+	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.mp3").toExternalForm();
 	private AudioClip newPlayerClip;
 	boolean guest = false;
+
+	public AnagramsClient() throws UnknownHostException {
+	}
 
 
 	/**
@@ -156,7 +161,7 @@ public class AnagramsClient extends JProApplication {
 
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
-        createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(162));
+		createGameButton.prefWidthProperty().bind(controlPanel.widthProperty().subtract(162));
 		controlPanel.getChildren().addAll(createGameButton, settingsButton);
 
 		//games panel
@@ -167,14 +172,23 @@ public class AnagramsClient extends JProApplication {
 		gamesScrollPane.setFitToWidth(true);
 		gamesScrollPane.setContent(gamesPanel);
 
+
 		//players panel
-		playersPanel.setPrefWidth(162);
-		playersPanel.setId("players-panel");
+		Image wooglesLogo = new Image("/images/woogles.png", 162, 33, false, true);
+		Image anagramsLogo = new Image("/images/anagrams-icon.png", 33, 33, false, true);
+		Button wooglesButton = new Button("", new ImageView(wooglesLogo));
+		Button anagramsButton = new Button("Anagrams Home", new ImageView(anagramsLogo));
+		anagramsButton.setPrefWidth(162);
+		wooglesButton.setOnAction(e -> getWebAPI().openURLAsTab("https://woogles.io"));
+		anagramsButton.setOnAction(e -> getWebAPI().openURLAsTab("https://anagrams.site"));
+		VBox links = new VBox(wooglesButton, anagramsButton, playersHeader);
+		sidePanel.setPrefWidth(162);
+		sidePanel.setId("side-panel");
 		playersScrollPane.setFitToHeight(true);
 		playersScrollPane.setFitToWidth(true);
 		playersScrollPane.setContent(playersListPane);
-		playersPanel.setTop(playersHeader);
-		playersPanel.setCenter(playersScrollPane);
+		sidePanel.setTop(links);
+		sidePanel.setCenter(playersScrollPane);
 		playersHeader.setTooltip(new Tooltip("Click a player's name to view profile"));
 
 		//chat panel
@@ -194,7 +208,7 @@ public class AnagramsClient extends JProApplication {
 		//main layout
 		borderPane.setTop(controlPanel);
 		borderPane.setCenter(gamesScrollPane);
-		borderPane.setRight(playersPanel);
+		borderPane.setRight(sidePanel);
 		borderPane.setMinHeight(300);
 		borderPane.setDisable(true);
 
@@ -267,23 +281,23 @@ public class AnagramsClient extends JProApplication {
 		}
 	}
 
-    /**
-     * Sets the text color to white or black as appropriate for text readability.
-     *
-     * @param colorCode a hexadecimal String representing the background color of a container node
-     * @return a String representing the color "black" if the luminance of the background color > 40
-     *         and a String representing the color "white" otherwise.
-     */
+	/**
+	 * Sets the text color to white or black as appropriate for text readability.
+	 *
+	 * @param colorCode a hexadecimal String representing the background color of a container node
+	 * @return a String representing the color "black" if the luminance of the background color > 40
+	 *         and a String representing the color "white" otherwise.
+	 */
 
-    static String getTextColor(String colorCode) {
-        int R = Integer.valueOf(colorCode.substring(1, 3), 16);
-        int G = Integer.valueOf(colorCode.substring(3, 5), 16);
-        int B = Integer.valueOf(colorCode.substring(5, 7), 16);
+	static String getTextColor(String colorCode) {
+		int R = Integer.valueOf(colorCode.substring(1, 3), 16);
+		int G = Integer.valueOf(colorCode.substring(3, 5), 16);
+		int B = Integer.valueOf(colorCode.substring(5, 7), 16);
 
-        double luminance = 0.2126*R + 0.7152*G + 0.0722*B;
+		double luminance = 0.2126*R + 0.7152*G + 0.0722*B;
 
-        return luminance > 43 ? "black" : "white";
-    }
+		return luminance > 43 ? "black" : "white";
+	}
 
 	/**
 	 * Connect to the AnagramsServer instance running on the local host
@@ -291,7 +305,7 @@ public class AnagramsClient extends JProApplication {
 
 	public boolean connect() {
 		try {
-			Socket socket = new Socket(InetAddress.getLocalHost().getHostAddress(), port);
+			Socket socket = new Socket(host, port);
 			this.serverOut = socket.getOutputStream();
 			this.serverIn = socket.getInputStream();
 			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
@@ -319,14 +333,14 @@ public class AnagramsClient extends JProApplication {
 		this.username = username;
 
 		prefs = Preferences.userNodeForPackage(getClass()).node(username);
-		explorer = new WordExplorer(prefs.get("lexicon", "CSW19"), this);
+		explorer = new WordExplorer(prefs.get("lexicon", "CSW21"), this);
 
 		//set user colors
 		for (Colors color : Colors.values())
 			colors.put(color, prefs.get(color.key, color.defaultCode));
 		setColors();
 
-	//	settingsMenu = new SettingsMenu(this);
+		//	settingsMenu = new SettingsMenu(this);
 		messageLoop = new Thread(this::readMessageLoop);
 		messageLoop.start();
 		borderPane.setDisable(false);
@@ -344,48 +358,48 @@ public class AnagramsClient extends JProApplication {
 	private void showStartupGuide() {
 
 		String[] titles = {
-			"How to play (1/5)",
-			"How to play (2/5)",
-			"How to play (3/5)",
-			"How to play (4/5)",
-			"How to play (5/5)",
+				"How to play (1/5)",
+				"How to play (2/5)",
+				"How to play (3/5)",
+				"How to play (4/5)",
+				"How to play (5/5)",
 
-			"Did you know? (1/6)",
-			"Did you know? (2/6)",
-			"Did you know? (3/6)",
-			"Did you know? (4/6)",
-			"Did you know? (5/6)",
-			"Did you know? (6/6)"
+				"Did you know? (1/6)",
+				"Did you know? (2/6)",
+				"Did you know? (3/6)",
+				"Did you know? (4/6)",
+				"Did you know? (5/6)",
+				"Did you know? (6/6)"
 		};
 		String[] intro = {
-			"Spell a word using tiles from the pool or add tiles to an existing word to form a longer one.",
-			"To steal a word, you must change the order of at least two of the letters.",
-			"Blanks can be used as any tile, but there is a cost: for each blank used (or changed), you must take <i>additional</i> tiles from the pool. You can set how many when you create a game.",
-			"The border of the text entry will turn green if you have created a valid play according to the rules of Anagrams. (But it won't check whether the word is in the dictionary; that part is up to you!)",
-			"Each word is worth n&sup2; points where n is the length of the word. The player with the most points at the end of the game is the winner.",
+				"Spell a word using tiles from the pool or add tiles to an existing word to form a longer one.",
+				"To steal a word, you must change the order of at least two of the letters.",
+				"Blanks can be used as any tile, but there is a cost: for each blank used (or changed), you must take <i>additional</i> tiles from the pool. You can set how many when you create a game.",
+				"The border of the text entry will turn green if you have created a valid play according to the rules of Anagrams. (But it won't check whether the word is in the dictionary; that part is up to you!)",
+				"Each word is worth n&sup2; points where n is the length of the word. The player with the most points at the end of the game is the winner.",
 
-			"You can hover over the Players label of the Game Pane to see who's currently playing.",
-			"You can click on a player's name in the Players panel to see their profile (or to edit your own).",
-			"You can use the arrow keys (&#11013; and &#10145;), PgDn, PgUp, Home, and End to navigate through the postgame analysis window.",
-			"At the end of game (or while watching a game), you can click on any word to see how it can be stolen.",
-			"In the Word Explorer window, words are colored according to probability. The redder a word is, the more likely it is to occur.",
-			"You can right-click in the Word Explorer window to save the word tree to a file or view it as an image like this one.",
+				"You can hover over the Players label of the Game Pane to see who's currently playing.",
+				"You can click on a player's name in the Players panel to see their profile (or to edit your own).",
+				"You can use the arrow keys (&#11013; and &#10145;), PgDn, PgUp, Home, and End to navigate through the postgame analysis window.",
+				"At the end of a game (or while watching a game), you can click on any word to see how it can be stolen.",
+				"In the Word Explorer window, words are colored according to probability. The redder a word is, the more likely it is to occur.",
+				"You can right-click in the Word Explorer window to save the word tree to a file or view it as an image like this one.",
 
 		};
 
 		String[] images = {
-			"images/play.gif",
-			"images/steal.png",
-			"images/blank_penalty.png",
-			"images/valid_play.png",
-			"images/score.png",
+				"images/play.gif",
+				"images/steal.png",
+				"images/blank_penalty.png",
+				"images/valid_play.png",
+				"images/score.png",
 
-			"images/players.png",
-			"images/profile.png",
-			"images/possible_plays.png",
-			"images/word_explorer.png",
-			"images/word_explorer.png",
-			"images/word_tree.png"
+				"images/players.png",
+				"images/profile.png",
+				"images/possible_plays.png",
+				"images/word_explorer.png",
+				"images/word_explorer.png",
+				"images/word_tree.png"
 		};
 		MessageDialog dialog = new MessageDialog(this, titles[0]);
 		dialog.setText(intro[0]);
@@ -453,7 +467,7 @@ public class AnagramsClient extends JProApplication {
 		GamePane(String gameID, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
 
 			this.gameID = gameID;
-            gamePanes.put(gameID, this);
+			gamePanes.put(gameID, this);
 			gameOver = Boolean.parseBoolean(isOver);
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
 			allowChat = Boolean.parseBoolean(allowsChat);
@@ -461,8 +475,8 @@ public class AnagramsClient extends JProApplication {
 
 			//labels
 			lexiconLabel.setText("Lexicon: " + lexicon);
-			if(lexicon.equals("CSW19"))
-				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words \u00a9 2019"));
+			if(lexicon.equals("CSW21"))
+				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words \u00a9 2021"));
 			else if(lexicon.equals("NWL20"))
 				lexiconLabel.setTooltip(new Tooltip("NASPA Word List \u00a9 2020"));
 			minLengthLabel.setText("Minimum word length: " + minLength);
@@ -483,20 +497,20 @@ public class AnagramsClient extends JProApplication {
 			//join button
 			Button joinButton = new Button("Join game");
 			joinButton.setOnAction(e -> {
-                if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
-                    if(players.size() < maxPlayers || gameOver && allowWatchers) {
+				if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+					if(players.size() < maxPlayers || gameOver && allowWatchers) {
 
-                    	gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, gameOver));
+						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, gameOver));
 
 
-                        if(gameOver) {
-                            send("watchgame " + gameID);
-                        }
-                        else {
-                            send("joingame " + gameID);
-                        }
-                    }
-                }
+						if(gameOver) {
+							send("watchgame " + gameID);
+						}
+						else {
+							send("joingame " + gameID);
+						}
+					}
+				}
 			});
 
 			//watch button
@@ -504,25 +518,25 @@ public class AnagramsClient extends JProApplication {
 			watchButton.setDisable(!allowWatchers);
 			if(allowWatchers) {
 				watchButton.setOnAction(e -> {
-                    if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
-                        if(!players.contains(username) || gameOver) {
-                            gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true));
-                            send("watchgame " + gameID);
-                        }
-                    }
+					if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+						if(!players.contains(username) || gameOver) {
+							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true));
+							send("watchgame " + gameID);
+						}
+					}
 				});
 			}
 
 			add(joinButton, 0, 0);
-            add(watchButton, 1, 0);
+			add(watchButton, 1, 0);
 			add(lexiconLabel, 0, 1);
-            add(minLengthLabel, 1,1 );
-            add(numSetsLabel, 0, 2);
-            add(blankPenaltyLabel, 1, 2);
-            add(speedLabel, 0, 3);
-            add(playersLabel, 1, 3);
-            add(notificationLabel, 0, 4, 2,1);
-            gamesPanel.getChildren().add(this);
+			add(minLengthLabel, 1,1 );
+			add(numSetsLabel, 0, 2);
+			add(blankPenaltyLabel, 1, 2);
+			add(speedLabel, 0, 3);
+			add(playersLabel, 1, 3);
+			add(notificationLabel, 0, 4, 2,1);
+			gamesPanel.getChildren().add(this);
 		}
 
 		/**

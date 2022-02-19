@@ -49,10 +49,10 @@ class SettingsMenu extends PopWindow {
 
         //labels
         Label lexiconLabel = new Label("Word list");
-        lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW19 = International"));
+        lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
 
         //selectors
-        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
         lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
         soundChooser.setPadding(new Insets(0,9,0,7));
@@ -116,7 +116,7 @@ class SettingsMenu extends PopWindow {
      */
 
     private void revertChanges() {
-        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW19"));
+        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
         soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
         for (AnagramsClient.Colors color : AnagramsClient.Colors.values()) {
             client.colors.put(color, client.prefs.get(color.key, color.defaultCode));
