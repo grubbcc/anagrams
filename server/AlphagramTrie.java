@@ -18,6 +18,7 @@ public class AlphagramTrie {
 	public final String lexicon;
 	private String currentWord;
 	private String currentDefinition;
+	public AlphagramTrie common;
 
 	/**
 	 * Creates a root node to serve as the base of the trie.
@@ -49,6 +50,14 @@ public class AlphagramTrie {
 		catch (IOException ioexception) {
 			System.out.println(ioexception.getMessage());
 		}
+	}
+
+	/**
+	 *  Generates the subset of this trie containing only common words
+	 */
+
+	public void common() {
+		common = new AlphagramTrie(lexicon + "-common");
 	}
 
 
