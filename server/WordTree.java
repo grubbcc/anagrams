@@ -1,6 +1,14 @@
 package server;
 
-/*
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeSet;
+
+/**
  * Given a lexicon and a rootWord, creates a hierarchical tree structure graphically depicting
  * how the word can be "stolen" according to the rules of Anagrams.
  *
@@ -12,14 +20,6 @@ package server;
  *
  */
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeSet;
-
 public class WordTree {
 
 	final AlphagramTrie trie;
@@ -29,7 +29,7 @@ public class WordTree {
 	final JSONArray jsonArray = new JSONArray();
 
 	/**
-	 * Generates a tree from a existing trie
+	 * Generates a tree from an existing trie
 	 */
 
 	public WordTree(String rootWord, AlphagramTrie trie) {

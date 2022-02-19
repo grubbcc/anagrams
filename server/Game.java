@@ -156,7 +156,7 @@ public class Game {
 			}
 
 			//check if game should be paused
-			if(tilePool.length() >= 30 && hasRobot) {
+			if(tilePool.length() >= 30 && !hasRobot) {
 				pauseGame(); //pause game due to inactivity
 				return;
 			}
