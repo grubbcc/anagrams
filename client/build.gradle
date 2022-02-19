@@ -8,19 +8,13 @@ buildscript {
         gradlePluginPortal()
 
         maven {
-            url "https://sandec.bintray.com/repo"
-        }
-        maven {
             url "https://sandec.jfrog.io/artifactory/repo"
-        }
-        maven {
-            url "https://dl.cloudsmith.io/public/sandec/testrepo2/maven/"
         }
     }
 
     dependencies {
-        classpath 'com.sandec.jpro:jpro-plugin-gradle:2021.2.0'
-        classpath 'org.openjfx:javafx-plugin:0.0.9'
+        classpath 'com.sandec.jpro:jpro-plugin-gradle:2021.2.3'
+        classpath 'org.openjfx:javafx-plugin:0.0.10'
     }
 }
 
@@ -38,7 +32,7 @@ repositories {
 
 javafx {
     version = '17'
-    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.fxml', 'javafx.media', 'javafx.web']
+    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.media', 'javafx.web']
 }
 
 
@@ -51,9 +45,9 @@ apply plugin: 'com.sandec.jpro'
 jpro {
     // for debugging
     // JVMArgs << '-agentlib:jdwp=transport=dt_socket,server=n,address=5006,suspend=y'
-    useFontConfig = true
-    jproVersion = "2021.2.0"
-    port = 8080
+
+    jproVersion = "2021.2.3"
+    port = 8079
 }
 
 dependencies {
@@ -61,4 +55,5 @@ dependencies {
     implementation "com.sandec:mdfx:0.2.4"
     implementation "one.jpro:one.jpro.sound:0.1.0"
     implementation 'org.json:json:20210307'
+
 }
