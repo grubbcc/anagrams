@@ -87,18 +87,21 @@
 #games-panel .label {
     -fx-text-fill: -game-foreground-text;
 }
-#players-panel {
+#side-panel {
     -fx-background-color: -players-list;
 }
-#players-panel .label {
+#side-panel .button {
+    -fx-padding: 0;
+}
+#side-panel .label {
     -fx-text-fill: -players-list-text;
     -fx-font-size: 18;
 }
-#players-panel .scroll-pane .label {
+#side-panel .scroll-pane .label {
     -fx-font-weight: normal;
     -fx-font-size: 16;
 }
-#players-panel .scroll-pane .label:hover {
+#side-panel .scroll-pane .label:hover {
     -fx-font-weight: bold;
 }
 
