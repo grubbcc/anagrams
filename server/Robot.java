@@ -15,6 +15,7 @@ class Robot {
 	private final int blankPenalty;
 	private final int minLength;
 	final HashMap<String, WordTree> trees = new HashMap<>();
+	private final HashMap<String, WordTree> commonTrees = new HashMap<>();
 	private final AlphagramTrie dictionary;
 	final private Random rgen = new Random();
 
@@ -52,7 +53,11 @@ class Robot {
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
 		if (tilePool.length() >= 2 * minLength || rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
-			searchInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
+
+			//decide whether to search among all words or among common subset
+			Node rootNode = rgen.nextInt(1,4) >= skillLevel ? dictionary.common.rootNode : dictionary.rootNode;
+
+			searchInPool(rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
 		}
 		else {
 			searchForSteal(game, words);
@@ -115,6 +120,7 @@ class Robot {
 	
 	void makeTree(String shortWord) {
 		trees.put(shortWord, new WordTree(shortWord.replaceAll("[a-z]",""), dictionary));
+		commonTrees.put(shortWord, new WordTree(shortWord.replaceAll("[a-z]",""), dictionary.common));
 	}
 	
 	/**
@@ -123,6 +129,7 @@ class Robot {
 	
 	void removeTree(String stolenWord) {
 		trees.remove(stolenWord);
+		commonTrees.remove(stolenWord);
 	}
 
 	/**
@@ -137,8 +144,12 @@ class Robot {
 		Collections.shuffle(players);
 		for(String player : players) {
 			for(String shortWord : words.get(player)) {
-				if(trees.containsKey(shortWord)) {
-					for(TreeNode child : trees.get(shortWord).rootNode.getChildren()) {
+
+				//decide whether to search among all words or among common subset
+				HashMap<String, WordTree> treeSet = rgen.nextInt(1,4) >= skillLevel ? commonTrees : trees;
+
+				if(treeSet.containsKey(shortWord)) {
+					for(TreeNode child : treeSet.get(shortWord).rootNode.getChildren()) {
 						String longWord = child.toString();
 						if(game.doSteal(player, shortWord, robotName, longWord)) {
 							return;
