@@ -1,0 +1,76 @@
+Update Log
+
+Version 0.9.9 - August 4, 2021
+
+    • Added text entry widget that checks words as you type.
+    • Added some simple animations.
+    • Enlarged buttons and labels for use on mobile phones.
+    • Added code to handle screen rotations and full-screen mode on mobile phones.
+    • Games pause automatically after a period of activity.
+
+Version 0.9.8 - June 25, 2021
+
+    • Enabled account creation (SSL encrypted) and password login.
+    • Enabled personalized profile creation using markdown syntax.
+    * Fixed bug that would delay logoff recognition.
+    * Chat panel is now resizable.
+    * Migrated to faster server.
+
+Version 0.9.7 - February 15, 2021
+
+    • Enabled online play(finall!)
+    • Migrated to JavaFX for improved graphical improvement.
+    • Added tree visualization widget.
+    • Fixed a bug that would cause game panels to disappear prematurely.
+
+Version 0.9.6 - July 6, 2020
+
+    • Added buttons to click through previous game positions.
+    • Added a panel that shows all playable words during analysis mode.
+    • Word explorer displays probabilities of steals.
+    • Game grays out players who have abandoned words on the table.
+    • Server keeps track of most commonly missed words.
+
+Version 0.9.5 - June 21, 2020
+
+    • Robot opponents and dictionaries load instantaneously.
+    • Customizable appearance and game settings load automatically on startup.
+    • Added informative tooltips to the main screen game panels.
+    • Names of active players in games are visible from the home screen.
+    • Maximum number of windows you can have open at a time is set to 4.
+
+Version 0.9.4 - June 12, 2020
+
+    • Game window can now be maximized and minimized.
+    • Added informative tooltips to game menu.
+    • Game window now displays game parameters.
+    • Tile size automatically adjusts according when panel is full.
+
+Version 0.9.3 - June 10, 2020
+
+    • The game ends immediately and goes to analysis mode if the tile bag and tile pool are both empty.
+    • Added NWL18 definitions
+    • Players may now select minimum word length of 4 or 5.
+    • Game notifications are now displayed in the main screen.
+    • You can now resume a game after leaving or getting connected. The game will automatically delete itself
+      if there is no activity after one minute.
+    • Improved robot loading speed
+
+Version 0.9.2 - June 5, 2020
+
+    • Added chat to the game window
+    • Fixed a bug where the dictionary would sometimes fail to load while watching a game
+    • Set chat panel to be of fixed size
+    • Added sounds for when a player logs in or makes a word
+    • Removed the annoying beep when the backspace key is entered in an empty text field
+
+Version 0.9.1 - June 4, 2020
+
+    • You can no longer make a word if it is already on the board
+    • Fixed a bug that would sometimes cause socket errors if you quit the application with a game open
+    • Created a warning panel that informs the player when their version is out of date
+    • Fixed a bug that would prevent player names from being removed if they disconnected unexpectedly
+    • Improved the way that game panes tile on the main screen
+    • Configured server to run on Dynamic DNS
+    • Adjusted Robot capabilities to better match their names
+

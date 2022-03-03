@@ -1,0 +1,111 @@
+/* universal */
+.root {
+    -cell-background: white;
+}
+
+.scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+*:mobile .context-menu {
+   -fx-scale-x: 1.35;
+   -fx-scale-y: 1.35;
+}
+
+/* control panel */
+#control-panel {
+    -fx-alignment: center;
+    -fx-padding: 4;
+    -fx-spacing: 3;
+    -fx-insets: 7;
+    -fx-background-color: blue;
+}
+
+#control-panel .text-field {
+      -fx-width: 170;
+      -fx-height: 20;
+      -fx-background-color: rgb(230, 230, 230);
+      -fx-border-insets: 0;
+      -fx-padding: 1;
+      -fx-border-width: 1;
+      -fx-border-color: black lightgray lightgray black;
+}
+
+#control-panel .button {
+    -fx-pref-width: 55;
+    -fx-pref-height: 20;
+    -fx-background-color: linear-gradient(#aabbee 0%, #ffffff 24%, #ffffff 25%, #aabbee 100%);
+    -fx-background-insets: 1;
+    -fx-background-radius: 0;
+    -fx-border-color: black;
+    -fx-padding: 3 9 3 9;
+    -fx-font-size: 14px;
+    -fx-font-weight: 200;
+}
+
+#control-panel .button:hover {
+    -fx-background-color: linear-gradient(#aabbee 0%, #eeeeee 24%, #eeeeee 25%, #aabbee 100%);
+}
+
+#control-panel .button:armed {
+    -fx-background-color: #3c7fb1,
+       linear-gradient(#ffffff 0%, #aabbee 24%, #aabbee 25%, #ffffff 100%);
+}
+
+.combo-box {
+    -fx-background-color: rgb(230, 230, 230);
+    -fx-background-insets: 1;
+    -fx-background-radius: 0;
+    -fx-border-color: black;
+
+}
+
+.combo-box > .arrow-button {
+     -fx-background-color: #3c7fb1,
+        linear-gradient(#aabbee 0%, #ffffff 24%, #ffffff 25%, #aabbee 100%);
+    -fx-padding: 4 4 3 3;
+}
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: black;
+    -fx-background-insets: 0;
+    -fx-padding: 0.166667em 0.333333em 0.166667em 0.333333em; /* 2 4 2 4 */
+}
+.combo-box > .list-cell {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 2;
+    -fx-border-width: 0;
+}
+.combo-box-popup > .list-view {
+    -fx-background-color: rgb(100,100,100), rgb(255,255,255);
+    -fx-background-insets: 0, 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.6), 8, 0.0, 0, 0);
+}
+
+.combo-box:hover {
+    -fx-background-color: #cccccc;
+}
+
+/* tree */
+.tree-cell {
+    -fx-padding: 0;
+    -fx-background-color: -cell-background;
+    -fx-font-weight:normal;
+}
+.tree-cell:focused {
+    -fx-font-weight: bold;
+    -fx-text-background-color: black;
+}
+
+/* message area */
+#message-area {
+    -fx-pref-height: 120;
+}
+#message-area .label {
+    -fx-padding: -3;
+    -fx-font-weight: normal;
+    -fx-alignment: center;
+}
+
+
+

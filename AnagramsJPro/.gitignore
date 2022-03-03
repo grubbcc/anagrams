@@ -1,0 +1,11 @@
+.gradle/
+.idea/
+build/
+/gradle
+src/test/
+src/main/java/resources/wordlists/**
+logs/
+tmp/
+gradlew
+gradlew.bat
+RUNNING_PID
