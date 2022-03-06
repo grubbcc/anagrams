@@ -33,14 +33,16 @@ public class AlphagramTrie {
 		this.lexicon = lexicon;
 
 		try {
-			InputStream stream = getClass().getResourceAsStream("/" + lexicon + ".txt");
+			InputStream stream = getClass().getResourceAsStream("/wordlists/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			for(String stringRead = reader.readLine(); stringRead != null; stringRead = reader.readLine()) {
-				String[] entry = stringRead.split("\\s+", 2);
-				currentWord = entry[0].toUpperCase();
-				if(entry.length > 1)
-					currentDefinition = entry[1];
-				insertWord(alphabetize(currentWord), rootNode);
+				if (!stringRead.isBlank() || stringRead.startsWith("#")) {
+					String[] entry = stringRead.split("\\s+", 2);
+					currentWord = entry[0].toUpperCase();
+					if (entry.length > 1)
+						currentDefinition = entry[1];
+					insertWord(alphabetize(currentWord), rootNode);
+				}
 			}
 			System.out.println("new trie created with lexicon = " + lexicon);
 		}

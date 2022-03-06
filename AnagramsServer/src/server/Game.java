@@ -1,7 +1,11 @@
 package server;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -104,6 +108,7 @@ public class Game {
 
 			if (gameLog.size() > 20) {
 				try {
+					Files.createDirectory(Paths.get("gamelogs")); //needs testing
 					PrintStream logger = new PrintStream(new FileOutputStream("gamelogs/log" + gameID + ".txt"));
 					logger.println("gameID " + gameID);
 					logger.println("lexicon " + lexicon);
