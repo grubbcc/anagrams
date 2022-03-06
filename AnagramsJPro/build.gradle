@@ -1,7 +1,5 @@
 
-/**
- ******************  Script Configuration ******************
- */
+/********************  Script Configuration *****************/
 buildscript {
     repositories {
         mavenCentral()
@@ -19,9 +17,7 @@ buildscript {
 }
 
 
-/**
- ******************  Java Configuration ******************
- */
+/********************  Java Configuration *******************/
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'org.openjfx.javafxplugin'
@@ -36,18 +32,13 @@ javafx {
 }
 
 
-
-/**
- ******************  jpro Configuration ******************
- */
+/** ******************  jpro Configuration *******************/
 apply plugin: 'com.sandec.jpro'
 
 jpro {
-    // for debugging
-    // JVMArgs << '-agentlib:jdwp=transport=dt_socket,server=n,address=5006,suspend=y'
-
     jproVersion = "2021.2.3"
     port = 8079
+    jproReleaseFiles << JProReleaseFile(new File("allfonts.properties"), "/fonts/")
 }
 
 dependencies {
@@ -55,5 +46,4 @@ dependencies {
     implementation "com.sandec:mdfx:0.2.4"
     implementation "one.jpro:one.jpro.sound:0.1.0"
     implementation 'org.json:json:20210307'
-
 }
