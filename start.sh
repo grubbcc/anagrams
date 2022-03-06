@@ -1,5 +1,5 @@
 #!/bin/bash
-java -Xmx4g -jar AnagramsServer.jar &
-./bin/restart.sh &
+./Server/bin/AnagramsServer &
+./Client/bin/restart.sh &
 wait -n
 exit $?
