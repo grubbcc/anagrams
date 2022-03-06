@@ -20,4 +20,6 @@ services:
         network_mode: host
         volumes:
             - /anagrams/prefs/:/root/.java/.userPrefs/client/
+            - /anagrams/gamelogs/:/anagrams/gamelogs/
+            - /anagrams/log.log:/anagrams/log.log
         restart: unless-stopped
