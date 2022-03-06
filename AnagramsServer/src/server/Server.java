@@ -1,6 +1,7 @@
 package server;
 
 import com.sun.net.httpserver.*;
+import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.net.*;
@@ -16,17 +17,18 @@ public class Server extends Thread {
 	
 	private static final int serverPort = 8118;
 	private static final String[] lexicons = {"NWL20", "CSW21"};
+	static final Logger log = Logger.getLogger(Server.class.getName());
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
 	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
-
 
 	/**
 	*
 	*/
 	
 	public Server() throws IOException {
+
 		System.out.println("Starting server...");
 
 		for(String lexicon : lexicons) {
@@ -40,8 +42,8 @@ public class Server extends Thread {
 
 		server.start();
 		System.out.println("Lookup service started on port 8116");
-
 	}
+
 
 	/**
 	*
@@ -227,10 +229,19 @@ public class Server extends Thread {
 	 */
 
 	public static void main(String[] args) throws IOException {
+
+		System.setOut(new PrintStream(System.out) {
+			public void print(final String string) {
+				log.info(string);
+			}
+		});
+		System.setErr(new PrintStream(System.err) {
+			public void print(final String string) {
+				log.error(string);
+			}
+		});
+
 		Server server = new Server();
 		server.start();
-
-
 	}
-
 }
