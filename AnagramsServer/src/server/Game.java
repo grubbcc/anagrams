@@ -108,7 +108,7 @@ public class Game {
 
 			if (gameLog.size() > 20) {
 				try {
-					Files.createDirectory(Paths.get("gamelogs")); //needs testing
+					Files.createDirectories(Paths.get("gamelogs"));
 					PrintStream logger = new PrintStream(new FileOutputStream("gamelogs/log" + gameID + ".txt"));
 					logger.println("gameID " + gameID);
 					logger.println("lexicon " + lexicon);
