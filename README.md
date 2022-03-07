@@ -37,9 +37,10 @@ Scoring methods vary, but in general, the player with the most words a the end o
 7. To register an account, you will need to enable the email verification service. Edit the `from` and `password` fields in `LoginMenu.java` to match an email account you control.
 
 ##### Setting up the webserver
-1. In `anagrams\AnagramsServer run `gradlew distZip`
+1. In `anagrams\AnagramsServer` run `gradlew distZip`
 2. In `anagrams\AnagramsJPro` run `gradlew jproRelease`
 3. Extract the created files into `anagrams\Production`
 4. From `Production`, run `Docker build .`
-5. Delete lines 1-50 of nginx.conf and uncomment the rest
-6. Run `docker-compose up -d`
+5. Delete lines 1-50 of `nginx.conf` and uncomment the rest
+6. Replace `<hostname>` in `nginx.conf` with your hostname.
+7. Run `docker-compose up -d`
