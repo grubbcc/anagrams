@@ -24,16 +24,15 @@ In order to reward longer words, your score is equal to the square of the word's
 
 ##### Prerequisites
 1. The Java 17 JDK
-2. JavaFX 17
-3. If developing on Linux, see [here](https://www.jpro.one/docs/current/2.7/PREPARING_LINUX_FOR_JPRO) for information on setting up a development environment, or use the prepared Docker container: `docker pull grubbcc/jpro-base:jdk17-fx17`.
-4. Recommended: The GitHub CLI tool. See [here](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) for Linux download instructions.
-5. In order to build the webserver: Docker and docker-compose
+2. If developing on Linux, see [here](https://www.jpro.one/docs/current/2.7/PREPARING_LINUX_FOR_JPRO) for information on setting up a development environment, or use the prepared Docker container: `docker pull grubbcc/jpro-base:jdk17-fx17`.
+3. Recommended: The GitHub CLI tool. See [here](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) for Linux download instructions.
+4. In order to build the webserver: Docker and docker-compose
 
 ##### How to develop locally
 
 1. Download/clone repository, e.g. `gh repo clone grubbcc/anagrams -- -b main`.
-2. Navigate to `anagrams\AnagramsServer` and run `gradlew run`.
-3. In another terminal navigate to `anagrams\AnagramsJPro` and run `gradlew jproRestart`. (For a full list of JPro commands, see [here](https://www.jpro.one/docs/current/2.1/JPRO_COMMANDS).)
+2. Navigate to `anagrams\AnagramsServer` and execute `.\gradlew run`.
+3. In another terminal navigate to `anagrams\AnagramsJPro` and execute `.\gradlew jproRestart`. (For a full list of JPro commands, see [here](https://www.jpro.one/docs/current/2.1/JPRO_COMMANDS).)
 4. In a browser tab open `localhost:8079`.
 5. To register an account, you will need to enable the email verification service. Edit the `from` and `password` fields in `LoginMenu.java` to match an email account you control.
 
