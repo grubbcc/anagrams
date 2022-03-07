@@ -4,7 +4,7 @@
 
 Anagrams is a classic word game of thought and thievery. For many players, including myself, their first encounter with Anagrams occurred at the end of a long day of playing tournament Scrabble™, but it has a long popular history as well. Originating in Victorian England (according to the [Wikipedia article](https://en.wikipedia.org/wiki/Anagrams_(game)), the first published version dates to 1877 or earlier. It has appeared in various tabletop versions over the years, one of which even made its way into a Hitchcock movie:
 
-It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly Snatch!, Carl Johnson's browser-based Anagrams Blitz, and the program on this page.
+It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly [Snatch!](https://snatch.cc), Carl Johnson's browser-based [Anagrams Blitz](https://safe-dusk-44647.herokuapp.com/), and the program on this page.
 
 ## How to Play
 
@@ -15,8 +15,6 @@ Play continues as before, except that now it is possible to steal an existing wo
 There is one small catch, however. In order to make a steal, you must rearrange at least two of the tiles. For example it would be possible to steal LAUNCHPAD from CHALUPA, but you could not steal READING to form PREBOARDING because the latter can be spelled by inserting letters into the former without changing their order.
 
 Scoring methods vary, but in general, the player with the most words a the end of the game win. Long words are awarded more points than short ones.
-
-Those are the basics. But wait! There's more. Check out some these other amazing features:
 
 ## Development
 
@@ -34,8 +32,7 @@ Those are the basics. But wait! There's more. Check out some these other amazing
 4. Navigate to `anagrams\AnagramsJPro`.
 5. In another terminal run `gradlew jproRestart`. For a full list of JPro commands, see [here](https://www.jpro.one/docs/current/2.1/JPRO_COMMANDS).
 6. In a browser open `localhost:8079`.
-
-To register an account, you will need to enable the email verification service. Edit the `from` and `password` fields in `LoginMenu.java` to match an email account you control.
+7. To register an account, you will need to enable the email verification service. Edit the `from` and `password` fields in `LoginMenu.java` to match an email account you control.
 
 ##### Setting up the webserver
 1. In `anagrams\AnagramsServer run `gradlew distZip`
