@@ -4,6 +4,8 @@
 
 Anagrams is a classic word game of thought and thievery. For many players, including myself, their first encounter with Anagrams occurred at the end of a long day of playing tournament Scrabble™, but it has a long popular history as well. Originating in Victorian England (according to the [Wikipedia article](https://en.wikipedia.org/wiki/Anagrams_(game)), the first published version dates to 1877 or earlier. It has appeared in various tabletop versions over the years, one of which even made its way into a Hitchcock movie:
 
+<img src="https://seattlephysicstutor.com/anagrams%20suspicion.jpg" width="300px" height="200px">
+
 It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly [Snatch!](https://snatch.cc), Carl Johnson's browser-based [Anagrams Blitz](https://safe-dusk-44647.herokuapp.com/), and the program on this page.
 
 ## How to Play
@@ -24,7 +26,7 @@ Scoring methods vary, but in general, the player with the most words a the end o
 3. The GitHub CLI tool See [here](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) for download instructions.
 4. Docker (if you want to run the webserver)
 
-##### How to build on Windows
+##### How to develop locally on Windows
 
 1. Clone/download repository, e.g. `gh repo clone grubbcc/anagrams -- -b main`.
 2. Navigate to `anagrams\AnagramsServer`.
