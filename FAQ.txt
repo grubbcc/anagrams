@@ -1,0 +1,27 @@
+FAQ
+Q. Can I change my password?
+A. Not at present, but you can always delete your account and reinstate it with a new password.
+
+Q. Will other languages/lexicons be added?
+A. Hopefully someday.
+
+Q. Can I play more than one game at a time?
+A. At present gameplay is limited to one game per computer.
+
+Q: Can I see who is watching a game?
+A: That feature will be added soon.
+
+Q: How are ratings calculated?
+A: It's a function of how often a player finds a word when one is available.
+
+Q: Can I save a record of my games?
+A: That's another feature that's coming soon.
+
+Q: What about ratings?
+A: That's a work in progress. By playing games, each user generates data that will be used to predict 
+
+Q: How do the robots work?
+A: 
+
+Q: Can you show me more details about how the blank penalty works?
+A: 
