@@ -21,7 +21,7 @@ There is one small catch, however. In order to make a steal, you must rearrange 
 In order to reward longer words, your score is equal to the square of the word's length.
 
 <p align="center">
-  <img src="https://seattlephysicstutor.com/images/anagrams%20screen.png" width="240px" height="156px">
+  <img src="https://seattlephysicstutor.com/images/anagrams%20screen.png" width="360px" height="234">
 </p>
 
 ## Development
@@ -50,6 +50,6 @@ In order to reward longer words, your score is equal to the square of the word's
 7. To use the API, enter a URL of the form `localhost/<NWL20|CSW21>/<anyword>`. Click [here](http://anagrams.mynetgear.com/CSW21/ANAGRAMS) for an example. See [here](https://rapidapi.com/grubbcc/api/word-tree/) for more details on how to use.
 
 <p align="center">
-  <img src="https://seattlephysicstutor.com/images/sample-tree.png" width="240px" height="156px">
+  <img src="https://seattlephysicstutor.com/images/sample-tree.png" width="240px" height="234">
 </p>
 
