@@ -1,0 +1,7 @@
+INFO	2022-03-07 16:48:45,629	0	server.Server	[main]	Starting server...
+INFO	2022-03-07 16:48:47,815	2186	server.Server	[main]	new trie created with lexicon = NWL20
+INFO	2022-03-07 16:48:48,115	2486	server.Server	[main]	new trie created with lexicon = NWL20-common
+INFO	2022-03-07 16:48:49,931	4302	server.Server	[main]	new trie created with lexicon = CSW21
+INFO	2022-03-07 16:48:50,238	4609	server.Server	[main]	new trie created with lexicon = CSW21-common
+INFO	2022-03-07 16:48:50,349	4720	server.Server	[main]	Lookup service started on port 8116
+INFO	2022-03-07 16:48:50,367	4738	server.Server	[Thread-0]	Ready to accept client connections on port 8118
