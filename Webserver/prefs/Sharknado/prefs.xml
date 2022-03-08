@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
+<map MAP_XML_VERSION="1.0">
+  <entry key="email" value="not-real-email@gmail.com"/>
+  <entry key="password" value="notrealpassword"/>
+  <entry key="bio" value="[background-color](blue)![](https://snappygoat.com/t/8d029f0ed585d5dcbb5eb626daed78fb54f7c29e)"/>
+  <entry key="max_players" value="6"/>
+  <entry key="min_length" value="7"/>
+  <entry key="num_sets" value="1"/>
+  <entry key="blank_penalty" value="2"/>
+  <entry key="lexicon" value="CSW21"/>
+  <entry key="speed" value="fast"/>
+  <entry key="robot_skill" value="genius"/>
+  <entry key="allow_chat" value="true"/>
+  <entry key="allow_watchers" value="true"/>
+  <entry key="add_robot" value="true"/>
+</map>
