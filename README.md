@@ -44,7 +44,7 @@ In order to reward longer words, your score is equal to the square of the word's
 1. In `anagrams\AnagramsServer` run `.\gradlew distZip`.
 2. In `anagrams\AnagramsJPro` run `.\gradlew jproRelease`.
 3. Extract the generated archives into `anagrams\Webserver`.
-4. From `Webserver`, run `docker build`.
+4. From `Webserver`, run `docker -t anagrams build`.
 5. Run `docker-compose up`.
 6. Open `localhost` or your public IP in a browser tab to see the app. (For web access you will need to configure your network and firewall to accept HTTP traffic.)
 7. To use the API, enter a URL of the form `localhost/<NWL20|CSW21>/<anyword>`. Click [here](http://anagrams.mynetgear.com/CSW21/ANAGRAMS) for an example. Click [here](https://rapidapi.com/grubbcc/api/word-tree/) for full API documentation.
