@@ -38,4 +38,4 @@
 |        |            |
 |--------|------------|
 | ***Q***  | Is there any way to record my games for posterity? |
-| ***A***  | That's another feature that's coming soon. For now if there's a specific game you're interested in I can pull it from the logs and send it to you. Later you will be save a file containing your record and review it. |
+| ***A***  | That's another feature that's coming soon. For now if there's a specific game you're interested in I can pull it from the logs and send it to you. Later you will be able save a file containing your record and review it. |
