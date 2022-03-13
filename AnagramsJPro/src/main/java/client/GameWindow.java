@@ -177,23 +177,29 @@ public class GameWindow extends PopWindow {
         //chat panel
         BorderPane chatPanel = new BorderPane();
         if (allowsChat) {
-            ScrollPane chatScrollPane = new ScrollPane();
             chatBox.setEditable(false);
             chatField.setPromptText("Type here to chat");
-           chatField.setOnAction(ae -> {
-                client.send("gamechat " + gameID + " " + username + ": " + chatField.getText());
+            chatField.setOnAction(ae -> {
+                String msg = String.format("%1.500s", chatField.getText()); //truncate to 500 characters
+                if(!msg.isBlank())
+                    client.send("gamechat " + gameID + " " + username + ": " + chatField.getText());
                 chatField.clear();
             });
-            chatScrollPane.setFitToHeight(true);
-            chatScrollPane.setFitToWidth(true);
-            chatScrollPane.setContent(chatBox);
             chatPanel.setMaxHeight(100);
             chatPanel.setMinHeight(0);
-            chatPanel.setCenter(chatScrollPane);
+            chatPanel.setCenter(chatBox);
             chatPanel.setBottom(chatField);
+            chatBox.setEditable(false);
+            chatBox.setStyle("-fx-font-size: " + (client.getWebAPI().isMobile() ? 18 : 16) + ";");
+            chatField.setStyle("-fx-font-size: " + (client.getWebAPI().isMobile() ? 18 : 16) + ";");
+            chatField.focusedProperty().addListener((focus, wasFocused, isFocused) -> {
+                if(isFocused)
+                    chatBox.scrollTopProperty().set(Double.MAX_VALUE);
+            });
+            chatBox.setWrapText(true);
+
             splitPane.getItems().add(chatPanel);
             splitPane.setDividerPosition(0, 0.85);
-
             if (isMobile) {
                 splitPane.setDividerPosition(0, 1.0);
                 hideButton.setPrefWidth(85);

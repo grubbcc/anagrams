@@ -2,7 +2,10 @@ package client;
 
 import com.jpro.webapi.JProApplication;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
+import javafx.scene.AccessibleAction;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -61,9 +64,10 @@ public class AnagramsClient extends JProApplication {
 	AnchorPane anchor = new AnchorPane(splitPane);
 	StackPane stack = new StackPane(anchor);
 
+	TextField chatField = new TextField();
 	private final TextArea chatBox = new TextArea();
 	private final BorderPane chatPanel = new BorderPane();
-	private final ScrollPane chatScrollPane = new ScrollPane();
+//	private final ScrollPane chatScrollPane = new ScrollPane();
 	private final PlayerPane playerPane = new PlayerPane(this);
 
 	HashMap<String, GameWindow> gameWindows = new HashMap<>();
@@ -193,17 +197,23 @@ public class AnagramsClient extends JProApplication {
 
 		//chat panel
 		chatBox.setEditable(false);
-		TextField chatField = new TextField();
 		chatField.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
 		chatField.setPromptText("Type here to chat");
-		chatField.setOnAction(ae -> {send("chat " + username + ": " + chatField.getText()); chatField.clear();});
+		chatField.focusedProperty().addListener((focus, wasFocused, isFocused) -> {
+			if(isFocused)
+				chatBox.scrollTopProperty().set(Double.MAX_VALUE);
+		});
+		chatField.setOnAction(ae -> {
+			String msg = String.format("%1.500s", chatField.getText()); //ISN'T WORKING
+			if(!msg.isBlank())
+				send("chat " + username + ": " + msg);
+			chatField.clear();
+		});
 		chatPanel.setBottom(chatField);
-		chatScrollPane.setFitToHeight(true);
-		chatScrollPane.setFitToWidth(true);
-		chatScrollPane.setContent(chatBox);
+		chatBox.setWrapText(true);
 		chatBox.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
 		chatBox.appendText("Welcome to Anagrams version " + version + "!");
-		chatPanel.setCenter(chatScrollPane);
+		chatPanel.setCenter(chatBox);
 
 		//main layout
 		borderPane.setTop(controlPanel);
@@ -323,6 +333,7 @@ public class AnagramsClient extends JProApplication {
 			Platform.runLater(() -> dialog.show(true));
 			return false;
 		}
+
 	}
 
 	/**
@@ -543,7 +554,7 @@ public class AnagramsClient extends JProApplication {
 		 *
 		 */
 
-		void addPlayer(String newPlayer) {
+		void addPlayerToGame(String newPlayer) {
 			players.add(newPlayer);
 			setPlayersToolTip();
 		}
@@ -697,7 +708,7 @@ public class AnagramsClient extends JProApplication {
 									if (gamePane != null) {
 										switch (cmd) {
 											case "takeseat" -> {
-												gamePane.addPlayer(tokens[2]);
+												gamePane.addPlayerToGame(tokens[2]);
 												if (gameWindows.containsKey(tokens[1]))
 													if (!gameWindows.get(tokens[1]).gameOver)
 														gameWindows.get(tokens[1]).addPlayer(tokens[2]);
