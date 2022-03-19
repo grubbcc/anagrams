@@ -1,5 +1,6 @@
 package server;
 
+import javax.swing.tree.AbstractLayoutCache;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,7 +11,7 @@ import java.util.regex.Pattern;
 
 class WordFinder {
 
-    private final int blankPenalty;
+    /*private final*/ int blankPenalty;
     private final int minLength;
     private String tilePool;
     private final AlphagramTrie dictionary;
@@ -150,8 +151,9 @@ class WordFinder {
             trees.putIfAbsent(shortWord, new WordTree(shortWord.replaceAll("[a-z]", ""), dictionary));
             for (TreeNode child : trees.get(shortWord).rootNode.getChildren()) {
                 String entry = child.toString();
-
-                if (entry.length() <= shortWord.length() + tilePool.length() && entry.length() > shortWord.length()) {
+                if(entry.length() <= shortWord.length() ) continue;
+                if(entry.length() > shortWord.length() + tilePool.length()) break;
+       //         if (entry.length() <= shortWord.length() + tilePool.length()) {
                     Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                     if (play.isValid()) {
                         possibleSteals.append(shortWord).append(" + ").append(child.getLongSteal()).append(" -> ").append(play.nextWord()).append(",");
@@ -160,7 +162,7 @@ class WordFinder {
                         }
                     }
                 }
-            }
+          //  }
         }
 
         return possibleSteals.toString();

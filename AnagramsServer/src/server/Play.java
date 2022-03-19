@@ -36,8 +36,8 @@ class Play {
      * Checks whether the play can be formed from the pool and preexisting words and
      * whether it long enough, accounting for the number of blanks required.
      *
-     * Note: this method does not check if steal is a rearrangement of a shortWord;
-     * that is assumed.
+     * Note: this method does not check if steal is a rearrangement of a shortWord or
+     * whether it is in the dictionary; that is assumed.
      *
      * @return whether the play is valid according to the rules of Anagrams
      */
@@ -55,15 +55,15 @@ class Play {
                 entry = entry.replaceFirst(s, "");
             }
             else if (Character.isLowerCase(s.charAt(0))) {
-                if (!entry.contains(s.toUpperCase())) {
-                    //Redesignate a blank and transfer it to the longWord
-                    blanksToChange++;
-                    penalty += blankPenalty;
-                }
-                else {
-                    //Transfer the blank without redesignating
+                if (entry.contains(s.toUpperCase())) {
+                    //Transfer the blank without re-designating
                     entry = entry.replaceFirst(s.toUpperCase(), "");
                     blanks += s.toUpperCase();
+                }
+                else {
+                    //Re-designate a blank and transfer it to the longWord
+                    blanksToChange++;
+                    penalty += blankPenalty;
                 }
             }
             else {
@@ -75,11 +75,15 @@ class Play {
         //Search for the remaining tiles in the entry
         int charsToFind = entry.length();
         for (String s : entry.split("")) {
-            if (charsToFind > blanksToChange) {
-                charsToFind--;
+            if (charsToFind-- > blanksToChange) {
                 //Add a tile from the pool
                 if (nextTiles.contains(s)) {
                     nextTiles = nextTiles.replaceFirst(s, "");
+                }
+                else if (blanksToChange-- > 0) {
+                    nextTiles = nextTiles.replaceFirst(s, "");
+                    blanks += s;
+                    blanksToChange--;
                 }
                 else if (nextTiles.contains("?")) {
                     //Take a tile from the pool and designate it
@@ -95,7 +99,6 @@ class Play {
             else if (blanksToChange > 0) {
                 nextTiles = nextTiles.replaceFirst(s, "");
                 blanks += s;
-                charsToFind--;
                 blanksToChange--;
             }
             else {
@@ -113,14 +116,13 @@ class Play {
     }
 
     /**
-     *
      * @return a formatted word with lowercase letters representing blanks
      */
 
     String nextWord() {
         String nextWord = longWord;
         for(String s : blanks.split(""))
-            nextWord = nextWord.replaceFirst(s, s.toLowerCase());
+            nextWord = nextWord.replaceFirst(s + "(?!.*?" + s + ")", s.toLowerCase()); //replace last occurrence
         return nextWord;
     }
 
