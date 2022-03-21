@@ -43,7 +43,7 @@ In order to reward longer words, your score is equal to the square of the word's
 ##### Setting up the webserver
 1. In `anagrams\AnagramsServer` run `.\gradlew distZip`.
 2. In `anagrams\AnagramsJPro` run `.\gradlew jproRelease`.
-3. Extract the generated archives into `anagrams\Webserver`.
+3. Extract the generated archives (under `\build\distributions`) into `anagrams\Webserver`.
 4. From `Webserver`, run `docker -t anagrams build`.
 5. Run `docker-compose up`.
 6. Open `localhost` or your public IP in a browser tab to see the app. (For web access you will need to configure your network and firewall to accept HTTP traffic.)
