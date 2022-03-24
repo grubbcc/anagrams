@@ -355,19 +355,21 @@ public class WordExplorer extends PopWindow {
 
         generateWordList("", rootNode);
 
-        client.getWebAPI().executeScript(
-          "var pom = document.createElement('a'); " +
-            "pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('" + wordList + "')); " +
-            "pom.setAttribute('download', '" + rootNode.getWord() + ".txt'); " +
-            "if (document.createEvent) { " +
-                "var event = document.createEvent('MouseEvents'); " +
-                "event.initEvent('click', true, true); " +
-                "pom.dispatchEvent(event); " +
-            "}" +
-            "else { " +
-                "pom.click(); " +
-            "}"
+        client.getWebAPI().executeScript("""
+            var pom = document.createElement('a');
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('%s'));
+            pom.setAttribute('download', '%s.txt');
+            if (document.createEvent) {
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                pom.dispatchEvent(event);
+            }
+            else {
+                pom.click();
+            }
+            """.formatted(wordList, rootNode.getWord())
         );
+
     }
 
     /**
