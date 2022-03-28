@@ -42,13 +42,14 @@ class Play {
      * @return whether the play is valid according to the rules of Anagrams
      */
 
-    boolean isValid() {
 
-        String entry = longWord;
-        int blanksToChange = 0;
-        int penalty = 0;
+     boolean isValid() {
 
-        //search for characters in the word to be stolen
+         String entry = longWord;
+         String blanksToKeep = "";
+         int blanksToChange = 0;
+
+        //Search for characters in the word to be stolen
         for (String s : shortWord.split("")) {
             if (entry.contains(s)) {
                 //Transfer a tile from the shortWord to the longWord
@@ -57,13 +58,12 @@ class Play {
             else if (Character.isLowerCase(s.charAt(0))) {
                 if (entry.contains(s.toUpperCase())) {
                     //Transfer the blank without re-designating
+                    blanksToKeep += s.toUpperCase();
                     entry = entry.replaceFirst(s.toUpperCase(), "");
-                    blanks += s.toUpperCase();
                 }
                 else {
-                    //Re-designate a blank and transfer it to the longWord
+                    //Mark a blank for re-designation
                     blanksToChange++;
-                    penalty += blankPenalty;
                 }
             }
             else {
@@ -72,38 +72,44 @@ class Play {
             }
         }
 
-        //Search for the remaining tiles in the entry
-        int charsToFind = entry.length();
+        //Search pool for missing tiles
         for (String s : entry.split("")) {
-            if (charsToFind-- > blanksToChange) {
-                //Add a tile from the pool
+            if(entry.length() > blanksToChange) {
                 if (nextTiles.contains(s)) {
+                    //Add a regular tile to the word
                     nextTiles = nextTiles.replaceFirst(s, "");
+                    entry = entry.replaceFirst(s, "");
                 }
-                else if (blanksToChange-- > 0) {
-                    nextTiles = nextTiles.replaceFirst(s, "");
-                    blanks += s;
-                    blanksToChange--;
+                else if(!blanksToKeep.isEmpty()) {
+                    for (String t : blanksToKeep.split("")) {
+                        //Mark a retained blank for re-designation
+                        if (nextTiles.contains(t)) {
+                            blanksToKeep = blanksToKeep.replaceFirst(t, "");
+                            nextTiles = nextTiles.replaceFirst(t, "");
+                            blanksToChange++;
+                            break;
+                        }
+                    }
                 }
-                else if (nextTiles.contains("?")) {
-                    //Take a tile from the pool and designate it
+            }
+        }
+
+        //Designate blanks to missing letters
+        int penalty = 0;
+        if(!entry.isEmpty()) {
+            for (String s : entry.split("")) {
+                blanks += s;
+                if (blanksToChange-- > 0) {
+                    //Re-designate a blank
+                    penalty += blankPenalty;
+                } else if (nextTiles.contains("?")) {
+                    //Take a blank from the pool and designate it
                     nextTiles = nextTiles.replaceFirst("\\?", "");
-                    blanks += s;
                     penalty += blankPenalty + 1;
-                }
-                else {
-                    //Not enough blanks in the pool
+                } else {
+                    //Not enough blanks available
                     return false;
                 }
-            }
-            else if (blanksToChange > 0) {
-                nextTiles = nextTiles.replaceFirst(s, "");
-                blanks += s;
-                blanksToChange--;
-            }
-            else {
-                //The entry contains a letter found neither in the shortWord nor the pool
-                return false;
             }
         }
 
