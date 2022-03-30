@@ -25,6 +25,8 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,8 +81,11 @@ public class GameWindow extends PopWindow {
     private final String username;
     public final boolean isWatcher;
     public final boolean allowsChat;
+    final String lexicon;
     final int minLength;
     final int blankPenalty;
+    final String numSets;
+    final String speed;
     private String tilePool = "";
     private final WeakHashMap<String, GamePanel> players = new WeakHashMap<>();
     boolean gameOver = false;
@@ -94,16 +99,19 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
+    GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
         super(client.anchor);
 
         this.client = client;
         explorer = client.explorer;
         explorer.setLexicon(lexicon);
+        this.lexicon = lexicon;
         this.gameID = gameID;
         this.username = username;
         this.minLength = Integer.parseInt(minLength);
         this.blankPenalty = Integer.parseInt(blankPenalty);
+        this.numSets = numSets;
+        this.speed = speed;
         this.gameLog = gameLog;
         this.allowsChat = allowsChat;
         this.isWatcher = isWatcher;
@@ -246,7 +254,8 @@ public class GameWindow extends PopWindow {
                 client.getWebAPI().executeScript("toggleFullscreen();");
                 Platform.runLater(() -> splitPane.setDividerPosition(0, dividerPosition));
             });
-        } else {
+        }
+        else {
             setPrefSize(1000, 674);
             textField.setPrefWidth(310);
             makeResizable();
@@ -269,10 +278,10 @@ public class GameWindow extends PopWindow {
             if(gameLog.isEmpty()) {
                 homePanel.takeSeat(username);
 
-            textField.setOnAction(e -> {
-                makePlay(textField.getText().toUpperCase());
-                textField.clear();
-            });
+                textField.setOnAction(e -> {
+                    makePlay(textField.getText().toUpperCase());
+                    textField.clear();
+                });
                 textField.setPromptText("Enter a word here to play");
                 textField.setId("text-field");
 
@@ -286,17 +295,17 @@ public class GameWindow extends PopWindow {
                 wordBuilder.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
 
 
-            textField.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (!newValue.matches("[a-zA-Z]*")) {
-                    Platform.runLater(() -> textField.setText(oldValue));
-                } else if (newValue.length() > 15) {
-                    Platform.runLater(() -> {
-                        textField.setText(oldValue);
-                        textField.positionCaret(oldValue.length());
-                    });
-                } else
-                    updateWordBuilder(newValue.toUpperCase());
-            });
+                textField.textProperty().addListener((observable, oldValue, newValue) -> {
+                    if (!newValue.matches("[a-zA-Z]*")) {
+                        Platform.runLater(() -> textField.setText(oldValue));
+                    } else if (newValue.length() > 15) {
+                        Platform.runLater(() -> {
+                            textField.setText(oldValue);
+                            textField.positionCaret(oldValue.length());
+                        });
+                    } else
+                        updateWordBuilder(newValue.toUpperCase());
+                });
 
                 caret.setStrokeWidth(2);
                 caret.translateXProperty().bind(textField.caretPositionProperty().multiply(20).add(4));
@@ -1032,6 +1041,7 @@ public class GameWindow extends PopWindow {
 
         controlPanel.getChildren().removeAll(textStack, textField, infoPane);
         controlPanel.getChildren().addAll(backToStartButton, backTenButton, backButton, showPlaysButton, forwardButton, forwardTenButton, forwardToEndButton, infoPane);
+
         backToStartButton.setPrefWidth(25);
         backTenButton.setPrefWidth(25);
         backButton.setPrefWidth(25);
@@ -1090,11 +1100,14 @@ public class GameWindow extends PopWindow {
                     }
                 }
             });
+            Button saveButton = new Button("Download");
+            saveButton.setTooltip(new Tooltip("Save game log as text file"));
+            saveButton.setBackground(new Background(new BackgroundFill(Color.CORNFLOWERBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+            saveButton.setOnAction(click -> saveGame());
+            controlPanel.getChildren().add(saveButton);
         }
 
-
         Platform.runLater(() -> showPosition(gameLog.get(position)));
-
     }
 
     /**
@@ -1260,6 +1273,42 @@ public class GameWindow extends PopWindow {
     }
 
     /**
+     *
+     */
+
+    void saveGame() {
+
+        String gameData = "gameID " + gameID + "\\n" +
+                "lexicon " + lexicon + "\\n" +
+                "numSets " + numSets + "\\n" +
+                "minLength " + minLength + "\\n" +
+                "blankPenalty " + blankPenalty + "\\n" +
+                "speed " + speed + "\\n\\n";
+
+        for (String[] gameState : gameLog) {
+            for(String datum : gameState) {
+                gameData = gameData.concat(datum + " ");
+            }
+            gameData = gameData.concat("\\n");
+
+        }
+        client.getWebAPI().executeScript("""
+            var pom = document.createElement('a');
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('%s'));
+            pom.setAttribute('download', '%s.txt');
+            if (document.createEvent) {
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                pom.dispatchEvent(event);
+            }
+            else {
+                pom.click();
+            }
+            """.formatted(gameData, gameID)
+        );
+    }
+
+    /**
      * An attempt to form a word, either by building from the pool or by stealing an existing word
      */
 
@@ -1318,7 +1367,7 @@ public class GameWindow extends PopWindow {
         }
 
         /**
-         * designate letters as blanks or as normal tiles
+         * Designate letters as blanks or as normal tiles
          */
 
         private char[] buildWord() {
@@ -1342,29 +1391,28 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        private boolean isValid() {
+        boolean isValid() {
 
-            String charsToUse = shortWord;
             String entry = longWord;
+            String blanksToKeep = "";
             String tiles = this.tiles;
             int blanksToChange = 0;
-            int penalty = 0;
 
-            //search for characters in the word to be stolen
-            for(String s : charsToUse.split("")) {
-                if(entry.contains(s)) {
+            //Search for characters in the word to be stolen
+            for (String s : shortWord.split("")) {
+                if (entry.contains(s)) {
                     //Transfer a tile from the shortWord to the longWord
                     entry = entry.replaceFirst(s, "");
                 }
-                else if(Character.isLowerCase(s.charAt(0))) {
-                    if(!entry.contains(s.toUpperCase())) {
-                        //Redesignate a blank and transfer it to the longWord
-                        blanksToChange++;
-                        penalty += blankPenalty;
+                else if (Character.isLowerCase(s.charAt(0))) {
+                    if (entry.contains(s.toUpperCase())) {
+                        //Transfer the blank without re-designating
+                        blanksToKeep += s.toUpperCase();
+                        entry = entry.replaceFirst(s.toUpperCase(), "");
                     }
                     else {
-                        //Transfer the blank without redesignating
-                        entry = entry.replaceFirst(s.toUpperCase(),"");
+                        //Mark a blank for re-designation
+                        blanksToChange++;
                     }
                 }
                 else {
@@ -1373,35 +1421,44 @@ public class GameWindow extends PopWindow {
                 }
             }
 
-            //Search for the remaining tiles in the entry
-            int charsToFind = entry.length();
-            for(String s : entry.split("")) {
-                if(charsToFind > blanksToChange) {
-                    charsToFind--;
-                    //Add a tile from the pool
-                    if(tiles.contains(s)) {
-                        tiles = tiles.replaceFirst(s,"");
+            //Search pool for missing tiles
+            for (String s : entry.split("")) {
+                if(entry.length() > blanksToChange) {
+                    if (tiles.contains(s)) {
+                        //Add a regular tile to the word
+                        tiles = tiles.replaceFirst(s, "");
+                        entry = entry.replaceFirst(s, "");
                     }
-                    else if(tiles.contains("?")) {
-                        //Take a tile from the pool and designate it
-                        tiles = tiles.replaceFirst("\\?","");
-                        penalty += blankPenalty + 1;
-                    }
-                    else {
-                        //Not enough blanks in the pool
-                        return false;
+                    else if(!blanksToKeep.isEmpty()) {
+                        for (String t : blanksToKeep.split("")) {
+                            //Mark a retained blank for re-designation
+                            if (tiles.contains(t)) {
+                                blanksToKeep = blanksToKeep.replaceFirst(t, "");
+                                tiles = tiles.replaceFirst(t, "");
+                                blanksToChange++;
+                                break;
+                            }
+                        }
                     }
                 }
-                else if(blanksToChange > 0) {
-                    tiles = tiles.replaceFirst(s,"");
-                    charsToFind--;
-                    blanksToChange--;
-                }
-                else {
-                    //The entry contains a letter found neither in the shortWord nor the pool
+            }
+
+            //Designate blanks to missing letters
+            int penalty = 0;
+
+            for (int i = 0; i < entry.length(); i++) {
+                if (blanksToChange-- > 0) {
+                    //Re-designate a blank
+                    penalty += blankPenalty;
+                } else if (tiles.contains("?")) {
+                    //Take a blank from the pool and designate it
+                    penalty += blankPenalty + 1;
+                } else {
+                    //Not enough blanks available
                     return false;
                 }
             }
+
 
             if(shortWord.isEmpty()) {
                 return longWord.length() - minLength >= penalty;
@@ -1421,7 +1478,7 @@ public class GameWindow extends PopWindow {
          * @param longWord      a longer word (case must match that of shortWord)
          */
 
-        private boolean isRearrangement(String shortWord, String longWord) {
+        private static boolean isRearrangement(String shortWord, String longWord) {
 
             while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
                 if (shortWord.charAt(0) == longWord.charAt(0)) {
