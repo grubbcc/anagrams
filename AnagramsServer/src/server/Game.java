@@ -424,10 +424,8 @@ public class Game {
 
 		String nextWord = play.nextWord();
 
-
-			robotPlayer.removeTree(shortWord);
-			robotPlayer.makeTree(nextWord);
-
+		robotPlayer.removeTree(shortWord);
+		robotPlayer.makeTree(nextWord);
 
 		words.get(shortPlayer).remove(shortWord);
 		words.get(longPlayer).add(nextWord);
