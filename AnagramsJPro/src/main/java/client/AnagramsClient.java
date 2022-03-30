@@ -510,10 +510,7 @@ public class AnagramsClient extends JProApplication {
 			joinButton.setOnAction(e -> {
 				if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
-
-						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, gameOver));
-
-
+						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver));
 						if(gameOver) {
 							send("watchgame " + gameID);
 						}
@@ -531,7 +528,7 @@ public class AnagramsClient extends JProApplication {
 				watchButton.setOnAction(e -> {
 					if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
 						if(!players.contains(username) || gameOver) {
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, allowChat, lexicon, gameLog, true));
+							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true));
 							send("watchgame " + gameID);
 						}
 					}

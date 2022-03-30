@@ -178,7 +178,7 @@ class GameMenu extends PopWindow {
             maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
         }
 
-        client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
+        client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
         String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);
