@@ -478,7 +478,7 @@ public class Game {
 
 		words.get(newWordPlayer).add(nextWord);
 
-		robotPlayer.makeTree(nextWord);
+		if(hasRobot) robotPlayer.makeTree(nextWord);
 
 		if(tileCount >= tileBag.length && tilePool.length() > 0) 
 			timeRemaining += 15;
