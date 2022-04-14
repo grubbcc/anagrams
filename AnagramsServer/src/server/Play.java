@@ -107,11 +107,12 @@ class Play {
                     nextTiles = nextTiles.replaceFirst("\\?", "");
                     penalty += blankPenalty + 1;
                 } else {
-                    //Not enough blanks available
+                    //Insufficient blanks available
                     return false;
                 }
             }
         }
+        blanks += blanksToKeep;
 
         //Check if word is long enough, accounting for the blank penalty
         if(shortWord.isEmpty())
