@@ -168,37 +168,37 @@ public class Game {
 			paused = false;
 
 			//update timer and check for game over
-			if(timeRemaining > 0) {
-				String message = "Time remaining: " + timeRemaining--;
-				server.broadcast("note " + gameID + " @" + message);
+			String message = "Time remaining: " + timeRemaining--;
+			server.broadcast("note " + gameID + " @" + message);
 
-				think--;
-				if(tileCount >= tileBag.length && tilePool.isEmpty()) {
-					//no more possible plays
-					timeRemaining = 0;
-					endGame();
-				}
-			}
-			else {
+			if(tileCount >= tileBag.length && tilePool.isEmpty()) {
+				//no more possible plays
+				timeRemaining = 0;
 				endGame();
 			}
 
-			//decide whether robot should attempt a move
-			if(timeRemaining % delay == 0 && tileCount < tileBag.length) {
+			if(timeRemaining <= 0)
+				endGame();
+
+			else if(timeRemaining % delay == 0 && tileCount < tileBag.length)
 				drawTile();
-				if(hasRobot) {
-					if (tilePool.length() >= 29) {
-						think = 2; //robot starts thinking of a play
-					}
-					else if (rgen.nextInt(50) <= 3*(robotPlayer.skillLevel-1) + delay/3 + 7*(tilePool.length()/minLength-1)) {
-						think = 2; //robot starts thinking of a play
+
+			//Robot thinks of a play
+			if(hasRobot) {
+				if (think-- < 0) {
+					if (tileCount < tileBag.length) {
+						if (tilePool.length() >= 29) {
+							think = 2;
+						} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 7 * (tilePool.length() / minLength - 1)) {
+							think = 2;
+						}
+					} else {
+						think = rgen.nextInt(10 + timeRemaining/robotPlayer.skillLevel);
 					}
 				}
-			}
-			
-			//Robot attempts to make a play
-			if(hasRobot && think == 0) {
-				robotPlayer.makePlay(Game.this, tilePool, words);
+				else if(think == 0) {
+					robotPlayer.makePlay(Game.this, tilePool, words);
+				}
 			}
 		}
 	}
