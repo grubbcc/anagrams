@@ -16,8 +16,8 @@ public class Game {
 	
 	private final Server server;
 
-	private final Hashtable<String, ServerWorker> playerList = new Hashtable<>();
-	private final Hashtable<String, ServerWorker> watcherList = new Hashtable<>();
+	private final ConcurrentHashMap<String, ServerWorker> playerList = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ServerWorker> watcherList = new ConcurrentHashMap<>();
 
 	final String gameID;
 	private static final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
@@ -45,7 +45,6 @@ public class Game {
 	boolean paused = false;
 	private int countdown = 10;
 	int timeRemaining;
-	private int think = 2;
 	private Robot robotPlayer;
 
 	final Vector<String> gameLog = new Vector<>();
@@ -134,6 +133,7 @@ public class Game {
 
 	private class GameTask extends TimerTask {
 
+		private int think = 2;
 		private GameTask() {
 			countdown = 10;
 		}
@@ -171,34 +171,37 @@ public class Game {
 			String message = "Time remaining: " + timeRemaining--;
 			server.broadcast("note " + gameID + " @" + message);
 
-			if(tileCount >= tileBag.length && tilePool.isEmpty()) {
-				//no more possible plays
-				timeRemaining = 0;
-				endGame();
-			}
-
 			if(timeRemaining <= 0)
 				endGame();
 
-			else if(timeRemaining % delay == 0 && tileCount < tileBag.length)
-				drawTile();
+			if(tileCount < tileBag.length) {
+				if(timeRemaining % delay == 0) {
+					drawTile();
 
-			//Robot thinks of a play
-			if(hasRobot) {
-				if (think-- < 0) {
-					if (tileCount < tileBag.length) {
-						if (tilePool.length() >= 29) {
-							think = 2;
-						} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 7 * (tilePool.length() / minLength - 1)) {
-							think = 2;
+					//Robot thinks of a play
+					if (hasRobot) {
+						if (tileCount < tileBag.length) {
+							if (tilePool.length() >= 29) {
+								think = 2;
+							} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 5 * (tilePool.length() / minLength - 1)) {
+								think = 2;
+							}
 						}
-					} else {
-						think = rgen.nextInt(10 + timeRemaining/robotPlayer.skillLevel);
 					}
 				}
-				else if(think == 0) {
-					robotPlayer.makePlay(Game.this, tilePool, words);
+			}
+			else {
+				if (tilePool.isEmpty()) { //no more possible plays
+					timeRemaining = 0;
+					endGame();
 				}
+				else if (hasRobot && think < 0) {
+					think = 10 + rgen.nextInt(50 / robotPlayer.skillLevel);
+				}
+			}
+
+			if (hasRobot && --think == 0) {
+				robotPlayer.makePlay(Game.this, tilePool, words);
 			}
 		}
 	}
@@ -421,9 +424,10 @@ public class Game {
 			return false;
 
 		String nextWord = play.nextWord();
-
-		robotPlayer.removeTree(shortWord);
-		robotPlayer.makeTree(nextWord);
+		if(hasRobot) {
+			robotPlayer.removeTree(shortWord);
+			robotPlayer.makeTree(nextWord);
+		}
 
 		words.get(shortPlayer).remove(shortWord);
 		words.get(longPlayer).add(nextWord);

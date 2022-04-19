@@ -36,11 +36,11 @@ public class Server extends Thread {
 			getDictionary(lexicon).common(); //generate the common subset
 		}
 
-		HttpServer server = HttpServer.create(new InetSocketAddress(8116), 0);
-		server.createContext("/CSW21/", this::handleRequest);
-		server.createContext("/NWL20/", this::handleRequest);
+		HttpServer httpServer = HttpServer.create(new InetSocketAddress(8116), 0);
+		httpServer.createContext("/CSW21/", this::handleRequest);
+		httpServer.createContext("/NWL20/", this::handleRequest);
 
-		server.start();
+		httpServer.start();
 		System.out.println("Lookup service started on port 8116");
 	}
 
@@ -181,10 +181,10 @@ public class Server extends Thread {
 	
 	@Override
 	public void run() {
-		
+		boolean running = true;
 		try {
 			ServerSocket serverSocket = new ServerSocket(serverPort);
-			while(true) {
+			while(running) {
 				System.out.println("Ready to accept client connections on port " + serverPort);
 				Socket clientSocket = serverSocket.accept();
 				System.out.println("Accepted connection from " + clientSocket);
@@ -243,5 +243,6 @@ public class Server extends Thread {
 
 		Server server = new Server();
 		server.start();
+
 	}
 }
