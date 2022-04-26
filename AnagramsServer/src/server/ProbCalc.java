@@ -6,7 +6,7 @@ import java.lang.Math;
  * Tool for calculating the likelihood of possible steals
  */
 
-public class ProbCalc {
+class ProbCalc {
 
     private static final int[] tileFrequencies = {27, 6, 6, 12, 36, 6, 9, 6, 27, 3, 3, 12, 6, 18, 24, 6, 3, 18, 12, 18, 12, 6, 6, 3, 6, 3};
 
@@ -18,7 +18,7 @@ public class ProbCalc {
      * @return      The probability that these tiles will be drawn expressed as a decimal
      */
 
-    public static double getProbability(String tiles) {
+    static double getProbability(String tiles) {
         int currChar;
         int prevChar = '&';
         int numer = 1;
@@ -50,7 +50,7 @@ public class ProbCalc {
      *
      */
 
-    public static double getLogProbability(String word) {
+    static double getLogProbability(String word) {
         return -1*Math.log10(getProbability(word));
     }
 
@@ -58,7 +58,7 @@ public class ProbCalc {
      *
      */
 
-    public static double round (double value, double precision) {
+    static double round (double value, double precision) {
         int scale = (int) Math.pow(10, precision);
         return (double) Math.round(value * scale) / scale;
     }

@@ -55,7 +55,7 @@ public class Game {
 	*
 	*/
 	
-	public String getGameParams() {
+	String getGameParams() {
 		return (gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
 	}
 	
@@ -64,7 +64,7 @@ public class Game {
 	*
 	*/
 
-	public Game(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
+	Game(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
 		
 		this.server = server;
 		this.gameID = gameID;
@@ -196,7 +196,7 @@ public class Game {
 					endGame();
 				}
 				else if (hasRobot && think < 0) {
-					think = 10 + rgen.nextInt(50 / robotPlayer.skillLevel);
+					think = 15 + rgen.nextInt(50 / robotPlayer.skillLevel);
 				}
 			}
 
@@ -220,7 +220,7 @@ public class Game {
 	* Stops the gameTimer and sends a notification to the players and watchers that the game is over
 	*/
 	
-	synchronized void endGame() {
+	private synchronized void endGame() {
 
 		gameTimer.cancel();
 		gameOver = true;
@@ -391,7 +391,7 @@ public class Game {
 	* Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
 	*/
 
-	synchronized private void drawTile() {
+	private synchronized void drawTile() {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];
 			tileCount++;
@@ -527,7 +527,7 @@ public class Game {
 	 * to the gameLog.
 	*/
 
-	synchronized private void saveState() {
+	private synchronized void saveState() {
 		if(!gameOver) {
 			String tiles = tilePool.isEmpty() ? "#" : tilePool;
 			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
@@ -549,7 +549,7 @@ public class Game {
 	* @return the names of all players and Robots that are either active or have at least one word.
 	*/
 	
-	synchronized public Set<String> getPlayerList() {
+	synchronized Set<String> getPlayerList() {
 
 		Set<String> union = new HashSet<>(words.keySet());
 		union.addAll(playerList.keySet());
@@ -563,7 +563,7 @@ public class Game {
 	* @return a set of all players who have left the game but still have at least one word.
 	*/
 	
-	synchronized public Set<String> getInactivePlayers() {
+	synchronized Set<String> getInactivePlayers() {
 		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
 		if(robotPlayer != null)
@@ -578,7 +578,7 @@ public class Game {
 	 * player1 [HELLO, WORLD] player2 []
 	*/
 
-	synchronized private String getFormattedWordList() {
+	private synchronized String getFormattedWordList() {
 		StringBuilder wordList = new StringBuilder();
 		Set<String> union = getPlayerList();
 

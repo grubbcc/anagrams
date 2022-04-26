@@ -23,7 +23,7 @@ class WordFinder {
      *
      */
 
-    public WordFinder(int minLength, int blankPenalty, AlphagramTrie dictionary) {
+    WordFinder(int minLength, int blankPenalty, AlphagramTrie dictionary) {
 
         this.minLength = minLength;
         this.blankPenalty = blankPenalty;
@@ -142,7 +142,7 @@ class WordFinder {
      * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
 
-    synchronized private String searchForSteals(String[] words) {
+    private synchronized String searchForSteals(String[] words) {
         StringBuilder possibleSteals = new StringBuilder();
         int numWordsFound = 0;
 

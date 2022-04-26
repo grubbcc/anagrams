@@ -15,13 +15,18 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Server extends Thread {
 	
-	private static final int serverPort = 8118;
+	private static final int GAME_PORT = 8118;
+	private static final int LOOKUP_PORT = 8116;
+
 	private static final String[] lexicons = {"NWL20", "CSW21"};
 	static final Logger log = Logger.getLogger(Server.class.getName());
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
 	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
+	private boolean running = true;
+	private final ServerSocket serverSocket = new ServerSocket(GAME_PORT);
+	private final HttpServer httpServer = HttpServer.create(new InetSocketAddress(LOOKUP_PORT), 0);
 
 	/**
 	*
@@ -36,7 +41,7 @@ public class Server extends Thread {
 			getDictionary(lexicon).common(); //generate the common subset
 		}
 
-		HttpServer httpServer = HttpServer.create(new InetSocketAddress(8116), 0);
+
 		httpServer.createContext("/CSW21/", this::handleRequest);
 		httpServer.createContext("/NWL20/", this::handleRequest);
 
@@ -49,7 +54,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public void removeGame(String gameID) {
+	void removeGame(String gameID) {
 		gameList.remove(gameID);
 		broadcast("removegame " + gameID);
 	}
@@ -58,7 +63,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public Set<String> getUsernames() {
+	Set<String> getUsernames() {
 		return workerList.keySet();
 	}
 	
@@ -66,7 +71,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public void addWorker(String username, ServerWorker worker) {
+	void addWorker(String username, ServerWorker worker) {
 		workerList.put(username, worker);
 	}
 
@@ -75,7 +80,7 @@ public class Server extends Thread {
 	 * @param username The name of the worker to be removed
 	 */
 
-	synchronized public void removeWorker(String username) {
+	synchronized void removeWorker(String username) {
 		workerList.remove(username);
 	}
 
@@ -83,7 +88,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	synchronized public void logoffPlayer(String username) {
+	synchronized void logoffPlayer(String username) {
 		workerList.remove(username);
 
 		for(Game game : gameList.values()) {
@@ -98,7 +103,7 @@ public class Server extends Thread {
 	 *
 	 */
 	
-	public ServerWorker getWorker(String username) {
+	ServerWorker getWorker(String username) {
 		return workerList.get(username);
 	}
 	
@@ -106,7 +111,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public void addGame(String gameID, Game game) {
+	void addGame(String gameID, Game game) {
 		gameList.put(gameID, game);
 	}
 
@@ -114,7 +119,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public Collection<Game> getGames() {
+	Collection<Game> getGames() {
 		return gameList.values();
 	}
 
@@ -122,7 +127,7 @@ public class Server extends Thread {
 	 *
 	 */
 
-	public int getRobotCount() {
+	int getRobotCount() {
 		Iterator<Game> it = gameList.values().iterator();
 		int robotCount = 0;
 		while (it.hasNext()) {
@@ -137,7 +142,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public Game getGame(String gameID) {
+	Game getGame(String gameID) {
 		return gameList.get(gameID);
 	}
 
@@ -145,7 +150,7 @@ public class Server extends Thread {
 	*
 	*/
 	
-	public AlphagramTrie getDictionary(String lexicon) {
+	AlphagramTrie getDictionary(String lexicon) {
 		return dictionaries.get(lexicon);
 	}
 
@@ -153,7 +158,7 @@ public class Server extends Thread {
 	 *
 	 */
 
-	public void logChat(String line) {
+	void logChat(String line) {
 		chatLog.add(line);
 		if(chatLog.size() >= 100) {
 			chatLog.remove();
@@ -166,7 +171,7 @@ public class Server extends Thread {
 	* @param msg the message to be sent
 	*/
 	
-	public void broadcast(String msg) {
+	void broadcast(String msg) {
 		
 		synchronized(workerList) {
 			for(ServerWorker worker : workerList.values()) {
@@ -181,11 +186,10 @@ public class Server extends Thread {
 	
 	@Override
 	public void run() {
-		boolean running = true;
 		try {
-			ServerSocket serverSocket = new ServerSocket(serverPort);
+
 			while(running) {
-				System.out.println("Ready to accept client connections on port " + serverPort);
+				System.out.println("Ready to accept client connections on port " + GAME_PORT);
 				Socket clientSocket = serverSocket.accept();
 				System.out.println("Accepted connection from " + clientSocket);
 				ServerWorker newWorker = new ServerWorker(this, clientSocket);
@@ -243,6 +247,23 @@ public class Server extends Thread {
 
 		Server server = new Server();
 		server.start();
+
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			server.running = false;
+
+			for(String username : server.getUsernames()) {
+				server.getWorker(username).send("logoffplayer " + username );
+			}
+			try {
+				server.serverSocket.close();
+				server.httpServer.stop(3);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			System.out.println("Server shutting down...");
+		}));
+
 
 	}
 }

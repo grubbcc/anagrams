@@ -7,7 +7,7 @@ import java.io.*;
 * Handles tasks for the client on the server side.
 */
 
-public class ServerWorker extends Thread {
+class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final Server server;
@@ -21,7 +21,7 @@ public class ServerWorker extends Thread {
 	*
 	*/
 	
-	public ServerWorker(Server server, Socket clientSocket) {
+	ServerWorker(Server server, Socket clientSocket) {
 
 		this.server = server;
 		this.clientSocket = clientSocket;
@@ -116,7 +116,7 @@ public class ServerWorker extends Thread {
 	*
 	*/
 	
-	void handleLogoff() throws IOException {
+	private void handleLogoff() throws IOException {
 
 		if(username != null) {
 			server.logoffPlayer(username);
@@ -164,7 +164,7 @@ public class ServerWorker extends Thread {
 	*
 	*/
 	
-	public String getUsername() {
+	String getUsername() {
 		return username;
 	}
 
@@ -200,6 +200,10 @@ public class ServerWorker extends Thread {
 							WordTree tree = new WordTree(tokens[2], server.getDictionary(tokens[1]));
 							tree.generateJSON(tree.rootWord, tree.rootNode, 1);
 							send("json " + tree.jsonArray.toString());
+						}
+						case "shutdown" -> {
+							if(username.equals("admin"))
+								System.exit(1);
 						}
 						default -> System.out.println("Error: Command not recognized: " + line);
 					}

@@ -12,7 +12,7 @@ import java.util.Arrays;
  */
 
 
-public class AlphagramTrie {
+class AlphagramTrie {
 
 	public final Node rootNode = new Node();
 	public final String lexicon;
@@ -28,7 +28,7 @@ public class AlphagramTrie {
 	 *                with one word per line and definition (optional) separated by white space.
 	 */
 
-	public AlphagramTrie(String lexicon) {
+	AlphagramTrie(String lexicon) {
 
 		this.lexicon = lexicon;
 
@@ -58,7 +58,7 @@ public class AlphagramTrie {
 	 *  Generates the subset of this trie containing only common words
 	 */
 
-	public void common() {
+	void common() {
 		common = new AlphagramTrie(lexicon + "-common");
 	}
 
@@ -102,7 +102,7 @@ public class AlphagramTrie {
 	 * @param searchKey the String to be searched for
 	 */
 
-	public boolean contains(String searchKey) {
+	boolean contains(String searchKey) {
 
 		Node node = getNode(searchKey);
 
@@ -124,7 +124,7 @@ public class AlphagramTrie {
 	 * @param searchKey the sequence of letters corresponding to the address of the searched-for node
 	 */
 
-	public Node getNode(String searchKey) {
+	Node getNode(String searchKey) {
 
 		String alphagram = alphabetize(searchKey.toUpperCase());
 		Node node = rootNode;
@@ -146,7 +146,7 @@ public class AlphagramTrie {
 	 *
 	 */
 
-	public String getDefinition(String searchKey) {
+	String getDefinition(String searchKey) {
 		Node node = getNode(searchKey);
 		if(node != null)
 			return node.definitions.get(searchKey.toUpperCase());
@@ -160,7 +160,7 @@ public class AlphagramTrie {
 	 * @param entry: the letters to be rearranged
 	 */
 
-	public static String alphabetize(String entry) {
+	static String alphabetize(String entry) {
 		char[] chars = entry.toCharArray();
 		Arrays.sort(chars);
 		return new String(chars);

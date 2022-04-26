@@ -27,7 +27,7 @@ class Robot {
 	*
 	*/
 	
-	public Robot(int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
+	Robot(int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
 		
 		this.dictionary = dictionary;
 
@@ -49,7 +49,7 @@ class Robot {
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
 
-	public void makePlay(Game game, String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
+	void makePlay(Game game, String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
 
 		this.game=game;
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();

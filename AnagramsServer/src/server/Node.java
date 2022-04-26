@@ -10,7 +10,7 @@ import java.util.HashMap;
  *
  */
 
-public class Node {
+class Node {
 
 	final HashSet<String> anagrams = new HashSet<>(2);
 	final HashMap<String, String> definitions = new HashMap<>(2);

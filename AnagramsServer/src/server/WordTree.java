@@ -20,7 +20,7 @@ import java.util.TreeSet;
  *
  */
 
-public class WordTree {
+class WordTree {
 
 	final AlphagramTrie trie;
 	final TreeNode rootNode;
@@ -32,7 +32,7 @@ public class WordTree {
 	 * Generates a tree from an existing trie
 	 */
 
-	public WordTree(String rootWord, AlphagramTrie trie) {
+	WordTree(String rootWord, AlphagramTrie trie) {
 		this.rootWord = rootWord.toUpperCase();
 		rootNode = new TreeNode(rootWord, "");
 		rootNode.setShortSteal("");
@@ -119,7 +119,7 @@ public class WordTree {
 	 * A tool for sorting tree nodes (1) according to length, and in case of ties, (2) in alphabetical order.
 	 */
 
-	static class TreeNodeComparator implements Comparator<TreeNode> {
+	private static class TreeNodeComparator implements Comparator<TreeNode> {
 		@Override
 		public int compare(TreeNode node1, TreeNode node2) {
 			int result = node2.toString().length() - node1.toString().length();
@@ -149,7 +149,7 @@ public class WordTree {
 	 * 	 *'[{"id":"grubb", "longsteal": ""},{"id":"grubb.BUGBEAR", longsteal: "AE"}]'
 	 */
 
-	public void generateJSON(String prefix, TreeNode node, double prob) {
+	void generateJSON(String prefix, TreeNode node, double prob) {
 
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", prefix);
@@ -183,7 +183,7 @@ public class WordTree {
 	 * @param longWord a longer word
 	 */
 
-	public static boolean isSubset(String shortWord, String longWord) {
+	static boolean isSubset(String shortWord, String longWord) {
 
 		if(shortWord.length() >= longWord.length()) {
 			return false;
@@ -219,7 +219,7 @@ public class WordTree {
 	 * @param longWord a longer word
 	 */
 
-	public static boolean isSteal(String shortWord, String longWord) {
+	static boolean isSteal(String shortWord, String longWord) {
 
 		if(!isSubset(shortWord, longWord))
 			return false;
@@ -243,7 +243,7 @@ public class WordTree {
 	 * @param entry: the letters to be rearranged
 	 */
 
-	public static String alphabetize(String entry) {
+	static String alphabetize(String entry) {
 		char[] chars = entry.toCharArray();
 		Arrays.sort(chars);
 		return new String(chars);
