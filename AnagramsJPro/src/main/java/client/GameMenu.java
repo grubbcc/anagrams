@@ -47,7 +47,7 @@ class GameMenu extends PopWindow {
      *
      */
 
-    public GameMenu(AnagramsClient client) {
+    GameMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
         if(client.getWebAPI().isMobile()) {
@@ -62,8 +62,8 @@ class GameMenu extends PopWindow {
             skillLevelSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         }
 
-        GridPane grid = new GridPane();
-        ColumnConstraints cc = new ColumnConstraints();
+        final GridPane grid = new GridPane();
+        final ColumnConstraints cc = new ColumnConstraints();
         cc.setHgrow(Priority.ALWAYS);
         cc.setFillWidth(true);
         grid.getColumnConstraints().add(cc);
@@ -72,13 +72,13 @@ class GameMenu extends PopWindow {
         grid.setVgap(6);
 
         //labels
-        Label tileSetsLabel = new Label("Number of tile sets");
+        final Label tileSetsLabel = new Label("Number of tile sets");
         tileSetsLabel.setTooltip(new Tooltip("100 tiles per set"));
-        Label blankPenaltyLabel = new Label("Blank penalty");
+        final Label blankPenaltyLabel = new Label("Blank penalty");
         blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must take\n this many additional tiles"));
-        Label wordListLabel = new Label("Word list");
+        final Label wordListLabel = new Label("Word list");
         wordListLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
-        Label speedLabel = new Label("Speed");
+        final Label speedLabel = new Label("Speed");
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
 
         //selectors
@@ -157,22 +157,22 @@ class GameMenu extends PopWindow {
      *
      */
 
-    public void createGame() {
+    void createGame() {
 
-        Date now = new Date();
-        SimpleDateFormat ft = new SimpleDateFormat("hhmmssMs");
-        String gameID = ft.format(now);	//generates a unique gameID based on the current time
+        final Date now = new Date();
+        final SimpleDateFormat ft = new SimpleDateFormat("hhmmssMs");
+        final String gameID = ft.format(now);	//generates a unique gameID based on the current time
 
         String maxPlayers = playersSelector.getSelectionModel().getSelectedItem() + "";
-        String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
-        String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
-        String blankPenalty = blanksSelector.getSelectionModel().getSelectedItem() + "";
-        String lexicon = lexiconSelector.getSelectionModel().getSelectedItem() + "";
-        String speed = speedSelector.getSelectionModel().getSelectedItem() + "";
-        String skillLevel = (skillLevelSelector.getSelectionModel().getSelectedIndex() + 1) + "";
-        String allowChat = chatChooser.isSelected() + "";
-        String allowWatchers = watchersChooser.isSelected() + "";
-        String addRobot = robotChooser.isSelected() + "";
+        final String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
+        final String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
+        final String blankPenalty = blanksSelector.getSelectionModel().getSelectedItem() + "";
+        final String lexicon = lexiconSelector.getSelectionModel().getSelectedItem() + "";
+        final String speed = speedSelector.getSelectionModel().getSelectedItem() + "";
+        final String skillLevel = (skillLevelSelector.getSelectionModel().getSelectedIndex() + 1) + "";
+        final String allowChat = chatChooser.isSelected() + "";
+        final String allowWatchers = watchersChooser.isSelected() + "";
+        final String addRobot = robotChooser.isSelected() + "";
 
         if(addRobot.equals("true")) {
             maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
@@ -180,7 +180,7 @@ class GameMenu extends PopWindow {
 
         client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
-        String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
+        final String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);
     }
 }

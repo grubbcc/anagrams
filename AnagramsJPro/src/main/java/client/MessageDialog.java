@@ -13,7 +13,7 @@ import javafx.scene.layout.HBox;
  */
 
 
-public class MessageDialog extends PopWindow {
+class MessageDialog extends PopWindow {
 
     private final BorderPane mainPane = new BorderPane();
     private final HTMLView htmlView = new HTMLView();
@@ -29,7 +29,7 @@ public class MessageDialog extends PopWindow {
      *
      */
 
-    public MessageDialog(AnagramsClient client, String title) {
+    MessageDialog(AnagramsClient client, String title) {
         super(client.stack);
 
         if(client.getWebAPI().isMobile()) {
@@ -53,7 +53,7 @@ public class MessageDialog extends PopWindow {
      * @param text some html for the dialog to display
      */
 
-    public void setText(String text) {
+    void setText(String text) {
         htmlView.setContent(text);
     }
 
@@ -61,7 +61,7 @@ public class MessageDialog extends PopWindow {
      *
      */
 
-    public void setImage(String url) {
+    void setImage(String url) {
         if(url != null) {
             ImageView img = new ImageView(new Image(url));
             img.setPreserveRatio(true);
@@ -77,7 +77,7 @@ public class MessageDialog extends PopWindow {
      * Adds a button which hides the dialog
      */
 
-    public void addOkayButton() {
+    void addOkayButton() {
         buttonPane.getChildren().add(okayButton);
         okayButton.setOnAction(e -> hide());
     }
@@ -86,7 +86,7 @@ public class MessageDialog extends PopWindow {
      * Adds two buttons, labeled "Yes" and "No", with configurable actions
      */
 
-    public void addYesNoButtons() {
+    void addYesNoButtons() {
         buttonPane.getChildren().addAll(yesButton, noButton);
     }
 
@@ -94,7 +94,7 @@ public class MessageDialog extends PopWindow {
      *
      */
 
-    public void addBackNextButtons() {
+    void addBackNextButtons() {
         buttonPane.getChildren().addAll(backButton, nextButton);
     }
 }

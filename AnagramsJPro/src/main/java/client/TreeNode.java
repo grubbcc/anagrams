@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import java.util.*;
 
-public class TreeNode {
+class TreeNode {
 
     private final JSONObject data;
     private final LinkedList<String> address;
@@ -16,7 +16,7 @@ public class TreeNode {
     private TreeNode parent;
     private final LinkedHashMap<String, TreeNode> children = new LinkedHashMap<>();
 
-    public TreeNode(JSONObject data) {
+    TreeNode(JSONObject data) {
         this.data = data;
         address = new LinkedList<>(Arrays.asList(data.getString("id").split("\\.")));
         word = address.removeLast();
@@ -39,7 +39,7 @@ public class TreeNode {
      *
      */
 
-    public String getWord() {
+    String getWord() {
         return word;
     }
 
@@ -47,7 +47,7 @@ public class TreeNode {
      *
      */
 
-    public LinkedList<String> getAddress() {
+    LinkedList<String> getAddress() {
         return address;
     }
 
@@ -55,7 +55,7 @@ public class TreeNode {
      *
      */
 
-    public String getDefinition() {
+    String getDefinition() {
         return definition;
     }
 
@@ -71,15 +71,15 @@ public class TreeNode {
      *
      */
 
-    public double getProb() {
+    double getProb() {
         return prob;
     }
 
     /**
-     * Places this TreeNode into a tree hierarchy as a child of the the supplied TreeNode
+     * Places this TreeNode into a tree hierarchy as a child of the supplied TreeNode
      */
 
-    public void setParent(TreeNode parent) {
+    void setParent(TreeNode parent) {
         this.parent = parent;
     }
 
@@ -87,7 +87,7 @@ public class TreeNode {
      * @return The TreeNode of which this one is a child. Returns null if this is the root node.
      */
 
-    public TreeNode getParent() {
+    TreeNode getParent() {
         return parent;
     }
 
@@ -97,7 +97,7 @@ public class TreeNode {
      * @param newChild another TreeNode whose word is a steal of this node according to the rules of Anagrams.
      */
 
-    public void addChild(String key, TreeNode newChild) {
+    void addChild(String key, TreeNode newChild) {
         children.put(key, newChild);
     }
 
@@ -105,7 +105,7 @@ public class TreeNode {
      *
      */
 
-    public TreeNode getChild(String key) {
+    TreeNode getChild(String key) {
         return children.get(key);
     }
 
@@ -113,7 +113,7 @@ public class TreeNode {
      *
      */
 
-    public Collection<TreeNode> getChildren() {
+    Collection<TreeNode> getChildren() {
         return children.values();
     }
 }

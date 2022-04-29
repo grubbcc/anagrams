@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *
  */
 
-public class GameWindow extends PopWindow {
+ class GameWindow extends PopWindow {
 
     private final HBox controlPanel = new HBox();
     private final Label notificationArea = new Label("");
@@ -79,15 +79,15 @@ public class GameWindow extends PopWindow {
     private final AnagramsClient client;
     final String gameID;
     private final String username;
-    public final boolean isWatcher;
-    public final boolean allowsChat;
+    final boolean isWatcher;
+    final boolean allowsChat;
     final String lexicon;
     final int minLength;
     final int blankPenalty;
     final String numSets;
     final String speed;
     private String tilePool = "";
-    private final WeakHashMap<String, GamePanel> players = new WeakHashMap<>();
+    private final HashMap<String, GamePanel> players = new HashMap<>();
     boolean gameOver = false;
 
     //fields for postgame analysis
@@ -412,13 +412,12 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    void exitGame() {
+    private void exitGame() {
         hide();
         wordDisplay.hide();
         explorer.hide();
         blinker.stop();
         client.anchor.getChildren().remove(hideButton);
-//        Arrays.stream(getClass().getDeclaredFields()).toList().forEach(obj ->  obj = null);
         client.exitGame(gameID, isWatcher);
     }
 
@@ -440,7 +439,7 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    void allocateSpace() {
+    private void allocateSpace() {
 
         double remainingSpace = getWidth() - 10;
         for (int i = 0; i < 3; i++) {
@@ -458,13 +457,13 @@ public class GameWindow extends PopWindow {
      * A panel for displaying the tilePool
      */
 
-    class TilePanel extends Pane {
+    private class TilePanel extends Pane {
 
         /**
          *
          */
 
-        public TilePanel() {
+        private TilePanel() {
             setId("tile-panel");
             setMinSize(minPanelWidth, minPanelHeight);
 
@@ -476,7 +475,7 @@ public class GameWindow extends PopWindow {
          * Draws the tiles in a spiral pattern
          */
 
-        public void showTiles() {
+        private void showTiles() {
 
             getChildren().clear();
 
@@ -506,7 +505,7 @@ public class GameWindow extends PopWindow {
      * A panel for displaying the name, score, and words possessed by a player.
      */
 
-    class GamePanel extends BorderPane {
+    private class GamePanel extends BorderPane {
 
         String playerName = null;
         private final HBox infoPane = new HBox();
@@ -522,18 +521,17 @@ public class GameWindow extends PopWindow {
         private int tileHeight;
         private int tileFontSize;
 
-        boolean isOccupied = false;
         boolean isAvailable = true;
-        final LinkedHashMap<String, WordLabel> words = new LinkedHashMap<>();
+        private final LinkedHashMap<String, WordLabel> words = new LinkedHashMap<>();
         private double prevWidth;
         private double prevHeight;
-        int score = 0;
+        private int score = 0;
 
         /**
          * An empty placeholder gamePanel
          */
 
-        GamePanel() {
+        private GamePanel() {
             setId("game-panel");
             if (isMobile) pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             gamePanels.add(this);
@@ -562,7 +560,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        GamePanel(int column) {
+        private GamePanel(int column) {
             this();
             this.column = column;
             if (column >= 0) {
@@ -576,7 +574,7 @@ public class GameWindow extends PopWindow {
          * @param newPlayer The name of the player to be added.
          */
 
-        public GamePanel takeSeat(String newPlayer) {
+        private GamePanel takeSeat(String newPlayer) {
             pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), false);
             this.playerName = newPlayer;
             players.put(newPlayer, this);
@@ -588,7 +586,6 @@ public class GameWindow extends PopWindow {
             if (words.isEmpty() && !gameOver) {
                 playerScoreLabel.setText("0");
             }
-            isOccupied = true;
             isAvailable = false;
 
             return this;
@@ -599,8 +596,7 @@ public class GameWindow extends PopWindow {
          * Otherwise, the seat becomes available for another player.
          */
 
-        public void abandonSeat() {
-            isOccupied = false;
+        private void abandonSeat() {
             if (column >= 0) {
                 pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), true);
             }
@@ -640,7 +636,7 @@ public class GameWindow extends PopWindow {
          * @param newWord The word to be removed.
          */
 
-        void addWord(String newWord) {
+        private void addWord(String newWord) {
             int PADDING = 4;
             double paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
@@ -688,7 +684,7 @@ public class GameWindow extends PopWindow {
          * and when joining or starting a game.
          */
 
-        void addWords(String[] wordsToAdd) {
+        private void addWords(String[] wordsToAdd) {
             double paneWidth = (gameGrid.getWidth() - 10) / 3;
             if (column < 0) paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
@@ -813,9 +809,9 @@ public class GameWindow extends PopWindow {
          * @param wordToRemove The word to be removed.
          */
 
-        void removeWord(String wordToRemove) {
+        private void removeWord(String wordToRemove) {
             WordLabel labelToRemove = words.remove(wordToRemove);
-           FadeTransition ft = new FadeTransition(Duration.millis(800), labelToRemove);
+            FadeTransition ft = new FadeTransition(Duration.millis(800), labelToRemove);
             ft.setToValue(0);
             ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(labelToRemove));
             ft.play();
@@ -829,7 +825,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        void makeSmall() {
+        private void makeSmall() {
             savingSpace.set(true);
             tileWidth = 12;
             tileHeight = 16;
@@ -840,7 +836,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        void makeBig() {
+        private void makeBig() {
             savingSpace.set(false);
             tileWidth = 16;
             tileHeight = 20;
@@ -851,7 +847,7 @@ public class GameWindow extends PopWindow {
          * Returns the words at this panel
          */
 
-        Set<String> getWords() {
+        private Set<String> getWords() {
             return words.keySet();
         }
 
@@ -859,11 +855,10 @@ public class GameWindow extends PopWindow {
          * A clickable object that displays a word
          */
 
-        class WordLabel extends Region {
+        private class WordLabel extends Region {
 
-            final String word;
-            final static double TILE_GAP = 2;
-            double width;
+            private final String word;
+            private final static double TILE_GAP = 2;
 
             /**
              *
@@ -871,7 +866,7 @@ public class GameWindow extends PopWindow {
 
             WordLabel(String word) {
                 this.word = word;
-                width = word.length() * tileWidth + (word.length() - 1) * TILE_GAP;
+        //      double width = word.length() * tileWidth + (word.length() - 1) * TILE_GAP;
                 drawWord();
 
                 setOnMouseClicked(event -> {
@@ -888,7 +883,7 @@ public class GameWindow extends PopWindow {
              * Draws a word, showing blanks in red and regular tiles in black.
              */
 
-            void drawWord() {
+            private void drawWord() {
                 getChildren().clear();
                 int x = 0;
 
@@ -917,7 +912,7 @@ public class GameWindow extends PopWindow {
      * @param nextMessage The message to be displayed.
      */
 
-    public void setNotificationArea(String nextMessage) {
+    void setNotificationArea(String nextMessage) {
         notificationArea.setText(nextMessage);
     }
 
@@ -928,7 +923,7 @@ public class GameWindow extends PopWindow {
      * @param nextTiles The letters that the TilePanel should display.
      */
 
-    public void setTiles(String nextTiles) {
+    void setTiles(String nextTiles) {
         if (nextTiles.equals("#"))
             nextTiles = "";
         tilePool = nextTiles;
@@ -945,7 +940,7 @@ public class GameWindow extends PopWindow {
      * none is available
      */
 
-    public GamePanel addPlayer(String newPlayerName) {
+    GamePanel addPlayer(String newPlayerName) {
 
         //current player is assigned homePanel
         if (newPlayerName.equals(username)) {
@@ -975,7 +970,7 @@ public class GameWindow extends PopWindow {
      * @param playerToRemove The name of the player to remove.
      */
 
-    public void removePlayer(String playerToRemove) {
+    void removePlayer(String playerToRemove) {
         if (players.containsKey(playerToRemove)) {
             players.get(playerToRemove).abandonSeat();
         }
@@ -985,7 +980,7 @@ public class GameWindow extends PopWindow {
      * Method used during gameplay for adding words and updating the tilePool. Plays a sound.
      */
 
-    public void makeWord(String playerName, String wordToAdd, String nextTiles) {
+    void makeWord(String playerName, String wordToAdd, String nextTiles) {
         players.get(playerName).addWord(wordToAdd);
         setTiles(nextTiles);
 
@@ -1001,7 +996,7 @@ public class GameWindow extends PopWindow {
      * @param wordToRemove the stolen word
      */
 
-    public void removeWord(String playerName, String wordToRemove) {
+    void removeWord(String playerName, String wordToRemove) {
         players.get(playerName).removeWord(wordToRemove);
     }
 
@@ -1009,7 +1004,7 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    public void doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord, String nextTiles) {
+    void doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord, String nextTiles) {
         removeWord(shortPlayer, shortWord);
         makeWord(longPlayer, longWord, nextTiles);
     }
@@ -1021,7 +1016,7 @@ public class GameWindow extends PopWindow {
      * @param msg The message to display.
      */
 
-    public void handleChat(String msg) {
+    void handleChat(String msg) {
         if (chatBox.getText().isEmpty())
             chatBox.appendText(msg);
         else
@@ -1032,7 +1027,7 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    public void endGame() {
+    void endGame() {
         gameOver = true;
         blinker.stop();
 
@@ -1157,7 +1152,7 @@ public class GameWindow extends PopWindow {
      * Shows possible plays during postgame analysis
      */
 
-    public class WordDisplay extends PopWindow {
+    private class WordDisplay extends PopWindow {
 
         private final GamePanel poolPanel = new GamePanel();
         private final GamePanel stealsPanel = new GamePanel();
@@ -1166,7 +1161,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        public WordDisplay() {
+        private WordDisplay() {
             super(client.anchor);
             setViewOrder(-1000);
             AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
@@ -1208,7 +1203,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        public void setWords(String[] wordsInPool, String[] possibleSteals) {
+        private void setWords(String[] wordsInPool, String[] possibleSteals) {
 
             poolPanel.wordPane.getChildren().clear();
             stealsPanel.wordPane.getChildren().clear();
@@ -1276,7 +1271,7 @@ public class GameWindow extends PopWindow {
      *
      */
 
-    void saveGame() {
+    private void saveGame() {
 
         String gameData = "gameID " + gameID + "\\n" +
                 "lexicon " + lexicon + "\\n" +
@@ -1295,7 +1290,7 @@ public class GameWindow extends PopWindow {
         client.getWebAPI().executeScript("""
             var pom = document.createElement('a');
             pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent('%s'));
-            pom.setAttribute('download', '%s.txt');
+            pom.setAttribute('download', 'game %s.txt');
             if (document.createEvent) {
                 var event = document.createEvent('MouseEvents');
                 event.initEvent('click', true, true);
@@ -1314,15 +1309,14 @@ public class GameWindow extends PopWindow {
 
     private class Play {
 
-        String shortWord;
-        String longWord;
-        String tiles;
+        final String shortWord;
+        final String longWord;
+        final String tiles;
 
-        Play(String shortWord, String longWord, String tiles) {
+        private Play(String shortWord, String longWord, String tiles) {
             this.shortWord = shortWord;
             this.longWord = longWord;
             this.tiles = tiles;
-
         }
 
         /**
@@ -1391,7 +1385,7 @@ public class GameWindow extends PopWindow {
          *
          */
 
-        boolean isValid() {
+        private boolean isValid() {
 
             String entry = longWord;
             String blanksToKeep = "";
@@ -1452,6 +1446,7 @@ public class GameWindow extends PopWindow {
                     penalty += blankPenalty;
                 } else if (tiles.contains("?")) {
                     //Take a blank from the pool and designate it
+                    tiles = tiles.replaceFirst("\\?", "");
                     penalty += blankPenalty + 1;
                 } else {
                     //Not enough blanks available

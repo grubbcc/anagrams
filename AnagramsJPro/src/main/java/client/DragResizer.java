@@ -13,7 +13,7 @@ import javafx.scene.layout.Region;
  */
 
 @SuppressWarnings("UnnecessaryReturnStatement")
-public class DragResizer {
+class DragResizer {
 
     /**
      * The margin (in pixels) around the control that a user can click to resize the region.
@@ -35,15 +35,15 @@ public class DragResizer {
      *
      */
     
-    private DragResizer(Region aRegion) {
-        region = aRegion;
+    private DragResizer(Region region) {
+        this.region = region;
     }
 
     /**
      *
      */
 
-    public static void makeResizable(Region region) {
+    static void makeResizable(Region region) {
         final DragResizer resizer = new DragResizer(region);
 
         region.setOnMousePressed(resizer::mousePressed);
@@ -98,7 +98,7 @@ public class DragResizer {
 
         event.consume();
 
-        //should bring clicked gameWindow to front if multiple gameWindows are open
+        //should be modified to bring clicked gameWindow to front if multiple gameWindows are open
 
         draggingNorth = isInDraggableZoneN(event);
         draggingEast = isInDraggableZoneE(event);

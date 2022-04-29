@@ -19,16 +19,14 @@ import javafx.scene.shape.Polyline;
  *  By default, the window is draggable, but not maximizable or resizable.
  */
 
-public class PopWindow extends BorderPane {
+class PopWindow extends BorderPane {
 
     private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
-    boolean resizable = false;
-    boolean movable = true;
     private final Pane container;
     final HBox titleBar = new HBox();
     final Label title = new Label();
     final MaximizeButton maximizeButton = new MaximizeButton();
-    boolean isMaximized;
+    private boolean isMaximized;
     final Button closeButton = new Button();
 
     /**
@@ -36,7 +34,7 @@ public class PopWindow extends BorderPane {
      * @param container The Pane in which this window resides.
      */
 
-    public PopWindow(Pane container) {
+    PopWindow(Pane container) {
 
         this.container = container;
 
@@ -93,7 +91,7 @@ public class PopWindow extends BorderPane {
          *
          */
 
-        public void toggle() {
+        void toggle() {
             if(isMaximized) {
                 maximizeButton.setGraphic(maximizeButton.maximizeIcon);
                 isMaximized = false;
@@ -140,7 +138,7 @@ public class PopWindow extends BorderPane {
      *
      */
 
-    public void setTitle(String title) {
+    void setTitle(String title) {
         this.title.setText(title);
     }
 
@@ -148,7 +146,7 @@ public class PopWindow extends BorderPane {
      *
      */
 
-    public void setContents(Region contents) {
+    void setContents(Region contents) {
         setCenter(contents);
     }
 
@@ -156,7 +154,7 @@ public class PopWindow extends BorderPane {
      *
      */
     
-    public void show(boolean modal) {
+    void show(boolean modal) {
         if(!isVisible()) {
             if(modal) {
                 for (Node child : container.getChildren()) {
@@ -173,7 +171,7 @@ public class PopWindow extends BorderPane {
      *
      */
 
-    public void hide() {
+    void hide() {
         setVisible(false);
         container.getChildren().remove(this);
         for(Node child : container.getChildren()) {
@@ -200,7 +198,7 @@ public class PopWindow extends BorderPane {
      *
      */
 
-    public void makeMaximizable() {
+    void makeMaximizable() {
         titleBar.getChildren().remove(closeButton);
         titleBar.getChildren().addAll(maximizeButton, closeButton);
     }
@@ -209,8 +207,7 @@ public class PopWindow extends BorderPane {
      *
      */
 
-    public void makeResizable() {
-        this.resizable = true;
+    void makeResizable() {
         DragResizer.makeResizable(this);
     }
 
@@ -220,9 +217,7 @@ public class PopWindow extends BorderPane {
      * @param movable whether this window can be dragged using the mouse. true by default.
      */
 
-    public void setMovable(boolean movable) {
-
-        this.movable = movable;
+    void setMovable(boolean movable) {
 
         if (movable) {
             setOnMousePressed(event ->

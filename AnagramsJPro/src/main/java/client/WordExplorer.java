@@ -24,7 +24,7 @@ import java.util.*;
  *
  */
 
-public class WordExplorer extends PopWindow {
+class WordExplorer extends PopWindow {
 
     private final AnagramsClient client;
     private String lexicon;
@@ -49,7 +49,7 @@ public class WordExplorer extends PopWindow {
      *
      */
 
-    public WordExplorer(String lexicon, AnagramsClient client) {
+    WordExplorer(String lexicon, AnagramsClient client) {
         super(client.anchor);
         this.client = client;
         setViewOrder(Double.NEGATIVE_INFINITY);
@@ -163,7 +163,7 @@ public class WordExplorer extends PopWindow {
      *
      */
 
-    public void setLexicon(String lexicon) {
+    void setLexicon(String lexicon) {
         this.lexicon = lexicon;
         lexiconSelector.getSelectionModel().select(lexicon);
     }
@@ -172,7 +172,7 @@ public class WordExplorer extends PopWindow {
      *
      */
 
-    public void lookUp(String query) {
+    void lookUp(String query) {
         textField.clear();
         treePanel.getChildren().clear();
         messagePane.clear();
@@ -183,7 +183,7 @@ public class WordExplorer extends PopWindow {
      *
      */
 
-    public void setUpTree(JSONArray data) {
+    void setUpTree(JSONArray data) {
         this.data = data;
 
         rootNode = new TreeNode(data.getJSONObject(0));
@@ -246,7 +246,7 @@ public class WordExplorer extends PopWindow {
      * @param parentItem The TreeItem whose children will be added next.
      */
 
-    public void addChildren(TreeItem<TreeNode> parentItem) {
+    private void addChildren(TreeItem<TreeNode> parentItem) {
         for(TreeNode child : parentItem.getValue().getChildren()) {
             TreeItem<TreeNode> childItem = new TreeItem<>(child);
             parentItem.getChildren().add(childItem);
@@ -311,7 +311,7 @@ public class WordExplorer extends PopWindow {
      * Creates a table showing the number of steals of the rootWord organized by word length
      */
 
-    public VBox treeSummary(TreeMap<Integer, Integer> counts) {
+    private VBox treeSummary(TreeMap<Integer, Integer> counts) {
 
         VBox summaryPane = new VBox();
 
@@ -340,7 +340,7 @@ public class WordExplorer extends PopWindow {
      * @param node The node currently being visited
      */
 
-    public void generateWordList(String prefix, TreeNode node) {
+    private void generateWordList(String prefix, TreeNode node) {
         for(TreeNode child : node.getChildren()) {
             wordList = wordList.concat(prefix + child.getWord() + "\\n");
             generateWordList(prefix + "  ", child);
@@ -351,7 +351,7 @@ public class WordExplorer extends PopWindow {
      *
      */
 
-    private void saveListToFile() {
+    private void saveListToFile () {
 
         generateWordList("", rootNode);
 

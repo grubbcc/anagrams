@@ -32,7 +32,7 @@ class SettingsMenu extends PopWindow {
      *
      */
 
-    public SettingsMenu(AnagramsClient client) {
+    SettingsMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
 
@@ -129,7 +129,7 @@ class SettingsMenu extends PopWindow {
      *
      */
 
-    class ColorChooser extends GridPane {
+    private class ColorChooser extends GridPane {
 
         AnagramsClient.Colors color;
 
@@ -168,7 +168,7 @@ class SettingsMenu extends PopWindow {
         /**
          */
 
-        public void setColor(String colorCode) {
+        private void setColor(String colorCode) {
 
             R = Integer.valueOf(colorCode.substring(1, 3), 16);
             G = Integer.valueOf(colorCode.substring(3, 5), 16);
@@ -188,7 +188,7 @@ class SettingsMenu extends PopWindow {
          *
          */
 
-        class ColorPane extends GridPane {
+        private class ColorPane extends GridPane {
 
             /**
              */
@@ -209,7 +209,7 @@ class SettingsMenu extends PopWindow {
             /**
              */
 
-            ChangeListener<String> textListener = new ChangeListener<>() {
+            private ChangeListener<String> textListener = new ChangeListener<>() {
 
                 @Override
                 public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -244,14 +244,14 @@ class SettingsMenu extends PopWindow {
          *
          */
 
-        public class ColorComboBox extends ComboBox<String> {
+        private class ColorComboBox extends ComboBox<String> {
 
             String[] colorCodes = {"#cd5c5c", "#f08080", "#fa8072", "#e9967a", "#ffa07a", "#dc143c", "#ff0000", "#b22222", "#8b0000", "#ffc0cb", "#ffb6c1", "#ff69b4", "#ff1493", "#c71585", "#db7093", "#ffa07a", "#ff7f50", "#ff6347", "#ff4500", "#ff8c00", "#ffa500", "#ffd700", "#ffff00", "#ffffe0", "#fffacd", "#fafad2", "#ffefd5", "#ffe4b5", "#ffdab9", "#eee8aa", "#f0e68c", "#bdb76b", "#e6e6fa", "#d8bfd8", "#dda0dd", "#ee82ee", "#da70d6", "#ff00ff", "#ff00ff", "#ba55d3", "#9370db", "#663399", "#8a2be2", "#9400d3", "#9932cc", "#8b008b", "#800080", "#4b0082", "#6a5acd", "#483d8b", "#7b68ee", "#adff2f", "#7fff00", "#7cfc00", "#00ff00", "#32cd32", "#98fb98", "#90ee90", "#00fa9a", "#00ff7f", "#3cb371", "#2e8b57", "#228b22", "#008000", "#006400", "#9acd32", "#6b8e23", "#808000", "#556b2f", "#66cdaa", "#8fbc8b", "#20b2aa", "#008b8b", "#008080", "#00ffff", "#00ffff", "#e0ffff", "#afeeee", "#7fffd4", "#40e0d0", "#48d1cc", "#00ced1", "#5f9ea0", "#4682b4", "#b0c4de", "#b0e0e6", "#add8e6", "#87ceeb", "#87cefa", "#00bfff", "#1e90ff", "#6495ed", "#7b68ee", "#4169e1", "#0000ff", "#0000cd", "#00008b", "#000080", "#191970", "#fff8dc", "#ffebcd", "#ffe4c4", "#ffdead", "#f5deb3", "#deb887", "#d2b48c", "#bc8f8f", "#f4a460", "#daa520", "#b8860b", "#cd853f", "#d2691e", "#8b4513", "#a0522d", "#a52a2a", "#800000", "#ffffff", "#fffafa", "#f0fff0", "#f5fffa", "#f0ffff", "#f0f8ff", "#f8f8ff", "#f5f5f5", "#fff5ee", "#f5f5dc", "#fdf5e6", "#fffaf0", "#fffff0", "#faebd7", "#faf0e6", "#fff0f5", "#ffe4e1", "#dcdcdc", "#d3d3d3", "#c0c0c0", "#a9a9a9", "#808080", "#696969", "#778899", "#708090", "#2f4f4f", "#000000"};
 
             /**
              */
 
-            ColorComboBox() {
+            private ColorComboBox() {
                 setCellFactory(lv -> new ColorCell());
                 setId("color-combo-box");
                 setVisibleRowCount(30);
@@ -265,11 +265,11 @@ class SettingsMenu extends PopWindow {
              *
              */
 
-            public class ColorCell extends ListCell<String> {
+            private class ColorCell extends ListCell<String> {
 
                 String colorCode;
 
-                public ColorCell() {
+                private ColorCell() {
                     if(client.getWebAPI().isMobile())
                         addEventFilter(TouchEvent.TOUCH_RELEASED, event -> setColor(colorCode));
                 }

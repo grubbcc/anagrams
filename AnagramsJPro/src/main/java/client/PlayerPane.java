@@ -130,6 +130,7 @@ class PlayerPane extends PopWindow {
      *
      */
 
+
     @Override
     public void hide() {
         super.hide();

@@ -31,7 +31,7 @@ import java.util.prefs.Preferences;
  *
  */
 
-public class LoginMenu extends PopWindow {
+class LoginMenu extends PopWindow {
 
     private final AnagramsClient client;
     private final GridPane grid = new GridPane();
@@ -73,7 +73,7 @@ public class LoginMenu extends PopWindow {
      *
      */
 
-    public LoginMenu(AnagramsClient client) {
+    LoginMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
 
@@ -626,7 +626,7 @@ public class LoginMenu extends PopWindow {
      * @return true if the email address is invalid, false otherwise
      */
 
-    public static boolean isInvalidEmailAddress(String email) {
+    private static boolean isInvalidEmailAddress(String email) {
         String ePattern = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$";
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(ePattern);
         java.util.regex.Matcher m = p.matcher(email);
