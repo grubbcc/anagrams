@@ -23,4 +23,5 @@ services:
             - ./prefs/:/root/.java/.userPrefs/client/
             - ./gamelogs/:/anagrams/gamelogs/
             - ./log.log:/anagrams/log.log
+            - ./chat.log:/anagrams/chat.log
 #        restart: unless-stopped
