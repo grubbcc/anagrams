@@ -1,7 +1,9 @@
 package server;
 
 import com.sun.net.httpserver.*;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.spi.Configurator;
 
 import java.io.*;
 import java.net.*;
@@ -19,12 +21,12 @@ public class Server extends Thread {
 	private static final int LOOKUP_PORT = 8116;
 
 	private static final String[] lexicons = {"NWL20", "CSW21"};
-	static final Logger log = Logger.getLogger(Server.class.getName());
+	private final Logger consoleLogger = Logger.getLogger("console");
+	private final Logger chatLogger = Logger.getLogger("chat");
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
 	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
-	private boolean running = true;
 	private final ServerSocket serverSocket = new ServerSocket(GAME_PORT);
 	private final HttpServer httpServer = HttpServer.create(new InetSocketAddress(LOOKUP_PORT), 0);
 
@@ -34,6 +36,16 @@ public class Server extends Thread {
 	
 	public Server() throws IOException {
 
+		System.setOut(new PrintStream(System.out) {
+			public void print(final String string) {
+				consoleLogger.info(string);
+			}
+		});
+		System.setErr(new PrintStream(System.err) {
+			public void print(final String string) {
+				consoleLogger.error(string);
+			}
+		});
 		System.out.println("Starting server...");
 
 		for(String lexicon : lexicons) {
@@ -41,6 +53,17 @@ public class Server extends Thread {
 			getDictionary(lexicon).common(); //generate the common subset
 		}
 
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader("chat.log"));
+			for(String line = reader.readLine(); line != null; line = reader.readLine()) {
+				logChat(line);
+			}
+			System.out.println("chat log loaded");
+			reader.close();
+		}
+		catch (IOException ioexception) {
+			ioexception.printStackTrace();
+		}
 
 		httpServer.createContext("/CSW21/", this::handleRequest);
 		httpServer.createContext("/NWL20/", this::handleRequest);
@@ -186,18 +209,20 @@ public class Server extends Thread {
 	
 	@Override
 	public void run() {
-		try {
-
-			while(running) {
+		while(!serverSocket.isClosed()) {
+			try {
 				System.out.println("Ready to accept client connections on port " + GAME_PORT);
 				Socket clientSocket = serverSocket.accept();
 				System.out.println("Accepted connection from " + clientSocket);
 				ServerWorker newWorker = new ServerWorker(this, clientSocket);
 				newWorker.start();
 			}
-		}
-		catch (IOException e) {
-			e.printStackTrace();
+			catch(SocketException e) {
+				System.out.println("Shutting down server");
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -234,34 +259,26 @@ public class Server extends Thread {
 
 	public static void main(String[] args) throws IOException {
 
-		System.setOut(new PrintStream(System.out) {
-			public void print(final String string) {
-				log.info(string);
-			}
-		});
-		System.setErr(new PrintStream(System.err) {
-			public void print(final String string) {
-				log.error(string);
-			}
-		});
-
 		Server server = new Server();
 		server.start();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			server.running = false;
-
 			for(String username : server.getUsernames()) {
 				server.getWorker(username).send("logoffplayer " + username );
 			}
 			try {
+				BufferedWriter writer = new BufferedWriter(new FileWriter("chat.log"));
+				for(String line : server.chatLog) {
+					writer.write(line + "\n");
+				}
+				System.out.println("chat file saved");
+				writer.close();
 				server.serverSocket.close();
 				server.httpServer.stop(3);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
-			System.out.println("Server shutting down...");
+			System.out.println("Program exiting");
 		}));
 
 

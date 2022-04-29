@@ -14,11 +14,11 @@ import java.util.Arrays;
 
 class AlphagramTrie {
 
-	public final Node rootNode = new Node();
-	public final String lexicon;
+	final Node rootNode = new Node();
+	final String lexicon;
 	private String currentWord;
 	private String currentDefinition;
-	public AlphagramTrie common;
+	AlphagramTrie common;
 
 	/**
 	 * Creates a root node to serve as the base of the trie.

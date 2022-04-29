@@ -2,6 +2,7 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
+import java.net.SocketOption;
 
 /**
 * Handles tasks for the client on the server side.
@@ -202,8 +203,8 @@ class ServerWorker extends Thread {
 							send("json " + tree.jsonArray.toString());
 						}
 						case "shutdown" -> {
-							if(username.equals("admin"))
-								System.exit(1);
+							if(clientSocket.getInetAddress().isLoopbackAddress())
+								System.exit(0);
 						}
 						default -> System.out.println("Error: Command not recognized: " + line);
 					}
