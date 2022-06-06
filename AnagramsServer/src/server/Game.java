@@ -171,19 +171,21 @@ public class Game {
 			String message = "Time remaining: " + timeRemaining--;
 			server.broadcast("note " + gameID + " @" + message);
 
-			if(timeRemaining <= 0)
+			if(timeRemaining <= 0) {
 				endGame();
+				return;
+			}
 
 			if(tileCount < tileBag.length) {
 				if(timeRemaining % delay == 0) {
 					drawTile();
 
 					//Robot thinks of a play
-					if (hasRobot) {
+					if (hasRobot && think < 0) {
 						if (tileCount < tileBag.length) {
 							if (tilePool.length() >= 29) {
 								think = 2;
-							} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 5 * (tilePool.length() / minLength - 1)) {
+							} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 4 * (tilePool.length() / minLength - 1)) {
 								think = 2;
 							}
 						}
@@ -200,7 +202,7 @@ public class Game {
 				}
 			}
 
-			if (hasRobot && --think == 0) {
+			if (hasRobot && think-- == 0) {
 				robotPlayer.makePlay(Game.this, tilePool, words);
 			}
 		}
@@ -432,13 +434,13 @@ public class Game {
 		words.get(shortPlayer).remove(shortWord);
 		words.get(longPlayer).add(nextWord);
 
-		if(tileCount >= tileBag.length && tilePool.length() > 0)
-			timeRemaining += 15;
-
 		tilePool = play.nextTiles;
 		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		saveState();
+
+		if(tileCount >= tileBag.length)
+			timeRemaining += 15;
 
 		notifyRoom("steal " + gameID + " " + shortPlayer + " " + shortWord + " " + longPlayer + " " + nextWord + " " + tiles);
 
@@ -482,14 +484,15 @@ public class Game {
 
 		if(hasRobot) robotPlayer.makeTree(nextWord);
 
-		if(tileCount >= tileBag.length && tilePool.length() > 0) 
-			timeRemaining += 15;
 		tilePool = play.nextTiles;
 		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
-		//inform players that a new word has been made	
-		saveState();	
-	
+
+		saveState();
+		if(tileCount >= tileBag.length)
+			timeRemaining += 15;
+
+		//inform players that a new word has been made
 		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + nextWord + " " + tiles);
 
 	}
