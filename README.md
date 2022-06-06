@@ -5,7 +5,7 @@
 Anagrams is a classic word game of thought and thievery. For many players, including myself, their first encounter with Anagrams occurred at the end of a long day of playing tournament Scrabble™, but it has a long popular history as well. Originating in Victorian England (according to the [Wikipedia article](https://en.wikipedia.org/wiki/Anagrams_(game)), the first published version dates to 1877 or earlier. It has appeared in various tabletop versions over the years, one of which even made its way into a Hitchcock movie:
 
 <p align="center">
-  <img src="https://seattlephysicstutor.com/anagrams%20suspicion.jpg" width="318px" height="240px">
+  <img src="https://seattlephysicstutor.com/images/anagrams/anagrams%20suspicion.jpg" width="318px" height="240px">
 </p>
 
 It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly [Snatch!](https://snatch.cc), Carl Johnson's browser-based [Anagrams Blitz](https://safe-dusk-44647.herokuapp.com/), and the program on this page.
@@ -21,7 +21,7 @@ There is one small catch, however. In order to make a steal, you must rearrange 
 In order to reward longer words, your score is equal to the square of the word's length, and the winner is whoever has the most points at the end of the game.
 
 <p align="center">
-  <img src="https://seattlephysicstutor.com/images/anagrams%20screen.png" width="360px" height="234">
+  <img src="https://seattlephysicstutor.com/images/anagrams/anagrams%20screen.png" width="360px" height="234">
 </p>
 
 ## Development
@@ -50,6 +50,6 @@ In order to reward longer words, your score is equal to the square of the word's
 7. To use the API, enter a URL of the form `localhost/<NWL20|CSW21>/<anyword>`. Click [here](http://anagrams.mynetgear.com/CSW21/ANAGRAMS) for an example. Click [here](https://rapidapi.com/grubbcc/api/word-tree/) for full API documentation.
 
 <p align="center">
-  <img src="https://seattlephysicstutor.com/images/sample-tree.png" width="360px" height="234">
+  <img src="https://seattlephysicstutor.com/images/anagrams/sample-tree.png" width="360px" height="234">
 </p>
 
