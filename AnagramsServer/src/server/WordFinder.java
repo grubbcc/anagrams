@@ -147,11 +147,16 @@ class WordFinder {
         int numWordsFound = 0;
 
         outer: for(String shortWord : words) {
-            trees.putIfAbsent(shortWord, new WordTree(shortWord.replaceAll("[a-z]", ""), dictionary));
-            for (TreeNode child : trees.get(shortWord).rootNode.getChildren()) {
+            trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z]", ""), dictionary));
+            ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
+            while(!wordQueue.isEmpty()) {
+                TreeNode child = wordQueue.pollFirst();
                 String entry = child.toString();
-                if (entry.length() <= shortWord.length()) continue;
-                if (entry.length() > shortWord.length() + tilePool.length()) break;
+                if (entry.length() <= shortWord.length()) {
+                    wordQueue.addAll(child.getChildren());
+                    continue;
+                }
+                else if (entry.length() > shortWord.length() + tilePool.length()) continue;
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
                     possibleSteals.append(shortWord).append(" + ").append(child.getLongSteal()).append(" -> ").append(play.nextWord()).append(",");

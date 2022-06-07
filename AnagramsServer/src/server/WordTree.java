@@ -119,7 +119,7 @@ class WordTree {
 	 * A tool for sorting tree nodes (1) according to length, and in case of ties, (2) in alphabetical order.
 	 */
 
-	private static class TreeNodeComparator implements Comparator<TreeNode> {
+	static class TreeNodeComparator implements Comparator<TreeNode> {
 		@Override
 		public int compare(TreeNode node1, TreeNode node2) {
 			int result = node2.toString().length() - node1.toString().length();
