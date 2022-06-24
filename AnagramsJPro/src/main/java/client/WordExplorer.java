@@ -8,11 +8,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.control.*;
+import javafx.scene.control.skin.ScrollBarSkin;
+import javafx.scene.control.skin.ScrollPaneSkin;
+import javafx.scene.control.skin.TextAreaSkin;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
@@ -103,10 +108,18 @@ class WordExplorer extends PopWindow {
         contextMenu.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
 
         //Prevent treeView from capturing drag events
-        treePanel.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(splitPane, event));
+        treePanel.addEventFilter(MouseEvent.ANY, event -> {
+            if(event.getTarget() instanceof Text || event.getTarget() instanceof CustomTreeCell) {
+                Event.fireEvent(splitPane, event);
+                if(event.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
+                    event.consume();
+                }
+            }
+        });
 
         //Message panel
         messagePanel.setCenter(messagePane);
+        messagePanel.setCursor(Cursor.DEFAULT);
         messagePanel.setId("message-area");
         messagePanel.setStyle("-fx-background-color: rgb(20,250,20)");
         messagePane.setStyle("-fx-background-color: rgb(20,250,20);" + "-fx-text-fill: black");
@@ -114,10 +127,11 @@ class WordExplorer extends PopWindow {
         messagePane.setEditable(false);
         messagePane.setWrapText(true);
 
-        //Make messagePanel background draggable
-        messagePanel.addEventFilter(MouseEvent.ANY, event -> {
-            if(!(event.getTarget() instanceof Text))
+        messagePane.addEventFilter(MouseEvent.ANY, event -> {
+            if(!(event.getTarget() instanceof Text || event.getTarget() instanceof ScrollBar || event.getTarget() instanceof StackPane)) {
                 Event.fireEvent(splitPane, event);
+                event.consume();
+            }
         });
 
         //Window
@@ -154,10 +168,8 @@ class WordExplorer extends PopWindow {
         setContents(splitPane);
 
         setVisible(false);
-
         setAsDragZone(controlPanel, splitPane);
         makeResizable();
-
         setPrefSize(345, 415);
     }
 
@@ -328,10 +340,14 @@ class WordExplorer extends PopWindow {
             treeSummary.setGridLinesVisible(true);
             treeSummary.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
             summaryPane.getChildren().add(treeSummary);
-
         }
-        summaryPane.setCursor(Cursor.DEFAULT);
-        summaryPane.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(splitPane, event));
+
+        summaryPane.addEventFilter(MouseEvent.ANY, event -> {
+            setCursor(Cursor.DEFAULT);
+            if(event.getTarget() instanceof GridPane || event.getTarget() instanceof Line || event.getTarget() instanceof Group || event.getTarget() instanceof Text) {
+                Event.fireEvent(splitPane, event);
+            }
+        });
         return summaryPane;
     }
 

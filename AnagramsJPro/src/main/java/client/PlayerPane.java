@@ -28,35 +28,34 @@ import java.util.HashSet;
 
 class PlayerPane extends PopWindow {
 
-    private final String sampleMarkdown =
-            """
-                    ### Heading
+    private final String sampleMarkdown = """
+        ### Heading
 
-                    *italic*
+        *italic*
 
-                    **bold**
+        **bold**
 
-                    ***bold and italic***
+        ***bold and italic***
 
-                     [click here](https://google.com)
+         [click here](https://google.com)
 
-                    ![](https://www.seattlephysicstutor.com/thinker.jpg)
+        ![](https://www.seattlephysicstutor.com/thinker.jpg)
 
-                    [text-color](GREEN)
-                    [link-color](BLUE)
-                    [background-color](YELLOW)
+        [text-color](GREEN)
+        [link-color](BLUE)
+        [background-color](YELLOW)
 
-                    ```
-                    block quote
-                    ```
+        ```
+        block quote
+        ```
 
-                    the  | old | man
-                     ---  | ---   | ---
-                    and  | the  | sea
+        the  | old | man
+         ---  | ---   | ---
+        and  | the  | sea
 
-                    * Bacon
-                    * Lettuce
-                    * Tomato""";
+        * Bacon
+        * Lettuce
+        * Tomato""";
     private final TextArea codePane = new TextArea(sampleMarkdown);
     private final AnagramsClient client;
     private final ScrollPane bioScrollPane = new ScrollPane();
@@ -69,24 +68,24 @@ class PlayerPane extends PopWindow {
     private final MarkdownView mdfx = new MarkdownView() {
         @Override
         public void setLink(Node node, String link, String description) {
-            switch (description) {
-                case "text-color" -> {
-                    textColor = link;
-                    nodesToRemove.add(node);
-                }
-                case "link-color" -> {
-                    linkColor = link;
-                    nodesToRemove.add(node);
-                }
-                case "background-color" -> {
-                    backgroundColor = link;
-                    nodesToRemove.add(node);
-                }
-                default -> {
-                    node.setCursor(Cursor.HAND);
-                    node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
-                }
+        switch (description) {
+            case "text-color" -> {
+                textColor = link;
+                nodesToRemove.add(node);
             }
+            case "link-color" -> {
+                linkColor = link;
+                nodesToRemove.add(node);
+            }
+            case "background-color" -> {
+                backgroundColor = link;
+                nodesToRemove.add(node);
+            }
+            default -> {
+                node.setCursor(Cursor.HAND);
+                node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
+            }
+        }
         }
     };
 
@@ -110,7 +109,7 @@ class PlayerPane extends PopWindow {
         contents.setCenter(bioScrollPane);
         setContents(contents);
         makeResizable();
-        setAsDragZone(mdfx);
+        setCursor(Cursor.DEFAULT);
 
         infoPane = new PopWindow(client.anchor);
         infoPane.setTitle("Markdown Guide");
@@ -121,6 +120,7 @@ class PlayerPane extends PopWindow {
         markdownPane.setSmooth(true);
         markdownPane.setMouseTransparent(true);
         infoPane.setContents(new HBox(codePane, markdownPane));
+        setAsDragZone(mdfx);
     }
 
 
