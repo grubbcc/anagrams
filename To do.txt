@@ -1,65 +1,55 @@
-make it so you can see the words that can be stolen to produce a given word, i.e. make the wordExplorer bidrectional
-change so game panels don't disappear when on the home screen (like on ISC)
-make it so tile size also adjusts in response to resizing wordDisplay
-enable minimize button?
-THIAZINE + JFQ?MIE?WTXA = WEATHERIZATIoN (where'd the other blank go?)
-does the prob calc take into account letters already in the word? e.g. PLEDGEE -> PEGLEGGED
-make sure tooltips don't go off edge of svg viewport
-make sure all context menus are at the right zoom level
-save chat log to file
-make button to show/hide flare edit features
-save loading time by not loading js scripts e.g. those used to save svg until needed
-remove redundancy in play validation?
-pop up messages saying you are already involved in this game, or you already have a game screen active, etc
-client can send a command to the server to reset itself?
-click on tilepool to randomize
-when there are fewer players, add fewer gamePanels
-widen scrollbars in mobile mode
-save game log and list of most missed words
-custom dictionaries and tile sets
-when waking phone from sleep, full screen size often goes wrong?... maybe just add runlater...
-need to prune word list so that if there is a possible steal, the wordbuilder always recognizes it
+FRONT END
 make sure as much of username and score as possible fits in game panel
-swipe gesture to navigate through turns in postgame analysis
 long words (more than about 12 or 13 letters long) should trigger small tiles on small screens... 
-change behavior of back button to exit game?
-allow user to log in when server doesn't know they've logged out
 improve calculation of tile sizes
 show octothorpes option
-make it so clicking (and holding?) has the effect of right clicking in word explorer?
+click on tilepool to randomize?
 make it so sound only plays once when logging in
-"Did you know" messages on log in
-check to see if notifying everyone about the end of the game slows down games in progress
-make list of most commonly missed words and share with subscribers
-write manual (should show specs on robots)
 show quick pop-up notification in bottom of game panel (e.g. "that word has already been played in this game")?
-make links in the markdown guide clickable and make it into an editable sandbox
 show watchers
-when navigating word list with arrow keys, definition of highlighted word should show
-ratings... calculate rating by using some sort of vocabulary estimate metric?
-add administrator tools on server side?
-add profanity filter
-different ways of scoring
-enable swipe gesture on mobile device during endgame analysis
-add maximize button to player profiles... maybe not necessarily to fullscreen, but at least larger?
-add custom wordlist option for explorer
-Increase max number of games... but make sure analysis tools stay unavailable if user is a player in any game that is not over
-prevent user from creating and abandoning too many games... probably could be done on server end... just have game keep track of who created it... send pop up warning if user tries to violate policy
-private messages
-text doesn't go to clipboard. problem with computer? try on other computer.
-fix bug where stolen word doesn't disappear (possibly only when it would result in switch to large letters?)
-make special beginners-only tables
-display game number on game panels so people can identify them
-change jpro log warning level
-if there are multiple gamewindows, clicking on one should bring it to front
-if you like the program suggested donation is a $5
-allow offline play
-ue) words played per game, weighted according to player skill?
 put user's own name at top
+make links in the markdown guide clickable and make it into an editable sandbox?
+add maximize button to player profiles... maybe not necessarily to fullscreen, but at least larger?
 dropdown menu to sort players list alphabetically or by rating
-stop flickering during postgame analysis
+when there are fewer players, add fewer gamePanels
+pop up messages saying you are already involved in this game, or you already have a game screen active, etc
+make it so tile size also adjusts in response to resizing wordDisplay
+change so game panels don't disappear when on the home screen (like on ISC)
+enable minimize button?
+
+BACK END
+does the prob calc take into account letters already in the word? e.g. PLEDGEE -> PEGLEGGED
+add profanity filter
+ratings... calculate rating by using some sort of vocabu1lary estimate metric?
+add administrator tools on server side?
+check to see if notifying everyone about the end of the game slows down games in progress
+
+MOBILE
+when waking phone from sleep, full screen size often goes wrong?... maybe just add runlater...
+swipe gesture to navigate through turns in postgame analysis
+change behavior of back button to exit game?
+widen scrollbars in mobile mode
+make it so clicking (and holding?) has the effect of right clicking in word explorer?
+make sure all context menus are at the right zoom level
+
+EXPLORER
+custom dictionaries and tile sets
+
+OTHER
+write manual (should show specs on robots)
+make list of most commonly missed words and share with subscribers
+share FAQ
+different ways of scoring
+book
+for quiz purposes, combine anagram sets into single nodes, annotate with a number indicating the anagram count
 what is a word that are anagrams of each other as far as the game of Anagrams is concerned?
 e.g. POMADE, PROMENADE
-for quiz purposes, combine anagram sets into single nodes, annotate with a number indicating the anagram count
-make a web widget for generating quizzes?
-book
+allow offline play
+Increase max number of games... but make sure analysis tools stay unavailable if user is a player in any game that is not over
+prevent user from creating and abandoning too many games... probably could be done on server end... just have game keep track of who created it... send pop up warning if user tries to violate policy
+if there are multiple gamewindows, clicking on one should bring it to front
+private messages
+if you like the program suggested donation is a $5
+make it so you can see the words that can be stolen to produce a given word, i.e. make the wordExplorer bidrectional
+remove redundancy in play validation?
+client can send a command to the server to reset itself?
