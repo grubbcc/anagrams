@@ -10,9 +10,6 @@ import javafx.geometry.Side;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.ScrollBarSkin;
-import javafx.scene.control.skin.ScrollPaneSkin;
-import javafx.scene.control.skin.TextAreaSkin;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -183,7 +180,9 @@ class WordExplorer extends PopWindow {
     }
 
     /**
+     * Instructs the server to retrieve data on a new word
      *
+     * @param query The contents of the textField (stripped of any non-alphabetic characters)
      */
 
     void lookUp(String query) {
@@ -194,7 +193,10 @@ class WordExplorer extends PopWindow {
     }
 
     /**
+     * Parses the JSON data from the server, constructs the TreeView, and displays it
      *
+     * @param data A list of nodes containing words, definitions, probabilities, and
+     *             instructions on how to place them in the hierarchy.
      */
 
     void setUpTree(JSONArray data) {
@@ -256,7 +258,8 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     * Recursively builds the TreeView according to to the hierarchy of TreeNodes.
+     * Recursively builds the TreeView according to the TreeNode hierarchy.
+     *
      * @param parentItem The TreeItem whose children will be added next.
      */
 
@@ -269,13 +272,14 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     *
+     * A TreeView cell that can be selected to show a definition, double-clicked to perform a lookup,
+     * hovered over to display the steal, and whose background is colored to indicate probability.
      */
 
     private class CustomTreeCell extends TreeCell<TreeNode> {
 
         /**
-         *
+         * On double-click looks up the selected node and triggers the goButton
          */
 
         private CustomTreeCell () {
@@ -293,7 +297,10 @@ class WordExplorer extends PopWindow {
         }
 
         /**
+         * Sets the cell's tooltip and background color
          *
+         * @param item The Java object to be rendered as a TreeCell
+         * @param empty Whether the cell is part of the background
          */
 
         @Override
@@ -322,6 +329,8 @@ class WordExplorer extends PopWindow {
 
     /**
      * Creates a table showing the number of steals of the rootWord organized by word length
+     *
+     * @param counts The raw data as computed in the setUpTree method
      */
 
     private VBox treeSummary(TreeMap<Integer, Integer> counts) {
@@ -367,7 +376,7 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     *
+     * Executes some JavaScript to create the file, insert the word list, and open the download window
      */
 
     private void saveListToFile () {
@@ -392,7 +401,7 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     *
+     * Sends the tree JSON data to the webpage and opens it.
      */
 
     private void viewListAsImage() {
