@@ -1037,7 +1037,7 @@ import java.util.regex.Pattern;
     }
 
     /**
-     *
+     * Removes the textEntry and exitGame button; adds buttons for navigating through the game history.
      */
 
     void endGame() {
@@ -1108,6 +1108,8 @@ import java.util.regex.Pattern;
                     }
                 }
             });
+
+            //Download button
             Button saveButton = new Button("Download");
             saveButton.setTooltip(new Tooltip("Save game log as text file"));
             saveButton.setBackground(new Background(new BackgroundFill(Color.CORNFLOWERBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -1119,7 +1121,13 @@ import java.util.regex.Pattern;
     }
 
     /**
+     * Displays the provided game position: time remaining, the tile pool, the players, and their words.
+     * If the WordDisplay is visible retrieves possible plays from the server.
      *
+     * @param tokens the current game state, an array e.g.
+     *               ["257", "YUIFOTMR", "GrubbTime", "[HAUYNES]", "Robot-Genius", "[BLEWARTS,POTJIES]"]
+     *               consisting of the remaining time, the tile pools, a list of players (even indices)
+     *               and their words (odd indices)
      */
 
     void showPosition(String[] tokens) {
@@ -1147,7 +1155,10 @@ import java.util.regex.Pattern;
     }
 
     /**
+     * Displays possible plays in the WordDisplay PopWindow
      *
+     * @param plays A formatted String containing possible plays from the pool and steals, e.g.
+     *              [FUMITORY] @ [BLEWARTS + I -> BRAWLIEST, BLEWARTS + I -> WARBLIEST, BLEWARTS + FO -> BATFOWLERS]
      */
 
     void showPlays(String plays) {
