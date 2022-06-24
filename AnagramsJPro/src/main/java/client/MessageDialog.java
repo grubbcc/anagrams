@@ -45,6 +45,7 @@ class MessageDialog extends PopWindow {
         setContents(mainPane);
         setMaxSize(410, 120);
         setTitle(title);
+        setAsDragZone(mainPane, buttonPane);
     }
 
     /**

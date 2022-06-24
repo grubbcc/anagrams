@@ -82,6 +82,7 @@ class SettingsMenu extends PopWindow {
         setContents(grid);
         setMaxSize(340,320);
         setTitle("Settings");
+        setAsDragZone(grid);
         show(false);
 
         client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode

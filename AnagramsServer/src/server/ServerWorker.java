@@ -141,19 +141,20 @@ class ServerWorker extends Thread {
 	private void handleCreateGame(String[] params) {
 	
 		String gameID = params[1];
-		int maxPlayers = Integer.parseInt(params[2]);
-		int minLength = Integer.parseInt(params[3]);
-		int numSets = Integer.parseInt(params[4]);
-		int blankPenalty = Integer.parseInt(params[5]);
-		String lexicon = params[6];
-		String speed = params[7];
-		boolean allowChat = Boolean.parseBoolean(params[8]);
-		boolean allowWatchers = Boolean.parseBoolean(params[9]);
-		boolean hasRobot = Boolean.parseBoolean(params[10]);
-		int skillLevel = Integer.parseInt(params[11]);
+		String gameName = params[2];
+		int maxPlayers = Integer.parseInt(params[3]);
+		int minLength = Integer.parseInt(params[4]);
+		int numSets = Integer.parseInt(params[5]);
+		int blankPenalty = Integer.parseInt(params[6]);
+		String lexicon = params[7];
+		String speed = params[8];
+		boolean allowChat = Boolean.parseBoolean(params[9]);
+		boolean allowWatchers = Boolean.parseBoolean(params[10]);
+		boolean hasRobot = Boolean.parseBoolean(params[11]);
+		int skillLevel = Integer.parseInt(params[12]);
 		
-		Game newGame = new Game(server, gameID, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers, hasRobot);
-		server.broadcast("addgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
+		Game newGame = new Game(server, gameID, gameName, maxPlayers, minLength, numSets, blankPenalty, lexicon, speed, allowChat, allowWatchers, hasRobot);
+		server.broadcast("addgame " + gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
 		newGame.addPlayer(this);
 		if(hasRobot)
 			newGame.addRobot(new Robot(skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
@@ -181,7 +182,7 @@ class ServerWorker extends Thread {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-//			System.out.println("command received: " + line);
+			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
 			if (tokens.length > 0) {

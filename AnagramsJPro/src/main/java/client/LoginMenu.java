@@ -176,6 +176,7 @@ class LoginMenu extends PopWindow {
         setMaxSize(300, 210);
         setTitle("Log in");
         setContents(grid);
+        setAsDragZone(grid);
         show(true);
     }
 

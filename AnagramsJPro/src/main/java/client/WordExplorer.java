@@ -12,6 +12,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
 import org.json.JSONArray;
@@ -35,6 +36,7 @@ class WordExplorer extends PopWindow {
 
     private final TextArea messagePane = new TextArea();
     private final HBox controlPanel = new HBox();
+    private final SplitPane splitPane = new SplitPane();
     private final StackPane treePanel = new StackPane();
     private final BorderPane messagePanel = new BorderPane();
     private final ScrollPane treeSummaryScrollPane = new ScrollPane();
@@ -98,11 +100,7 @@ class WordExplorer extends PopWindow {
         contextMenu.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
 
         //Prevent treeView from capturing drag events
-        treePanel.addEventFilter(MouseEvent.ANY, event -> {
-            if(event.getTarget() instanceof CustomTreeCell) {
-                Event.fireEvent(this, event);
-            }
-        });
+        treePanel.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(splitPane, event));
 
         //Message panel
         messagePanel.setCenter(messagePane);
@@ -113,12 +111,10 @@ class WordExplorer extends PopWindow {
         messagePane.setEditable(false);
         messagePane.setWrapText(true);
 
-        //Prevent messagePane from capturing drag events
+        //Make messagePanel background draggable
         messagePanel.addEventFilter(MouseEvent.ANY, event -> {
-            if(event.getTarget() instanceof GridPane) {
-                Event.fireEvent(this, event);
-                event.consume();
-            }
+            if(!(event.getTarget() instanceof Text))
+                Event.fireEvent(splitPane, event);
         });
 
         //Window
@@ -145,7 +141,7 @@ class WordExplorer extends PopWindow {
         else {
             mainPanel.setCenter(treePanel);
         }
-        SplitPane splitPane = new SplitPane();
+
         splitPane.setOrientation(Orientation.VERTICAL);
         splitPane.getItems().addAll(mainPanel, messagePanel);
         splitPane.setDividerPosition(0, 0.75);
@@ -155,7 +151,10 @@ class WordExplorer extends PopWindow {
         setContents(splitPane);
 
         setVisible(false);
+
+        setAsDragZone(controlPanel, splitPane);
         makeResizable();
+
         setPrefSize(345, 415);
     }
 

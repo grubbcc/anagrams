@@ -9,6 +9,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polyline;
@@ -59,9 +60,8 @@ class PopWindow extends BorderPane {
         HBox.setHgrow(spacer, Priority.SOMETIMES);
         titleBar.getChildren().addAll(title, spacer, closeButton);
         setTop(titleBar);
-
-        setMovable(true);
         setVisible(false);
+        setAsDragZone(titleBar);
         setId("popup");
         getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
     }
@@ -211,42 +211,38 @@ class PopWindow extends BorderPane {
         DragResizer.makeResizable(this);
     }
 
-    /**
-     * If set to true, allows user to reposition this window by dragging inside its area.
-     *
-     * @param movable whether this window can be dragged using the mouse. true by default.
-     */
+    void setAsDragZone(Region... handles) {
 
-    void setMovable(boolean movable) {
+        for(Region handle : handles) {
 
-        if (movable) {
-            setOnMousePressed(event ->
-                mouseLocation.set(new Point2D(event.getScreenX(), event.getScreenY()))
-            );
+            handle.setOnMousePressed(event -> mouseLocation.set(new Point2D((float) event.getScreenX(), (float) event.getScreenY())));
+            handle.setOnMouseDragged(this::mouseDragged);
+            handle.setOnMouseReleased(this::mouseReleased);
 
-            setOnMouseDragged(event -> {
-                event.consume();
-                if (mouseLocation.get() != null) {
-                    double x = event.getScreenX();
-                    double deltaX = x - mouseLocation.get().getX();
-                    double y = event.getScreenY();
-                    double deltaY = y - mouseLocation.get().getY();
-
-                    setTranslateX(getTranslateX() + deltaX);
-                    setTranslateY(getTranslateY() + deltaY);
-
-                    mouseLocation.set(new Point2D(x, y));
-                }
-            });
-
-            setOnMouseReleased(event -> mouseLocation.set(null));
-        }
-
-        else {
-            setOnMousePressed(null);
-            setOnMouseDragged(null);
-            setOnMouseReleased(null);
         }
     }
 
+    private void mousePressed(MouseEvent event) {
+
+        event.consume();
+        mouseLocation.set(new Point2D((float)event.getScreenX(), (float)event.getScreenY()));
+
+    }
+
+    private void mouseDragged(MouseEvent event) {
+
+        event.consume();
+
+        if(mouseLocation.get() != null) {
+            double x = event.getScreenX();
+            double y = event.getScreenY();
+
+            setTranslateX(getTranslateX() + x - mouseLocation.get().getX());
+            setTranslateY(getTranslateY() + y - mouseLocation.get().getY());
+            mouseLocation.set(new javafx.geometry.Point2D(x, y));
+        }
+    }
+    protected void mouseReleased(MouseEvent event) {
+         mouseLocation.set(null);
+    }
 }

@@ -36,7 +36,7 @@
     -fx-label-padding: 3;
 }
 .choice-box, .choice-box .context-menu {
-    -fx-pref-width: 108;
+    -fx-pref-width: 112px;
 }
 
 .button {
@@ -167,6 +167,7 @@
     -fx-spacing: 15px;
     -fx-padding: 2;
 }
+
 #title-bar .button {
     -fx-pref-width: 20px;
     -fx-pref-height: 20px;

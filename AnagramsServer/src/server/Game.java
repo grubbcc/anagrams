@@ -20,6 +20,7 @@ public class Game {
 	private final ConcurrentHashMap<String, ServerWorker> watcherList = new ConcurrentHashMap<>();
 
 	final String gameID;
+	final String gameName;
 	private static final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
 	private char[] tileBag;
 	private String tilePool = "";
@@ -56,7 +57,7 @@ public class Game {
 	*/
 	
 	String getGameParams() {
-		return (gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
+		return (gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
 	}
 	
 	
@@ -64,10 +65,11 @@ public class Game {
 	*
 	*/
 
-	Game(Server server, String gameID, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
+	Game(Server server, String gameID, String gameName, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
 		
 		this.server = server;
 		this.gameID = gameID;
+		this.gameName = gameName;
 		this.maxPlayers = maxPlayers;
 		this.minLength = minLength;
 		this.numSets = numSets;

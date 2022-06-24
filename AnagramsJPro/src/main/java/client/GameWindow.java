@@ -25,8 +25,6 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -99,7 +97,7 @@ import java.util.regex.Pattern;
      *
      */
 
-    GameWindow(AnagramsClient client, String gameID, String username, String minLength, String blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
+    GameWindow(AnagramsClient client, String gameID, String gameName, String username, String minLength, String blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
         super(client.anchor);
 
         this.client = client;
@@ -125,7 +123,7 @@ import java.util.regex.Pattern;
         wordDisplay = new WordDisplay();
 
         //title bar
-        setTitle("Game " + gameID);
+        setTitle(gameName.replaceAll("%", " "));
         makeMaximizable();
 
         //control panel
@@ -193,6 +191,15 @@ import java.util.regex.Pattern;
                     client.send("gamechat " + gameID + " " + username + ": " + chatField.getText());
                 chatField.clear();
             });
+
+            KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
+            chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+                if(copyKey.match(keyEvent)) {
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(chatField.getSelectedText());
+                    Clipboard.getSystemClipboard().setContent(content);
+                }
+            });
             chatPanel.setMaxHeight(100);
             chatPanel.setMinHeight(0);
             chatPanel.setCenter(chatBox);
@@ -236,7 +243,6 @@ import java.util.regex.Pattern;
         setContents(splitPane);
 
         if (isMobile) {
-            setMovable(false);
             title.setStyle("-fx-font-size: 16;");
             maximizeButton.setScaleX(1.45);
             maximizeButton.setScaleY(1.45);
@@ -259,6 +265,8 @@ import java.util.regex.Pattern;
             setPrefSize(1000, 674);
             textField.setPrefWidth(310);
             makeResizable();
+            setAsDragZone(controlPanel, tilePanel);
+
             maximizeButton.setOnAction(e -> {
                 maximizeButton.maximizeAction.handle(e);
                 Platform.runLater(() -> {
@@ -270,7 +278,7 @@ import java.util.regex.Pattern;
                     }
                 });
                 allocateSpace();
-                textField.requestFocus();
+    //            textField.requestFocus();
             });
         }
 
@@ -330,15 +338,19 @@ import java.util.regex.Pattern;
                 controlPanel.getChildren().addAll(textStack, infoPane);
             }
         }
+        gameGrid.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
+                maximizeButton.fire();
+        });
 
-        setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
-                if (e.getClickCount() == 2) {
-                    if (e.getSource() instanceof Pane) {
-                        maximizeButton.fire();
-                    }
-                }
-            }
+        controlPanel.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
+                maximizeButton.fire();
+        });
+
+        titleBar.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
+                maximizeButton.fire();
         });
 
         if (!gameLog.isEmpty()) {
@@ -346,7 +358,7 @@ import java.util.regex.Pattern;
         }
 
         client.setColors();
-        Platform.runLater(() -> setTiles(tilePool)); // needs testing
+        Platform.runLater(() -> setTiles(tilePool));
         show(false);
         textField.requestFocus();
         closeButton.setOnAction(e -> exitGame());
@@ -538,6 +550,7 @@ import java.util.regex.Pattern;
 
             infoPane.getChildren().add(playerNameLabel);
             infoPane.getChildren().add(playerScoreLabel);
+
             playerScoreLabel.setMinWidth(USE_PREF_SIZE);
 
             scrollPane.setFitToWidth(true);
@@ -552,7 +565,7 @@ import java.util.regex.Pattern;
 
             setTop(infoPane);
             setCenter(scrollPane);
-
+            setAsDragZone(infoPane, wordPane);
             makeBig();
         }
 
@@ -1190,13 +1203,20 @@ import java.util.regex.Pattern;
             mainPanel.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
             displayGrid.add(poolPanel, 0, 0);
             displayGrid.add(stealsPanel, 0, 1);
-            displayGrid.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(this, event));
+            displayGrid.addEventFilter(MouseEvent.ANY, event -> {
+                if(event.getTarget() instanceof FlowPane || event.getTarget() instanceof Text) {
+                    Event.fireEvent(mainPanel, event);
+                    if(event.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
+                        event.consume();
+                    }
+                }
+            });
 
+            makeResizable();
             setPrefSize(380, 450);
             setContents(mainPanel);
             setTitle("Possible plays");
-            makeResizable();
-
+            setAsDragZone(mainPanel);
         }
 
         /**

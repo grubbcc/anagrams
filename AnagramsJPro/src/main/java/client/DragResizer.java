@@ -1,8 +1,5 @@
 package client;
 
-import javafx.geometry.Point2D;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
@@ -29,14 +26,17 @@ class DragResizer {
     private boolean draggingSouth;
     private boolean draggingWest;
 
-    private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
-
     /**
      *
      */
     
     private DragResizer(Region region) {
         this.region = region;
+
+        region.setOnMousePressed(this::mousePressed);
+        region.setOnMouseDragged(this::mouseDragged);
+        region.setOnMouseMoved(this::mouseOver);
+        region.setOnMouseReleased(this::mouseReleased);
     }
 
     /**
@@ -44,12 +44,7 @@ class DragResizer {
      */
 
     static void makeResizable(Region region) {
-        final DragResizer resizer = new DragResizer(region);
-
-        region.setOnMousePressed(resizer::mousePressed);
-        region.setOnMouseDragged(resizer::mouseDragged);
-        region.setOnMouseMoved(resizer::mouseOver);
-        region.setOnMouseReleased(resizer::mouseReleased);
+        new DragResizer(region);
     }
 
     /**
@@ -104,8 +99,6 @@ class DragResizer {
         draggingEast = isInDraggableZoneE(event);
         draggingSouth = isInDraggableZoneS(event);
         draggingWest = isInDraggableZoneW(event);
-
-        mouseLocation.set(new Point2D((float)event.getScreenX(), (float)event.getScreenY()));
 
         // Make sure that the minimum height is set to the current height once;
         // setting a min height that is smaller than the current height will have no effect.
@@ -163,14 +156,6 @@ class DragResizer {
 
         if(draggingSouth || draggingEast || draggingNorth || draggingWest) {
             return;
-        }
-        else if(mouseLocation.get() != null) {
-            double x = event.getScreenX();
-            double y = event.getScreenY();
-
-            region.setTranslateX(region.getTranslateX() + x - mouseLocation.get().getX());
-            region.setTranslateY(region.getTranslateY() + y - mouseLocation.get().getY());
-            mouseLocation.set(new javafx.geometry.Point2D(x, y));
         }
     }
 
@@ -230,6 +215,5 @@ class DragResizer {
         initMinHeight = false;
         draggingNorth = false; draggingEast = false; draggingSouth = false; draggingWest = false;
         region.setCursor(Cursor.DEFAULT);
-        mouseLocation.set(null);
     }
 }

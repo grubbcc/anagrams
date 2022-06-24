@@ -5,13 +5,9 @@ import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
@@ -204,6 +200,15 @@ class AnagramsClient extends JProApplication {
 				send("chat " + username + ": " + msg);
 			chatField.clear();
 		});
+		KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
+		chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+			if(copyKey.match(keyEvent)) {
+				ClipboardContent content = new ClipboardContent();
+				content.putString(chatField.getSelectedText());
+				Clipboard.getSystemClipboard().setContent(content);
+			}
+		});
+
 		chatPanel.setBottom(chatField);
 		chatBox.setWrapText(true);
 		chatBox.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");
@@ -465,7 +470,7 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 
-		private GamePane(String gameID, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
+		private GamePane(String gameID, String gameName, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
 
 			this.gameID = gameID;
 			gamePanes.put(gameID, this);
@@ -497,10 +502,11 @@ class AnagramsClient extends JProApplication {
 
 			//join button
 			Button joinButton = new Button("Join game");
+			joinButton.setTooltip(new Tooltip(gameName.replaceAll("%", " ")));
 			joinButton.setOnAction(e -> {
 				if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
-						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver));
+						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver));
 						if(gameOver) {
 							send("watchgame " + gameID);
 						}
@@ -518,7 +524,7 @@ class AnagramsClient extends JProApplication {
 				watchButton.setOnAction(e -> {
 					if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
 						if(!players.contains(username) || gameOver) {
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true));
+							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true));
 							send("watchgame " + gameID);
 						}
 					}
@@ -682,7 +688,7 @@ class AnagramsClient extends JProApplication {
 									chatBox.appendText("\n" + msg);
 								}
 								case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
-										tokens[7], tokens[8], tokens[9], tokens[10]);
+										tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
 								case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
 								case "json" -> {
 									if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.substring(5)));

@@ -13,7 +13,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -30,33 +29,34 @@ import java.util.HashSet;
 class PlayerPane extends PopWindow {
 
     private final String sampleMarkdown =
-        "### Heading\n" +
-        "\n" +
-        "*italic*\n" +
-        "\n" +
-        "**bold**\n" +
-        "\n" +
-        "***bold and italic***\n" +
-        "\n" +
-        " [click here](https://google.com)\n" +
-        "\n" +
-        "![](https://www.seattlephysicstutor.com/thinker.jpg)\n" +
-        "\n" +
-        "[text-color](GREEN)\n" +
-        "[link-color](BLUE)\n" +
-        "[background-color](YELLOW)\n" +
-        "\n" +
-        "```\n" +
-        "block quote\n" +
-        "```\n" +
-        "\n" +
-        "the  | old | man\n" +
-        " ---  | ---   | ---\n" +
-        "and  | the  | sea\n" +
-        "\n" +
-        "* Bacon\n" +
-        "* Lettuce\n" +
-        "* Tomato";
+            """
+                    ### Heading
+
+                    *italic*
+
+                    **bold**
+
+                    ***bold and italic***
+
+                     [click here](https://google.com)
+
+                    ![](https://www.seattlephysicstutor.com/thinker.jpg)
+
+                    [text-color](GREEN)
+                    [link-color](BLUE)
+                    [background-color](YELLOW)
+
+                    ```
+                    block quote
+                    ```
+
+                    the  | old | man
+                     ---  | ---   | ---
+                    and  | the  | sea
+
+                    * Bacon
+                    * Lettuce
+                    * Tomato""";
     private final TextArea codePane = new TextArea(sampleMarkdown);
     private final AnagramsClient client;
     private final ScrollPane bioScrollPane = new ScrollPane();
@@ -108,11 +108,9 @@ class PlayerPane extends PopWindow {
         bioScrollPane.addEventFilter(KeyEvent.ANY, Event::consume);
 
         contents.setCenter(bioScrollPane);
-
-        mdfx.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(this, event));
-
         setContents(contents);
         makeResizable();
+        setAsDragZone(mdfx);
 
         infoPane = new PopWindow(client.anchor);
         infoPane.setTitle("Markdown Guide");

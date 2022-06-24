@@ -41,7 +41,9 @@ class GameMenu extends PopWindow {
     private final CheckBox robotChooser = new CheckBox("Add robot player");
     private final CheckBox defaultChooser = new CheckBox("Save as default");
 
+    private final TextField nameField = new TextField();
     private final Button startButton = new Button("Start");
+    private final String gameID;
 
     /**
      *
@@ -50,6 +52,20 @@ class GameMenu extends PopWindow {
     GameMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
+
+        final Date now = new Date();
+        final SimpleDateFormat ft = new SimpleDateFormat("hhmmss");
+        gameID = ft.format(now);	//generates a unique gameID based on the current time
+        nameField.setPromptText("Game " + gameID);
+        nameField.setStyle("-fx-font-weight: bold;");
+
+        nameField.setPrefWidth(112);
+        nameField.textProperty().addListener((observable, oldValue, newValue) -> {
+            nameField.setText(newValue.replace("%", ""));
+            if(newValue.length() > 50)
+                nameField.setText(newValue.substring(0, 50));
+        });
+
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.45); setScaleY(1.45);
             pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
@@ -72,6 +88,8 @@ class GameMenu extends PopWindow {
         grid.setVgap(6);
 
         //labels
+        final Label nameLabel = new Label("Name");
+        nameLabel.setTooltip(new Tooltip("e.g. \"Beginners' table\",\n\"Mary's club\", etc"));
         final Label tileSetsLabel = new Label("Number of tile sets");
         tileSetsLabel.setTooltip(new Tooltip("100 tiles per set"));
         final Label blankPenaltyLabel = new Label("Blank penalty");
@@ -96,28 +114,30 @@ class GameMenu extends PopWindow {
         watchersChooser.setSelected(client.prefs.getBoolean("allow_watchers", true));
         robotChooser.setSelected(client.prefs.getBoolean("add_robot", false));
 
-        grid.add(new Label("Maximum number of players"), 0, 0);
-        grid.add(playersSelector, 1, 0);
-        grid.add(new Label("Minimum word length"), 0, 1);
-        grid.add(lengthsSelector, 1, 1);
-        grid.add(tileSetsLabel, 0, 2);
-        grid.add(setsSelector, 1, 2);
-        grid.add(blankPenaltyLabel, 0, 3);
-        grid.add(blanksSelector, 1, 3);
-        grid.add(wordListLabel, 0, 4);
-        grid.add(lexiconSelector, 1, 4);
-        grid.add(speedLabel, 0, 5);
-        grid.add(speedSelector, 1, 5);
-        grid.add(chatChooser, 0, 6);
-        grid.add(watchersChooser, 1, 6);
-        grid.add(robotChooser, 0, 7);
-        grid.add(skillLevelSelector, 1, 7);
-        grid.add(startButton, 0, 8);
-        grid.add(defaultChooser, 1, 8);
+        grid.add(nameLabel, 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Maximum number of players"), 0, 1);
+        grid.add(playersSelector, 1, 1);
+        grid.add(new Label("Minimum word length"), 0, 2);
+        grid.add(lengthsSelector, 1, 2);
+        grid.add(tileSetsLabel, 0, 3);
+        grid.add(setsSelector, 1, 3);
+        grid.add(blankPenaltyLabel, 0, 4);
+        grid.add(blanksSelector, 1, 4);
+        grid.add(wordListLabel, 0, 5);
+        grid.add(lexiconSelector, 1, 5);
+        grid.add(speedLabel, 0, 6);
+        grid.add(speedSelector, 1, 6);
+        grid.add(chatChooser, 0, 7);
+        grid.add(watchersChooser, 1, 7);
+        grid.add(robotChooser, 0, 8);
+        grid.add(skillLevelSelector, 1, 8);
+        grid.add(startButton, 0, 9);
+        grid.add(defaultChooser, 1, 9);
 
         setTitle("Game Options");
         setContents(grid);
-        setMaxSize(335, 340);
+        setMaxSize(335, 363);
 
         startButton.setPrefWidth(75.0);
         startButton.setPrefHeight(25.0);
@@ -129,8 +149,9 @@ class GameMenu extends PopWindow {
         });
 
         startButton.setDefaultButton(true);
-
+        setAsDragZone(grid);
         show(true);
+
         client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
         startButton.requestFocus();
 
@@ -159,11 +180,9 @@ class GameMenu extends PopWindow {
 
     void createGame() {
 
-        final Date now = new Date();
-        final SimpleDateFormat ft = new SimpleDateFormat("hhmmssMs");
-        final String gameID = ft.format(now);	//generates a unique gameID based on the current time
-
         String maxPlayers = playersSelector.getSelectionModel().getSelectedItem() + "";
+        String gameName = nameField.getText().replaceAll(" ", "%");
+        if(gameName.isBlank()) gameName = nameField.getPromptText().replaceAll(" ", "%");
         final String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
         final String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
         final String blankPenalty = blanksSelector.getSelectionModel().getSelectedItem() + "";
@@ -178,9 +197,9 @@ class GameMenu extends PopWindow {
             maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
         }
 
-        client.gameWindows.put(gameID, new GameWindow(client, gameID, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
+        client.gameWindows.put(gameID, new GameWindow(client, gameID, gameName, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
-        final String cmd = "newgame " + gameID + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
+        final String cmd = "newgame " + gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);
     }
 }
