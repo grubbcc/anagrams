@@ -5,7 +5,7 @@ import java.io.*;
 import java.net.SocketOption;
 
 /**
-* Handles tasks for the client on the server side.
+* Handles tasks for a client on the server side.
 */
 
 class ServerWorker extends Thread {
@@ -23,16 +23,14 @@ class ServerWorker extends Thread {
 	*/
 	
 	ServerWorker(Server server, Socket clientSocket) {
-
 		this.server = server;
 		this.clientSocket = clientSocket;
 	}
 	
 	/**
 	*
-	*/
-
-
+	g*/
+	
 	@Override
 	public void run() {
 
@@ -49,7 +47,10 @@ class ServerWorker extends Thread {
 
 
 	/**
-	* Informs new user of other players and games in progress. Informs other players of new user.
+	 * Informs new user of other players and games in progress. Informs other players of new user.
+	 * Prevents duplicate usernames.
+	 *
+	 * @param username The new user's name
 	*/
 	
 	private void handleLogin(String username) {
@@ -135,7 +136,7 @@ class ServerWorker extends Thread {
 	}
 	
 	/**
-	*
+	* Creates the game and informs all players
 	*/
 	
 	private void handleCreateGame(String[] params) {
@@ -241,7 +242,6 @@ class ServerWorker extends Thread {
 	*
 	* @param msg The message to be sent.
 	*/
-	
 
 	synchronized void send(String msg) {
 
