@@ -7,6 +7,7 @@ import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -87,11 +88,13 @@ class WordExplorer extends PopWindow {
         lexiconSelector.setOnAction(e -> this.lexicon = lexiconSelector.getValue());
         lexiconSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         controlPanel.setId("control-panel");
+        controlPanel.setCursor(Cursor.DEFAULT);
         controlPanel.getChildren().addAll(textField, goButton, lexiconSelector);
 
         //Tree panel
         treePanel.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         treePanel.setMinHeight(70);
+        treePanel.setCursor(Cursor.DEFAULT);
         MenuItem textOption = new MenuItem("Save List to File");
         textOption.setOnAction(e-> saveListToFile());
         MenuItem imageOption = new MenuItem("View List as Image");
@@ -267,14 +270,13 @@ class WordExplorer extends PopWindow {
             setPickOnBounds(false);
 
             setOnMouseClicked(e -> {
-            if (!isEmpty() && e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
+                if (!isEmpty() && e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                     goButton.arm();
                     PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
                     pause.setOnFinished(ef -> goButton.disarm());
                     pause.play();
                     lookUp(getText());
                 }
-
             });
         }
 
@@ -328,6 +330,8 @@ class WordExplorer extends PopWindow {
             summaryPane.getChildren().add(treeSummary);
 
         }
+        summaryPane.setCursor(Cursor.DEFAULT);
+        summaryPane.addEventFilter(MouseEvent.ANY, event -> Event.fireEvent(splitPane, event));
         return summaryPane;
     }
 
