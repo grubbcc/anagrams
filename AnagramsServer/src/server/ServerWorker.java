@@ -183,7 +183,7 @@ class ServerWorker extends Thread {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-			System.out.println("command received: " + line);
+//			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
 			if (tokens.length > 0) {
