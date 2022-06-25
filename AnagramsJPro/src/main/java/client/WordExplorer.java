@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.Cursor;
-import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -108,9 +107,6 @@ class WordExplorer extends PopWindow {
         treePanel.addEventFilter(MouseEvent.ANY, event -> {
             if(event.getTarget() instanceof Text || event.getTarget() instanceof CustomTreeCell) {
                 Event.fireEvent(splitPane, event);
-                if(event.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
-                    event.consume();
-                }
             }
         });
 
@@ -127,7 +123,6 @@ class WordExplorer extends PopWindow {
         messagePane.addEventFilter(MouseEvent.ANY, event -> {
             if(!(event.getTarget() instanceof Text || event.getTarget() instanceof ScrollBar || event.getTarget() instanceof StackPane)) {
                 Event.fireEvent(splitPane, event);
-                event.consume();
             }
         });
 
@@ -228,6 +223,11 @@ class WordExplorer extends PopWindow {
 
         if(!rootNode.getChildren().isEmpty()) {
             treeSummaryScrollPane.setContent(treeSummary(counts));
+            treeSummaryScrollPane.addEventFilter(MouseEvent.ANY, event -> {
+                if(event.getY() > treeSummaryScrollPane.getContent().getBoundsInLocal().getHeight()) {
+                    Event.fireEvent(splitPane, event);
+                }
+            });
             messagePanel.setRight(treeSummaryScrollPane);
         }
         else
@@ -353,7 +353,7 @@ class WordExplorer extends PopWindow {
 
         summaryPane.addEventFilter(MouseEvent.ANY, event -> {
             setCursor(Cursor.DEFAULT);
-            if(event.getTarget() instanceof GridPane || event.getTarget() instanceof Line || event.getTarget() instanceof Group || event.getTarget() instanceof Text) {
+            if(event.getTarget() instanceof GridPane || event.getTarget() instanceof Line || event.getTarget() instanceof Text) {
                 Event.fireEvent(splitPane, event);
             }
         });

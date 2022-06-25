@@ -23,6 +23,7 @@ import javafx.scene.shape.Polyline;
 class PopWindow extends BorderPane {
 
     private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
+    private final ObjectProperty<Point2D> newLocation = new SimpleObjectProperty<>();
     private final Pane container;
     final HBox titleBar = new HBox();
     final Label title = new Label();
@@ -211,38 +212,35 @@ class PopWindow extends BorderPane {
         DragResizer.makeResizable(this);
     }
 
+    /**
+     * Allows the user to move this PopWindow by dragging one of the provided regions.
+     *
+     * @param handles Regions that should serve as handles for dragging
+     */
+
     void setAsDragZone(Region... handles) {
-
         for(Region handle : handles) {
-
-            handle.setOnMousePressed(event -> mouseLocation.set(new Point2D((float) event.getScreenX(), (float) event.getScreenY())));
+            handle.setOnMousePressed(this::mousePressed);
             handle.setOnMouseDragged(this::mouseDragged);
             handle.setOnMouseReleased(this::mouseReleased);
-
         }
     }
 
     private void mousePressed(MouseEvent event) {
-
-        event.consume();
-        mouseLocation.set(new Point2D((float)event.getScreenX(), (float)event.getScreenY()));
-
+        mouseLocation.set(new Point2D(event.getSceneX(), event.getSceneY()));
     }
 
     private void mouseDragged(MouseEvent event) {
-
-        event.consume();
-
-        if(mouseLocation.get() != null) {
-            double x = event.getScreenX();
-            double y = event.getScreenY();
-
-            setTranslateX(getTranslateX() + x - mouseLocation.get().getX());
-            setTranslateY(getTranslateY() + y - mouseLocation.get().getY());
-            mouseLocation.set(new javafx.geometry.Point2D(x, y));
+        newLocation.set(new Point2D(event.getSceneX(), event.getSceneY()));
+        if(mouseLocation.get() != null && newLocation.get() != null) {
+            setTranslateX(getTranslateX() + newLocation.get().getX() - mouseLocation.get().getX());
+            setTranslateY(getTranslateY() + newLocation.get().getY() - mouseLocation.get().getY());
+            mouseLocation.set(newLocation.get());
         }
     }
+
     protected void mouseReleased(MouseEvent event) {
          mouseLocation.set(null);
+         newLocation.set(null);
     }
 }
