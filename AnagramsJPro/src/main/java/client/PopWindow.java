@@ -89,7 +89,7 @@ class PopWindow extends BorderPane {
         }
 
         /**
-         *
+         * Alternate PopWindow between maximized and unmaximized and update MaximizeButton accordingly
          */
 
         void toggle() {
@@ -152,7 +152,8 @@ class PopWindow extends BorderPane {
     }
 
     /**
-     *
+     * Adds this PopWindow to its container and makes it visible.
+     * @param modal whether the PopWindow's siblings should be disabled until hidden.
      */
     
     void show(boolean modal) {
@@ -169,7 +170,8 @@ class PopWindow extends BorderPane {
     }
 
     /**
-     *
+     * Hides this PopWindow and removes it from its parent. Ensures that its siblings
+     * are now enabled (in case this PopWindow is modal).
      */
 
     void hide() {
@@ -196,7 +198,7 @@ class PopWindow extends BorderPane {
     }
 
     /**
-     *
+     * Adds a button that allows this PopWindow to fill the screen
      */
 
     void makeMaximizable() {
@@ -205,7 +207,7 @@ class PopWindow extends BorderPane {
     }
 
     /**
-     *
+     * Allows the user to resize this PopWindow by dragging its borders
      */
 
     void makeResizable() {
@@ -226,9 +228,17 @@ class PopWindow extends BorderPane {
         }
     }
 
+    /**
+     *
+     */
+
     private void mousePressed(MouseEvent event) {
         mouseLocation.set(new Point2D(event.getSceneX(), event.getSceneY()));
     }
+
+    /**
+     *
+     */
 
     private void mouseDragged(MouseEvent event) {
         newLocation.set(new Point2D(event.getSceneX(), event.getSceneY()));
@@ -238,6 +248,10 @@ class PopWindow extends BorderPane {
             mouseLocation.set(newLocation.get());
         }
     }
+
+    /**
+     *
+     */
 
     protected void mouseReleased(MouseEvent event) {
          mouseLocation.set(null);
