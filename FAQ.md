@@ -9,6 +9,10 @@
 | ***Q***  | Will other languages/lexicons be added?  |
 | ***A***  | Hopefully someday.  |
 
+|        |            |
+|--------|------------|
+| ***Q***  | I want to play, but there's no one else online.  |
+| ***A***  | Play against a bot. Or start a club. The Woogles Anagrams Club meets Mondays at 8PM EDT.  |
 
 |        |            |
 |--------|------------|
