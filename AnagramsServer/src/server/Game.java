@@ -89,7 +89,7 @@ public class Game {
 		else
 			delay = 3;
 
-		timeRemaining = delay*tileBag.length + 30;
+		timeRemaining = delay*tileBag.length + 31;
 		saveState();
 
 	}
@@ -170,9 +170,8 @@ public class Game {
 			paused = false;
 
 			//update timer and check for game over
-			String message = "Time remaining: " + timeRemaining--;
+			String message = "Time remaining: " + --timeRemaining;
 			server.broadcast("note " + gameID + " @" + message);
-
 			if(timeRemaining <= 0) {
 				endGame();
 				return;
