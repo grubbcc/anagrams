@@ -20,6 +20,7 @@ class Robot {
 	private final HashMap<String, WordTree> commonTrees = new HashMap<>();
 	private final AlphagramTrie dictionary;
 	final private Random rgen = new Random();
+	private boolean wordFound = false;
 
 	private int blanksAvailable;
 
@@ -58,7 +59,7 @@ class Robot {
 
 			//decide whether to search among all words or among common subset
 			Node rootNode = rgen.nextInt(3) + 1 >= skillLevel ? dictionary.common.rootNode : dictionary.rootNode;
-
+			wordFound = false;
 			searchInPool(rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
 		}
 		else {
@@ -78,12 +79,13 @@ class Robot {
 	 */
 
 	private void searchInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
-
+		if(wordFound) return;
 		if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
 			if(!node.anagrams.isEmpty()) {
 				int num = rgen.nextInt(node.anagrams.size());
 				for(String anagram: node.anagrams) {
 					if (--num < 0) {
+						wordFound = true;
 						game.doMakeWord(robotName, anagram);
 						return;
 					}
