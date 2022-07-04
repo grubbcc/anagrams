@@ -158,7 +158,7 @@ class ServerWorker extends Thread {
 		server.broadcast("addgame " + gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + "false");
 		newGame.addPlayer(this);
 		if(hasRobot)
-			newGame.addRobot(new Robot(skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
+			newGame.addRobot(new Robot(newGame, skillLevel, server.getDictionary(lexicon), minLength, blankPenalty));
 
 		server.addGame(gameID, newGame);
 	}

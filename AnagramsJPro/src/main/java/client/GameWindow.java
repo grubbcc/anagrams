@@ -97,7 +97,7 @@ import java.util.regex.Pattern;
      *
      */
 
-    GameWindow(AnagramsClient client, String gameID, String gameName, String username, String minLength, String blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
+    GameWindow(AnagramsClient client, String gameID, String gameName, String username, String minLength, int blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
         super(client.anchor);
 
         this.client = client;
@@ -107,7 +107,7 @@ import java.util.regex.Pattern;
         this.gameID = gameID;
         this.username = username;
         this.minLength = Integer.parseInt(minLength);
-        this.blankPenalty = Integer.parseInt(blankPenalty);
+        this.blankPenalty = blankPenalty;
         this.numSets = numSets;
         this.speed = speed;
         this.gameLog = gameLog;
@@ -184,6 +184,7 @@ import java.util.regex.Pattern;
         BorderPane chatPanel = new BorderPane();
         if (allowsChat) {
             chatBox.setEditable(false);
+            chatBox.setId("game-chat");
             chatField.setPromptText("Type here to chat");
             chatField.setOnAction(ae -> {
                 String msg = String.format("%1.500s", chatField.getText()); //truncate to 500 characters

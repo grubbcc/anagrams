@@ -13,6 +13,8 @@
 	-game-background-text:  blue;
 	-chat-area:             blue;
 	-chat-area-text:        blue;
+	-game-chat:             blue;
+	-game-chat-text:        blue;
 }
 
 .choice-box {
@@ -145,6 +147,11 @@
 }
 #game-panel:abandoned .label {
     -fx-text-fill: darkgray;
+}
+#game-chat {
+    -fx-font-weight: normal;
+    -fx-background-color: -game-chat;
+    -fx-text-fill: -game-chat-text;
 }
 
 #word-display {

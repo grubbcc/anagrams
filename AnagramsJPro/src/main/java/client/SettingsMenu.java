@@ -70,9 +70,10 @@ class SettingsMenu extends PopWindow {
         grid.add(new ColorChooser(AnagramsClient.Colors.GAME_FOREGROUND), 0, 3, 3, 1);
         grid.add(new ColorChooser(AnagramsClient.Colors.GAME_BACKGROUND), 0, 4, 3, 1);
         grid.add(new ColorChooser(AnagramsClient.Colors.CHAT_AREA), 0, 5, 3, 1);
-        grid.add(OKButton, 0, 6);
-        grid.add(CancelButton, 1, 6);
-        grid.add(ApplyButton, 2, 6);
+        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_CHAT), 0, 6, 3, 1);
+        grid.add(OKButton, 0, 7);
+        grid.add(CancelButton, 1, 7);
+        grid.add(ApplyButton, 2, 7);
 
         OKButton.setOnAction(e -> { applyChanges(); savePreferences(); hide(); });
         CancelButton.setOnAction(e -> {revertChanges(); hide();});
@@ -80,7 +81,7 @@ class SettingsMenu extends PopWindow {
         closeButton.setOnAction(e -> {revertChanges(); hide();});
 
         setContents(grid);
-        setMaxSize(340,320);
+        setMaxSize(340,350);
         setTitle("Settings");
         setAsDragZone(grid);
         show(false);

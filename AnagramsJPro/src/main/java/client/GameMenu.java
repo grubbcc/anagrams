@@ -185,7 +185,7 @@ class GameMenu extends PopWindow {
         if(gameName.isBlank()) gameName = nameField.getPromptText().replaceAll(" ", "%");
         final String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
         final String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
-        final String blankPenalty = blanksSelector.getSelectionModel().getSelectedItem() + "";
+        final int blankPenalty = Integer.parseInt(blanksSelector.getSelectionModel().getSelectedItem());
         final String lexicon = lexiconSelector.getSelectionModel().getSelectedItem() + "";
         final String speed = speedSelector.getSelectionModel().getSelectedItem() + "";
         final String skillLevel = (skillLevelSelector.getSelectionModel().getSelectedIndex() + 1) + "";

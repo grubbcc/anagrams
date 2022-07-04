@@ -13,7 +13,7 @@ class Robot {
 	final String robotName;
 	final int skillLevel;
 
-	private  Game game;
+	private final Game game;
 	private final int blankPenalty;
 	private final int minLength;
 	final HashMap<String, WordTree> trees = new HashMap<>();
@@ -28,8 +28,9 @@ class Robot {
 	*
 	*/
 	
-	Robot(int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
-		
+	Robot(Game game, int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
+
+		this.game = game;
 		this.dictionary = dictionary;
 
 		this.minLength = minLength;
@@ -50,9 +51,8 @@ class Robot {
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
 
-	void makePlay(Game game, String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
+	void makePlay(String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
 
-		this.game=game;
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
 		if (tilePool.length() >= 2 * minLength || rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
@@ -63,7 +63,7 @@ class Robot {
 			searchInPool(rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
 		}
 		else {
-			searchForSteal(game, words);
+			searchForSteal(words);
 		}
 	}
 
@@ -142,7 +142,7 @@ class Robot {
 	 * @param words All the words on the board grouped by player
 	 */
 	
-	private void searchForSteal(Game game, ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
+	private void searchForSteal(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
 
 		ArrayList<String> players = new ArrayList<>(words.keySet());
 		Collections.shuffle(players);

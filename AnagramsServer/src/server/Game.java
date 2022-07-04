@@ -204,7 +204,7 @@ public class Game {
 			}
 
 			if (hasRobot && think-- == 0) {
-				robotPlayer.makePlay(Game.this, tilePool, words);
+				robotPlayer.makePlay(tilePool, words);
 			}
 		}
 	}
@@ -432,7 +432,9 @@ public class Game {
 			robotPlayer.makeTree(nextWord);
 		}
 
-		words.get(shortPlayer).remove(shortWord);
+		if(words.containsKey(shortPlayer))
+			words.get(shortPlayer).remove(shortWord);
+
 		words.get(longPlayer).add(nextWord);
 
 		tilePool = play.nextTiles;
@@ -446,13 +448,14 @@ public class Game {
 		notifyRoom("steal " + gameID + " " + shortPlayer + " " + shortWord + " " + longPlayer + " " + nextWord + " " + tiles);
 
 		//if the shortPlayer has left the game and has no words, make room for another player to join
-		if(words.get(shortPlayer).isEmpty()) {
-			if (!shortPlayer.startsWith("Robot")) {
-				if (server.getWorker(shortPlayer) == null) { //player is not logged in
-					server.broadcast("removeplayer " + gameID + " " + shortPlayer);
-				}
-				else if (!playerList.containsKey(shortPlayer)) { //player has left the game
-					server.broadcast("removeplayer " + gameID + " " + shortPlayer);
+		if(words.containsKey(shortPlayer)) {
+			if (words.get(shortPlayer).isEmpty()) {
+				if (!shortPlayer.startsWith("Robot")) {
+					if (server.getWorker(shortPlayer) == null) { //player is not logged in
+						server.broadcast("removeplayer " + gameID + " " + shortPlayer);
+					} else if (!playerList.containsKey(shortPlayer)) { //player has left the game
+						server.broadcast("removeplayer " + gameID + " " + shortPlayer);
+					}
 				}
 			}
 		}

@@ -31,7 +31,7 @@ class AnagramsClient extends JProApplication {
 
 	private final String host = InetAddress.getLocalHost().getHostAddress();
 	private final int port = 8118;
-	private final String version = "1.0.0";
+	private static final String version = "1.0.0";
 
 	private boolean connected = false;
 	private InputStream serverIn;
@@ -72,7 +72,9 @@ class AnagramsClient extends JProApplication {
 
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
 	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.mp3").toExternalForm();
+	private final String newGameSound = getClass().getResource("/sounds/new game sound.mp3").toExternalForm();
 	private AudioClip newPlayerClip;
+	private AudioClip newGameClip;
 	boolean guest = false;
 
 	AnagramsClient() throws UnknownHostException {
@@ -84,12 +86,12 @@ class AnagramsClient extends JProApplication {
 	 */
 
 	enum Colors {
-
-		MAIN_SCREEN ("-main-screen", "main_screen", "Main Screen", "#282828"),
-		PLAYERS_LIST ("-players-list", "players_list", "Players List", "#3a3a3a"),
-		GAME_FOREGROUND ("-game-foreground", "game_foreground", "Game Foreground", "#193a57"),
-		GAME_BACKGROUND ("-game-background", "game_background", "Game Background", "#2d6893"),
-		CHAT_AREA ("-chat-area", "chat_area", "Chat Area", "#a4dffc"),
+		MAIN_SCREEN ("-main-screen", "main_screen", "Main Screen", "#002868"),
+		PLAYERS_LIST ("-players-list", "players_list", "Players List", "#bf0a30"),
+		GAME_FOREGROUND ("-game-foreground", "game_foreground", "Game Foreground", "#ffffff"),
+		GAME_BACKGROUND ("-game-background", "game_background", "Game Background", "#bf0a30"),
+		CHAT_AREA ("-chat-area", "chat_area", "Chat Area", "#ffffff"),
+		GAME_CHAT ("-game-chat", "game_chat", "Game Chat", "#002868")
 		;
 
 		final String css;
@@ -124,6 +126,7 @@ class AnagramsClient extends JProApplication {
 		System.out.println("Welcome to Anagrams!");
 
 		newPlayerClip = AudioClip.getAudioClip(newPlayerSound, stage);
+		newGameClip = AudioClip.getAudioClip(newGameSound, stage);
 		for(Colors color : Colors.values()) {
 			colors.put(color, color.defaultCode);
 		}
@@ -470,7 +473,7 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 
-		private GamePane(String gameID, String gameName, String playerMax, String minLength, String numSets, String blankPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
+		private GamePane(String gameID, String gameName, String playerMax, String minLength, String numSets, String blanksPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
 
 			this.gameID = gameID;
 			gamePanes.put(gameID, this);
@@ -478,6 +481,11 @@ class AnagramsClient extends JProApplication {
 			allowWatchers = Boolean.parseBoolean(allowsWatchers);
 			allowChat = Boolean.parseBoolean(allowsChat);
 			maxPlayers = Integer.parseInt(playerMax);
+			int blankPenalty = Integer.parseInt(blanksPenalty);
+
+			if(prefs.getBoolean("play_sounds", true)) {
+				newGameClip.play();
+			}
 
 			//labels
 			Label lexiconLabel = new Label("Lexicon: " + lexicon);
@@ -489,7 +497,7 @@ class AnagramsClient extends JProApplication {
 			Label numSetsLabel = new Label("Number of sets: " + numSets);
 			numSetsLabel.setTooltip(new Tooltip(100*Integer.parseInt(numSets) + " total tiles"));
 			Label blankPenaltyLabel = new Label("Blank Penalty: " + blankPenalty);
-			blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must\ntake " + blankPenalty + " additional tiles"));
+			blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must\ntake " + blankPenalty + " additional tile" + (blankPenalty > 1 ? "s" : "")));
 			Label speedLabel = new Label("Speed: " + speed);
 			if(speed.equals("slow"))
 				speedLabel.setTooltip(new Tooltip("9 seconds per tile"));
