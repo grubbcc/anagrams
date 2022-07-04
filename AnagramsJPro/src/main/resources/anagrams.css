@@ -2,19 +2,6 @@
 .root {
     -fx-font-family:        Arial;
     -fx-font-weight:        bold;
-
-	-main-screen:           blue;
-	-main-screen-text:      blue;
-	-players-list:          blue;
-	-players-list-text:     blue;
-	-game-foreground:       blue;
-	-game-foreground-text:  blue;
-	-game-background:       blue;
-	-game-background-text:  blue;
-	-chat-area:             blue;
-	-chat-area-text:        blue;
-	-game-chat:             blue;
-	-game-chat-text:        blue;
 }
 
 .choice-box {
