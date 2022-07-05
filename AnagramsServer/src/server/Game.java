@@ -422,6 +422,10 @@ public class Game {
 			return false;
 		}
 
+		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+			if(wordList.contains(longWord)) return false;
+		}
+
 		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
 		if(!play.isValid())
 			return false;
@@ -477,6 +481,9 @@ public class Game {
 
 		if(countdown > 0) {
 			return;
+		}
+		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+			if(wordList.contains(entry)) return;
 		}
 		Play play = new Play("", entry, tilePool, minLength, blankPenalty);
 		if(!play.isValid())
