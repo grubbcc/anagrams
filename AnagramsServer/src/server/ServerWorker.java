@@ -2,12 +2,10 @@ package server;
 
 import java.net.Socket;
 import java.io.*;
-import java.net.SocketOption;
 
 /**
 * Handles tasks for a client on the server side.
 */
-
 class ServerWorker extends Thread {
 
 	private final Socket clientSocket;
@@ -21,7 +19,6 @@ class ServerWorker extends Thread {
 	/**
 	*
 	*/
-	
 	ServerWorker(Server server, Socket clientSocket) {
 		this.server = server;
 		this.clientSocket = clientSocket;
@@ -29,8 +26,7 @@ class ServerWorker extends Thread {
 	
 	/**
 	*
-	g*/
-	
+	*/
 	@Override
 	public void run() {
 
@@ -52,7 +48,6 @@ class ServerWorker extends Thread {
 	 *
 	 * @param username The new user's name
 	*/
-	
 	private void handleLogin(String username) {
 
 		//Prevents duplicate usernames
@@ -66,7 +61,10 @@ class ServerWorker extends Thread {
 		send("ok login");
 		this.username = username;
 		System.out.println("User logged in successfully: " + username);
-		//use this space to send alert messages or chat messages upon login
+
+		for (String s : server.announcements) {
+			send("chat " + s);
+		}
 
 		for (String s : server.chatLog) {
 			send("chat " + s);
@@ -109,15 +107,11 @@ class ServerWorker extends Thread {
 		//notify other players of the new player
 		server.addWorker(username, this);
 		server.broadcast("loginplayer " + username);
-
 	}
-
-
 
 	/**
 	*
 	*/
-	
 	private void handleLogoff() throws IOException {
 
 		if(username != null) {
@@ -132,13 +126,11 @@ class ServerWorker extends Thread {
 
 		System.out.println(username + " has disconnected");
 		interrupt();
-
 	}
 	
 	/**
 	* Creates the game and informs all players
 	*/
-	
 	private void handleCreateGame(String[] params) {
 	
 		String gameID = params[1];
@@ -166,7 +158,6 @@ class ServerWorker extends Thread {
 	/**
 	*
 	*/
-	
 	String getUsername() {
 		return username;
 	}
@@ -174,7 +165,6 @@ class ServerWorker extends Thread {
 	/**
 	 * Listens for commands from this worker's client and responds appropriately.
 	 */
-
 	private void handleClientSocket() throws IOException {
 
 		inputStream = clientSocket.getInputStream();
@@ -183,7 +173,7 @@ class ServerWorker extends Thread {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-//			System.out.println("command received: " + line);
+			System.out.println("command received: " + line);
 			String[] tokens = line.split(" ");
 
 			if (tokens.length > 0) {
@@ -242,7 +232,6 @@ class ServerWorker extends Thread {
 	*
 	* @param msg The message to be sent.
 	*/
-
 	synchronized void send(String msg) {
 
 		try {

@@ -1,9 +1,7 @@
 package server;
 
 import com.sun.net.httpserver.*;
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.log4j.spi.Configurator;
 
 import java.io.*;
 import java.net.*;
@@ -22,10 +20,11 @@ public class Server extends Thread {
 
 	private static final String[] lexicons = {"NWL20", "CSW21"};
 	private final Logger consoleLogger = Logger.getLogger("console");
-	private final Logger chatLogger = Logger.getLogger("chat");
+	private final Logger chatLogger = Logger.getLogger("chat"); // currently unused
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
+	final ArrayDeque<String> announcements = new ArrayDeque<>();
 	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
 	private final ServerSocket serverSocket = new ServerSocket(GAME_PORT);
 	private final HttpServer httpServer = HttpServer.create(new InetSocketAddress(LOOKUP_PORT), 0);
@@ -51,6 +50,18 @@ public class Server extends Thread {
 		for(String lexicon : lexicons) {
 			dictionaries.put(lexicon, new AlphagramTrie(lexicon));
 			getDictionary(lexicon).common(); //generate the common subset
+		}
+
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader("announcements.txt"));
+			for(String line = reader.readLine(); line != null; line = reader.readLine()) {
+				announcements.add(line);
+			}
+			System.out.println("announcements loaded");
+			reader.close();
+		}
+		catch (IOException ioexception) {
+			ioexception.printStackTrace();
 		}
 
 		try {
