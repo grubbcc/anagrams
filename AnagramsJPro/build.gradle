@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.sandec.jpro:jpro-plugin-gradle:2021.2.3'
+        classpath 'com.sandec.jpro:jpro-plugin-gradle:2022.1.2'
         classpath 'org.openjfx:javafx-plugin:0.0.10'
     }
 }
@@ -27,8 +27,8 @@ repositories {
 }
 
 javafx {
-    version = '17'
-    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.media', 'javafx.web']
+    version = '18'
+    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.media', 'javafx.web', 'javafx.swing']
 }
 
 
@@ -36,7 +36,7 @@ javafx {
 apply plugin: 'com.sandec.jpro'
 
 jpro {
-    jproVersion = "2021.2.3"
+    jproVersion = "2022.1.2"
     port = 8079
     jproReleaseFiles << JProReleaseFile(new File("allfonts.properties"), "/fonts/")
 }
@@ -46,4 +46,6 @@ dependencies {
     implementation "com.sandec:mdfx:0.2.4"
     implementation "one.jpro:one.jpro.sound:0.1.0"
     implementation 'org.json:json:20210307'
+
+
 }
