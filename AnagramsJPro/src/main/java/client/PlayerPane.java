@@ -100,7 +100,7 @@ class PlayerPane extends PopWindow {
 
         contents.getStyleClass().clear();
         contents.setStyle(null);
-        contents.getStylesheets().add(getClass().getResource("/mdfx-default.css").toExternalForm());
+        contents.getStylesheets().add(getClass().getResource("/css/mdfx-default.css").toExternalForm());
         bioScrollPane.setFitToHeight(true);
         bioScrollPane.setFitToWidth(true);
         bioScrollPane.setContent(mdfx);

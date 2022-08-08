@@ -5,7 +5,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.css.PseudoClass;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.TouchEvent;
@@ -83,6 +82,9 @@ class SettingsMenu extends PopWindow {
         setContents(grid);
         setMaxSize(340,350);
         setTitle("Settings");
+
+        setId("settings-menu");
+        getStylesheets().add("css/settings-menu.css");
         setAsDragZone(grid);
         show(false);
 
@@ -196,7 +198,7 @@ class SettingsMenu extends PopWindow {
              */
 
             ColorPane() {
-                setId("color-pane");
+                getStyleClass().add("color-pane");
                 add(textFieldR, 0, 0);
                 add(textFieldG, 1, 0);
                 add(textFieldB, 2, 0);
@@ -255,7 +257,7 @@ class SettingsMenu extends PopWindow {
 
             private ColorComboBox() {
                 setCellFactory(lv -> new ColorCell());
-                setId("color-combo-box");
+                getStyleClass().add("color-combo-box");
                 setVisibleRowCount(30);
                 getItems().addAll(colorCodes);
                 setButtonCell(new ColorCell());

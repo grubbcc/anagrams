@@ -37,7 +37,7 @@ class MessageDialog extends PopWindow {
             setScaleY(1.2);
         }
 
-        mainPane.setId("dialog");
+        mainPane.getStyleClass().add("dialog");
         mainPane.setCenter(htmlView);
         mainPane.setBottom(buttonPane);
         buttonPane.setAlignment(Pos.BASELINE_CENTER);

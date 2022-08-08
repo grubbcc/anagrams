@@ -154,9 +154,9 @@ class WordExplorer extends PopWindow {
         splitPane.setOrientation(Orientation.VERTICAL);
         splitPane.getItems().addAll(mainPanel, messagePanel);
         splitPane.setDividerPosition(0, 0.75);
-        String explorerStyle = getClass().getResource("/explorer.css").toExternalForm();
-        getStylesheets().add(explorerStyle);
-        setStyle(explorerStyle);
+
+        getStylesheets().add("css/explorer.css");
+
         setContents(splitPane);
 
         setVisible(false);

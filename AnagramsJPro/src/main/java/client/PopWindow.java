@@ -56,15 +56,15 @@ class PopWindow extends BorderPane {
 
 
         //title bar
-        titleBar.setId("title-bar");
+        titleBar.getStyleClass().add("title-bar");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.SOMETIMES);
         titleBar.getChildren().addAll(title, spacer, closeButton);
         setTop(titleBar);
         setVisible(false);
         setAsDragZone(titleBar);
-        setId("popup");
-        getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
+        getStyleClass().add("popup");
+        getStylesheets().add("css/popup.css");
     }
 
     /**
@@ -168,6 +168,8 @@ class PopWindow extends BorderPane {
             setDisable(false);
         }
     }
+
+
 
     /**
      * Hides this PopWindow and removes it from its parent. Ensures that its siblings
