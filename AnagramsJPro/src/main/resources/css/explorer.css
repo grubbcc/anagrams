@@ -1,10 +1,5 @@
-/* universal */
 .root {
     -cell-background: white;
-}
-
-.scroll-pane, .scroll-pane .content, .scroll-pane .viewport {
-    -fx-background-color: transparent;
 }
 
 *:mobile .context-menu {
@@ -52,12 +47,12 @@
        linear-gradient(#ffffff 0%, #aabbee 24%, #aabbee 25%, #ffffff 100%);
 }
 
+/* lexicon chooser */
 .combo-box {
     -fx-background-color: rgb(230, 230, 230);
     -fx-background-insets: 1;
     -fx-background-radius: 0;
     -fx-border-color: black;
-
 }
 
 .combo-box > .arrow-button {
@@ -90,8 +85,9 @@
 .tree-cell {
     -fx-padding: 0;
     -fx-background-color: -cell-background;
-    -fx-font-weight:normal;
+    -fx-font-weight: normal;
 }
+
 .tree-cell:focused {
     -fx-font-weight: bold;
     -fx-text-background-color: black;
@@ -101,11 +97,9 @@
 #message-area {
     -fx-pref-height: 120;
 }
+
 #message-area .label {
     -fx-padding: -3;
     -fx-font-weight: normal;
     -fx-alignment: center;
 }
-
-
-
