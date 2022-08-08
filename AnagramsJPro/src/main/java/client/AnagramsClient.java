@@ -254,7 +254,8 @@ class AnagramsClient extends JProApplication {
 			getWebAPI().executeScript("window.location.reload(false)");
 			return;
 		}
-		scene.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
+		scene.getStylesheets().setAll("css/anagrams.css", "css/main.css");
+
 
 		//main stage
 		stage.setTitle("Anagrams");
@@ -274,7 +275,12 @@ class AnagramsClient extends JProApplication {
 		stage.show();
 
 		getWebAPI().addInstanceCloseListener(this::logOut);
+
 	}
+
+
+
+
 
 	/**
 	 *
@@ -302,7 +308,7 @@ class AnagramsClient extends JProApplication {
 	 *         and a String representing the color "white" otherwise.
 	 */
 
-	private static String getTextColor(String colorCode) {
+	static String getTextColor(String colorCode) {
 		int R = Integer.valueOf(colorCode.substring(1, 3), 16);
 		int G = Integer.valueOf(colorCode.substring(3, 5), 16);
 		int B = Integer.valueOf(colorCode.substring(5, 7), 16);
@@ -486,6 +492,7 @@ class AnagramsClient extends JProApplication {
 			if(prefs.getBoolean("play_sounds", true)) {
 				newGameClip.play();
 			}
+			getStyleClass().setAll("game-panel");
 
 			//labels
 			Label lexiconLabel = new Label("Lexicon: " + lexicon);
