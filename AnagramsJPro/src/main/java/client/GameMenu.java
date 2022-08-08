@@ -67,7 +67,7 @@ class GameMenu extends PopWindow {
         });
 
         if(client.getWebAPI().isMobile()) {
-            setScaleX(1.45); setScaleY(1.45);
+        //    setScaleX(1.45); setScaleY(1.45);
             pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             playersSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             lengthsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
@@ -196,6 +196,8 @@ class GameMenu extends PopWindow {
         if(addRobot.equals("true")) {
             maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
         }
+
+        getStylesheets().add("css/game-menu.css");
 
         client.gameWindows.put(gameID, new GameWindow(client, gameID, gameName, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
 
