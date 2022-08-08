@@ -22,6 +22,7 @@ services:
         volumes:
             - ./prefs/:/root/.java/.userPrefs/client/
             - ./gamelogs/:/anagrams/gamelogs/
+            - ./announcements.txt:/announcements.txt
             - ./log.log:/anagrams/log.log
             - ./chat.log:/anagrams/chat.log
 #        restart: unless-stopped
