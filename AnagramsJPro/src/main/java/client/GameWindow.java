@@ -1,9 +1,6 @@
 package client;
 
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -11,7 +8,13 @@ import javafx.css.PseudoClass;
 import javafx.css.Styleable;
 import javafx.event.Event;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
@@ -44,6 +47,7 @@ import java.util.regex.Pattern;
     private final Line caret = new Line(0, 6, 0, 27);
     private final StackPane textStack = new StackPane();
     private final Label infoPane = new Label();
+    private final MenuButton saveButton = new MenuButton("Download");
 
     private final TextArea chatBox = new TextArea();
     private final TextField chatField = new TextField();
@@ -127,13 +131,12 @@ import java.util.regex.Pattern;
         makeMaximizable();
 
         //control panel
-        controlPanel.setId("control-panel");
+        controlPanel.getStyleClass().add("control-panel");
         if (isMobile) controlPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         controlPanel.setSpacing(isMobile ? 5 : 20);
         exitGameButton.setOnAction(e -> exitGame());
-        notificationArea.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
-        infoPane.setStyle("-fx-font-size: " + (isMobile ? 15 : 13) + ";");
-        infoPane.setText(lexicon + (isMobile ? "" : "      Minimum length = " + minLength));
+
+        infoPane.setText(lexicon + (isMobile ? "" : "      Min length = " + minLength));
         controlPanel.getChildren().addAll(notificationArea, exitGameButton, infoPane);
 
         //game panels
@@ -169,7 +172,7 @@ import java.util.regex.Pattern;
         //main layout
         borderPane.setTop(controlPanel);
         borderPane.setCenter(gameGrid);
-        borderPane.setId("game-background");
+        borderPane.getStyleClass().add("game-background");
         splitPane.setOrientation(Orientation.VERTICAL);
         splitPane.getItems().add(borderPane);
         splitPane.addEventFilter(MouseEvent.ANY, event -> {
@@ -184,7 +187,7 @@ import java.util.regex.Pattern;
         BorderPane chatPanel = new BorderPane();
         if (allowsChat) {
             chatBox.setEditable(false);
-            chatBox.setId("game-chat");
+            chatBox.getStyleClass().add("game-chat");
             chatField.setPromptText("Type here to chat");
             chatField.setOnAction(ae -> {
                 String msg = String.format("%1.500s", chatField.getText()); //truncate to 500 characters
@@ -202,6 +205,7 @@ import java.util.regex.Pattern;
                 }
             });
             chatPanel.setMaxHeight(100);
+            chatPanel.setPrefHeight(100);
             chatPanel.setMinHeight(0);
             chatPanel.setCenter(chatBox);
             chatPanel.setBottom(chatField);
@@ -215,7 +219,7 @@ import java.util.regex.Pattern;
             chatBox.setWrapText(true);
 
             splitPane.getItems().add(chatPanel);
-            splitPane.setDividerPosition(0, 0.85);
+            splitPane.setDividerPosition(0, 0);
             if (isMobile) {
                 splitPane.setDividerPosition(0, 1.0);
                 hideButton.setPrefWidth(85);
@@ -240,7 +244,7 @@ import java.util.regex.Pattern;
             }
         }
 
-        this.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
+        getStylesheets().add("css/game-window.css");
         setContents(splitPane);
 
         if (isMobile) {
@@ -271,15 +275,17 @@ import java.util.regex.Pattern;
             maximizeButton.setOnAction(e -> {
                 maximizeButton.maximizeAction.handle(e);
                 Platform.runLater(() -> {
-                    setTiles(tilePool);
+                    for (int i = 0; i < 3; i++) {
+                        gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+                        gameGrid.getColumnConstraints().get(i).setPrefWidth(getWidth()/3 - 10);
+                    }
                     for (GamePanel gamePanel : gamePanels) {
                         if (!gamePanel.getWords().isEmpty()) {
                             gamePanel.addWords(gamePanel.getWords().toArray(new String[0]));
                         }
                     }
+                    setTiles(tilePool);
                 });
-                allocateSpace();
-    //            textField.requestFocus();
             });
         }
 
@@ -292,7 +298,7 @@ import java.util.regex.Pattern;
                     textField.clear();
                 });
                 textField.setPromptText("Enter a word here to play");
-                textField.setId("text-field");
+                textField.getStyleClass().add("text-field");
 
                 wordBuilder.visibleProperty().bind(textField.focusedProperty());
                 wordBuilder.setPrefWidth(310);
@@ -359,11 +365,12 @@ import java.util.regex.Pattern;
         }
 
         client.setColors();
-        Platform.runLater(() -> setTiles(tilePool));
+        Platform.runLater(() -> setTiles(tilePool)); // is runLater necessary here?
+        setTiles(tilePool);
         show(false);
         textField.requestFocus();
         closeButton.setOnAction(e -> exitGame());
-        gameGrid.layout();
+        Platform.runLater(this::layout);
     }
 
     /**
@@ -454,16 +461,25 @@ import java.util.regex.Pattern;
 
     private void allocateSpace() {
 
-        double remainingSpace = getWidth() - 10;
+        double availableSpace = getWidth() - 10;
+        double usedSpace = 0;
+
         for (int i = 0; i < 3; i++) {
-            remainingSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
+            usedSpace += gameGrid.getColumnConstraints().get(i).getMinWidth();
         }
-        for (int i = 0; i < 3; i++) {
-            ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
-            double allocatedWidth = currentColumn.getMinWidth();
-            currentColumn.setPrefWidth(allocatedWidth + remainingSpace / 3);
+
+        if(usedSpace >= availableSpace) {
+            setPrefWidth(Math.max(availableSpace, usedSpace + 10));
         }
-        Platform.runLater(() -> setTiles(tilePool));
+/*        else {
+            for (int i = 0; i < 3; i++) {
+                availableSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
+            }
+            for(int i = 0; i < 3; i++) {
+                ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
+        //        currentColumn.setPrefWidth(currentColumn.getMinWidth() + availableSpace / 3);
+            }
+        }*/
     }
 
     /**
@@ -477,7 +493,7 @@ import java.util.regex.Pattern;
          */
 
         private TilePanel() {
-            setId("tile-panel");
+            getStyleClass().add("tile-panel");
             setMinSize(minPanelWidth, minPanelHeight);
 
             widthProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
@@ -545,7 +561,7 @@ import java.util.regex.Pattern;
          */
 
         private GamePanel() {
-            setId("game-panel");
+            getStyleClass().add("game-panel");
             if (isMobile) pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             gamePanels.add(this);
 
@@ -611,7 +627,7 @@ import java.util.regex.Pattern;
          */
 
         private void abandonSeat() {
-            if (column >= 0) {
+            if (!gameOver && column >= 0) {
                 pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), true);
             }
             if (words.isEmpty()) {
@@ -640,7 +656,7 @@ import java.util.regex.Pattern;
             wordPane.getChildren().clear();
             playerNameLabel.setGraphic(null);
             words.clear();
-            //    makeBig();
+            makeBig();
             abandonSeat();
         }
 
@@ -659,7 +675,7 @@ import java.util.regex.Pattern;
 
             if (width > paneWidth) {
                 makeSmall();
-                gameGrid.getColumnConstraints().get(column).setMinWidth(newWord.length() * 12 + (newWord.length() - 1) * WordLabel.TILE_GAP + 1);
+                gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.length() * 12 + (newWord.length() - 1) * WordLabel.TILE_GAP + 1);
             }
 
             if (prevHeight + wordPane.getHgap() + tileHeight + PADDING > paneHeight) {
@@ -699,121 +715,46 @@ import java.util.regex.Pattern;
          */
 
         private void addWords(String[] wordsToAdd) {
-            double paneWidth = (gameGrid.getWidth() - 10) / 3;
-            if (column < 0) paneWidth = getWidth();
-            double paneHeight = getHeight() - infoPane.getHeight();
-            makeBig();
-            if (column >= 0) {
-                gameGrid.getColumnConstraints().get(column).setMinWidth(minPanelWidth);
-            }
 
-            if (isMobile) {
-                //check if any individual words are too large to fit using large tiles
-                for (String word : wordsToAdd) {
-                    double width = word.length() * 16 + (word.length() - 1) * WordLabel.TILE_GAP + 1;
-                    if (width > paneWidth) {
-                        makeSmall();
-                        gameGrid.getColumnConstraints().get(column).setMinWidth(word.length() * 12 + (word.length() - 1) * WordLabel.TILE_GAP + 1);
-                        break;
-                    }
-                }
-            }
+            wordPane.getChildren().clear();
 
-            //check if panel is large enough for adding large tiles
-            if (34 * wordsToAdd.length - 4 <= paneHeight) {
-                score = 0;
-                wordPane.getChildren().clear();
-                for (String word : wordsToAdd) {
-                    WordLabel newWordLabel = new WordLabel(word);
-                    wordPane.getChildren().add(newWordLabel);
-                    words.put(word, newWordLabel);
-                    score += word.length() * word.length();
-                }
-                playerScoreLabel.setText(score + "");
-                return;
-            }
-
-            //check if there is room for large tiles
-            double hgap = 12;
-            double vgap = 6;
-            double x = -1 * hgap / 2 + paneWidth / 2;
-            double PADDING = 4;
-            double y = 24 + PADDING;
+            WordLabel newWordLabel = new WordLabel(wordsToAdd[0]);
 
             for (String word : wordsToAdd) {
-                double width = word.length() * 16 + (word.length() - 1) * WordLabel.TILE_GAP + 1;
-                x += (width + hgap + PADDING) / 2;
-                if (x > paneWidth) {
-                    x = width / 2 + paneWidth / 2;
-                    y += 24 + vgap + PADDING;
+                if (isMobile && column >= 0 && word.length() * 16 + (word.length() - 1) * WordLabel.TILE_GAP + 1 > getPrefWidth()) {
+                    makeSmall();
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(word.length() * 12 + (word.length() - 1) * WordLabel.TILE_GAP + 1);
                 }
+                newWordLabel = new WordLabel(word);
+                wordPane.getChildren().add(newWordLabel);
+                words.put(word, newWordLabel);
             }
-            if (y <= paneHeight) {
-                score = 0;
-                wordPane.getChildren().clear();
-                for (String word : wordsToAdd) {
-                    WordLabel newWordLabel = new WordLabel(word);
-                    wordPane.getChildren().add(newWordLabel);
-                    words.put(word, newWordLabel);
-                    score += word.length() * word.length();
-                }
-                playerScoreLabel.setText(score + "");
+
+            gameGrid.applyCss();
+            gameGrid.layout();
+
+            double paneWidth = getWidth();
+            double paneHeight = getHeight() - infoPane.getHeight();
+            double maxY = newWordLabel.getLayoutY() + newWordLabel.getHeight();
+
+            //check if we need to save space by switching to small tiles
+            if (!savingSpace.get() && maxY > paneHeight) {
+                makeSmall();
+                addWords(wordsToAdd);
                 return;
             }
 
-            //room is sufficient to add small tiles
-            hgap = 6;
-            vgap = 2;
-            makeSmall();
-            if (23 * wordsToAdd.length - 2 <= paneHeight || column < 0) {
+            if(column >= 0) {
+                gameGrid.getColumnConstraints().get(column).setMinWidth(Math.max(minPanelWidth, paneWidth * maxY / paneHeight));
+
                 score = 0;
-                wordPane.getChildren().clear();
                 for (String word : wordsToAdd) {
-                    WordLabel newWordLabel = new WordLabel(word);
-                    wordPane.getChildren().add(newWordLabel);
-                    words.put(word, newWordLabel);
                     score += word.length() * word.length();
+                    playerScoreLabel.setText(score + "");
                 }
-                playerScoreLabel.setText(score + "");
-                return;
-            }
-
-            //widen the pane until there is room for small tiles
-            outer:
-            while (true) {
-                x = -1 * hgap / 2 + paneWidth / 2;
-                y = 17 + PADDING;
-                for (String word : wordsToAdd) {
-                    double width = word.length() * 12 + (word.length() - 1) * WordLabel.TILE_GAP + 1;
-                    x += (width + hgap + PADDING) / 2;
-                    if (x > paneWidth) {
-                        x = width / 2 + paneWidth / 2;
-                        y += 17 + vgap + PADDING;
-                    }
-
-                    if (y > paneHeight) {
-                        paneWidth *= 1.15;
-                        gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth);
-                        continue outer;
-                    }
-                }
-                GameWindow.this.setPrefWidth(Math.max(1000, paneWidth + 366)); //actually sets the minimum width
-                if (!isMobile)
-                    GameWindow.this.setMinWidth(Math.max(GameWindow.this.getWidth(), paneWidth + 366)); //actually sets the current width
-
-                allocateSpace();
-                score = 0;
-                wordPane.getChildren().clear();
-                for (String word : wordsToAdd) {
-                    WordLabel newWordLabel = new WordLabel(word);
-                    wordPane.getChildren().add(newWordLabel);
-                    words.put(word, newWordLabel);
-                    score += word.length() * word.length();
-                }
-                playerScoreLabel.setText(score + "");
-                return;
             }
         }
+
 
         /**
          * Remove a word from the player's collection and recalculate their score.
@@ -908,7 +849,7 @@ import java.util.regex.Pattern;
                     rect.setArcHeight(2);
                     rect.setFill(Color.YELLOW);
 
-                    Text text = new Text(x + 1, tileHeight - 3, String.valueOf(Character.toUpperCase(tile)));
+                    Text text = new Text(x + 1, tileHeight - 2, String.valueOf(Character.toUpperCase(tile)));
                     text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize));
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
@@ -1051,12 +992,12 @@ import java.util.regex.Pattern;
         controlPanel.getChildren().removeAll(textStack, textField, infoPane);
         controlPanel.getChildren().addAll(backToStartButton, backTenButton, backButton, showPlaysButton, forwardButton, forwardTenButton, forwardToEndButton, infoPane);
 
-        backToStartButton.setPrefWidth(25);
-        backTenButton.setPrefWidth(25);
-        backButton.setPrefWidth(25);
-        forwardButton.setPrefWidth(25);
-        forwardTenButton.setPrefWidth(25);
-        forwardToEndButton.setPrefWidth(25);
+        backToStartButton.setPrefWidth(29);
+        backTenButton.setPrefWidth(29);
+        backButton.setPrefWidth(29);
+        forwardButton.setPrefWidth(29);
+        forwardTenButton.setPrefWidth(29);
+        forwardToEndButton.setPrefWidth(29);
         showPlaysButton.textProperty().bind(Bindings.createStringBinding(() -> wordDisplay.visibleProperty().get() ? "Hide plays" : "Show plays", wordDisplay.visibleProperty()));
         showPlaysButton.setOnAction(e -> {
             if (wordDisplay.isVisible()) {
@@ -1111,14 +1052,18 @@ import java.util.regex.Pattern;
             });
 
             //Download button
-            Button saveButton = new Button("Download");
-            saveButton.setTooltip(new Tooltip("Save game log as text file"));
-            saveButton.setBackground(new Background(new BackgroundFill(Color.CORNFLOWERBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-            saveButton.setOnAction(click -> saveGame());
+            MenuItem textOption = new MenuItem("Save as Text");
+            textOption.setOnAction(click -> saveAsText());
+            MenuItem gifOption = new MenuItem("Save as GIF");
+            gifOption.setOnAction(click -> saveAsGif());
+
+            saveButton.getItems().addAll(textOption, gifOption);
+            saveButton.setTooltip(new Tooltip("Save record of game"));
+            saveButton.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
             controlPanel.getChildren().add(saveButton);
         }
 
-        Platform.runLater(() -> showPosition(gameLog.get(position)));
+        Platform.runLater(() -> showPosition(gameLog.get(position))); //is runLater necessary here?
     }
 
     /**
@@ -1132,13 +1077,14 @@ import java.util.regex.Pattern;
      */
 
     void showPosition(String[] tokens) {
+        for (int i = 0; i < 3; i++) {
+            gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+        }
 
         for (GamePanel panel : gamePanels)
-            panel.reset();
+            panel.abandonSeat(); // or reset()?
 
         notificationArea.setText("Time remaining " + tokens[0]);
-        tilePool = tokens[1];
-        setTiles(tilePool);
 
         if (tokens.length > 2) {
             for (int i = 2; i < tokens.length; i += 2) {
@@ -1149,6 +1095,7 @@ import java.util.regex.Pattern;
             }
         }
         allocateSpace();
+        setTiles(tokens[1]);
 
         if (wordDisplay.isVisible()) {
             client.send("findplays " + gameID + " " + position);
@@ -1211,8 +1158,9 @@ import java.util.regex.Pattern;
             displayGrid.getRowConstraints().addAll(row1, row2);
 
             BorderPane mainPanel = new BorderPane(displayGrid);
-            mainPanel.setId("word-display");
-            mainPanel.getStylesheets().add(getClass().getResource("/anagrams.css").toExternalForm());
+            mainPanel.getStyleClass().add("word-display");
+            getStylesheets().add("css/game-window.css");
+
             displayGrid.add(poolPanel, 0, 0);
             displayGrid.add(stealsPanel, 0, 1);
             displayGrid.addEventFilter(MouseEvent.ANY, event -> {
@@ -1301,9 +1249,9 @@ import java.util.regex.Pattern;
 
     /**
      *
+     *
      */
-
-    private void saveGame() {
+    private void saveAsText() {
 
         String gameData = "gameID " + gameID + "\\n" +
                 "lexicon " + lexicon + "\\n" +
@@ -1336,9 +1284,32 @@ import java.util.regex.Pattern;
     }
 
     /**
+     *
+     */
+    private void saveAsGif() {
+
+        SnapshotPane snapshotPane = new SnapshotPane(client, gameID, username, minLength + "", blankPenalty, numSets, speed, lexicon, gameLog);
+
+
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.progressProperty().bind(snapshotPane.progress);
+        Platform.runLater(() -> {
+            controlPanel.getChildren().remove(saveButton);
+            controlPanel.getChildren().add(progressBar);
+        });
+
+
+        snapshotPane.finished.addListener((finished, wasFinished, isFinished) -> {
+            if (isFinished) {
+                controlPanel.getChildren().remove(progressBar);
+                controlPanel.getChildren().add(saveButton);
+            }
+        });
+    }
+
+    /**
      * An attempt to form a word, either by building from the pool or by stealing an existing word
      */
-
     private class Play {
 
         final String shortWord;
@@ -1353,9 +1324,8 @@ import java.util.regex.Pattern;
 
         /**
          *
-         * @return a measure of how "playable" this play is. All valid plays will have a score >= 0
+         * @return a measure of how "playable" this play is. All valid plays will have a score >= 0.
          */
-
         private int getScore() {
 
             String charsToSteal = shortWord;
@@ -1395,7 +1365,6 @@ import java.util.regex.Pattern;
         /**
          * Designate letters as blanks or as normal tiles
          */
-
         private char[] buildWord() {
             String tiles = this.tiles + shortWord.toUpperCase();
             String newWord = "";
@@ -1416,7 +1385,6 @@ import java.util.regex.Pattern;
         /**
          *
          */
-
         private boolean isValid() {
 
             String entry = longWord;
@@ -1504,7 +1472,6 @@ import java.util.regex.Pattern;
          * @param shortWord     a short word (case must match longWord)
          * @param longWord      a longer word (case must match that of shortWord)
          */
-
         private static boolean isRearrangement(String shortWord, String longWord) {
 
             while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
@@ -1518,4 +1485,3 @@ import java.util.regex.Pattern;
         }
     }
 }
-
