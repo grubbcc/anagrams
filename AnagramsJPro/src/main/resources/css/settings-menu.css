@@ -1,0 +1,45 @@
+
+.color-pane {
+    -fx-pref-width: 80;
+    -fx-pref-height: 40;
+    -fx-hgap: 9;
+    -fx-vgap: 0;
+    -fx-hpos: center;
+}
+
+.color-pane .text-field {
+    -fx-padding: 0;
+    -fx-alignment: center;
+}
+
+.color-pane .label {
+    -fx-alignment: center;
+}
+
+.color-combo-box {
+    -fx-pref-height: 18;
+    -fx-pref-width: 70;
+    -fx-padding: 1, 1, 5, 1;
+}
+
+.color-combo-box .arrow,
+.color-combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.color-combo-box .arrow-button {
+    -fx-padding: 1;
+}
+
+.color-combo-box .list-view {
+    -fx-fixed-cell-size: 6;
+}
+
+.color-combo-box .list-view .list-cell:hover {
+    -fx-border-color: black;
+}
+
+.color-combo-box:mobile .list-view {
+    -fx-scale-x: 1.45;
+    -fx-scale-y: 1.45;
+}

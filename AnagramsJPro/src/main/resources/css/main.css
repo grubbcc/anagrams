@@ -1,0 +1,72 @@
+/* universal */
+
+
+.button {
+    -fx-text-fill: black;
+    -fx-padding: 3;
+    -fx-content-display: right;
+    -fx-graphic-text-gap: 15;
+}
+
+.text-field {
+    -fx-background-color: #E5E5E5;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-prompt-text-fill: #333333;
+}
+
+.text-area {
+    -fx-background-color: -chat-area;
+    -fx-text-fill: -chat-area-text;
+}
+
+.tooltip {
+    -fx-padding: 2;
+    -fx-background-radius: 1;
+    -fx-background-color: #EFEFEF;
+    -fx-text-fill: black;
+    -fx-font-weight: normal;
+    -fx-show-delay: 500ms;
+}
+
+
+#games-panel {
+    -fx-padding: 10;
+    -fx-hgap: 10;
+    -fx-vgap: 8;
+    -fx-background-color: -main-screen;
+}
+#games-panel > * {
+    -fx-background-color: -game-foreground;
+    -fx-border-color: -game-background;
+    -fx-border-width: 3;
+    -fx-padding: 5;
+    -fx-hgap: 3;
+    -fx-vgap: 3;
+}
+#games-panel .button {
+    -fx-pref-width: 83;
+    -fx-pref-height: 25;
+}
+#games-panel .label {
+    -fx-text-fill: -game-foreground-text;
+}
+#side-panel {
+    -fx-background-color: -players-list;
+}
+#side-panel .button {
+    -fx-font-size: 13;
+        -fx-graphic-text-gap: 10;
+    -fx-padding: 0;
+}
+#side-panel .label {
+    -fx-text-fill: -players-list-text;
+    -fx-font-size: 18;
+}
+#side-panel .scroll-pane .label {
+    -fx-font-weight: normal;
+    -fx-font-size: 16;
+}
+#side-panel .scroll-pane .label:hover {
+    -fx-font-weight: bold;
+}

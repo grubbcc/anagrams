@@ -1,0 +1,77 @@
+/* background */
+.game-background {
+    -fx-background-color: -game-background;
+}
+
+.game-background .text-field {
+    -fx-padding: 8;
+}
+
+/* control panel */
+.control-panel:mobile {
+    -fx-spacing: 5;
+}
+
+.control-panel .button,
+.control-panel .menu-button,
+.control-panel .progress-bar {
+    -fx-pref-height: 25;
+    -fx-font-size: 13px;
+    -fx-min-width: 30;
+}
+
+.control-panel .menu-button {
+    -fx-label-padding: 0;
+}
+
+.control-panel {
+    -fx-alignment: center;
+    -fx-padding: 3;
+    -fx-spacing: 20;
+}
+
+.control-panel > .label {
+    -fx-font-size: 14px;
+    -fx-text-fill: -game-background-text;
+    -fx-padding: 4;
+}
+
+.menu-button > .label {
+    -fx-label-padding: 0;
+}
+
+.control-panel:mobile .button,
+.control-panel:mobile .menu-button {
+    -fx-font-size: 15px;
+}
+
+/* foreground */
+.tile-panel,
+.game-panel {
+    -fx-background-color: -game-foreground;
+}
+
+.game-panel .label {
+    -fx-font-size: 22px;
+    -fx-text-fill: -game-foreground-text;
+}
+
+.game-panel:mobile .label {
+    -fx-font-size: 19px;
+}
+
+.game-panel:abandoned .label {
+    -fx-text-fill: darkgray;
+}
+
+/* chat */
+.game-chat {
+    -fx-font-weight: normal;
+    -fx-background-color: -game-chat;
+    -fx-text-fill: -game-chat-text;
+}
+
+/* word-display */
+.word-display {
+    -fx-background-color: -game-background;
+}

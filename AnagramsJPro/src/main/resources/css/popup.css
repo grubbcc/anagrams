@@ -1,0 +1,36 @@
+.popup {
+    -fx-background-color: #DDDDDD;
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 4px;
+}
+
+/* title-bar */
+.title-bar {
+    -fx-background-color: #EFEFEF;
+    -fx-spacing: 15px;
+    -fx-padding: 2;
+}
+
+.title-bar .button {
+    -fx-pref-width: 20px;
+    -fx-pref-height: 20px;
+    -fx-padding: 2;
+}
+
+/* choice-box */
+.choice-box,
+.choice-box .context-menu {
+    -fx-pref-width: 112px;
+}
+
+.choice-box {
+    -fx-mark-color: transparent;
+    -fx-focused-mark-color: transparent;
+}
+
+.choice-box .open-button .arrow {
+    -fx-background-color: black;
+}

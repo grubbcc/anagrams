@@ -1,0 +1,58 @@
+.root {
+    -fx-font-family:        Arial;
+    -fx-font-weight:        bold;
+    -main-screen:           blue;
+    -main-screen-text:      blue;
+    -players-list:          blue;
+    -players-list-text:     blue;
+    -game-foreground:       blue;
+    -game-foreground-text:  blue;
+    -game-background:       blue;
+    -game-background-text:  blue;
+    -chat-area:             blue;
+    -chat-area-text:        blue;
+    -game-chat:             blue;
+    -game-chat-text:        blue;
+}
+
+.scroll-pane,
+.scroll-pane .content,
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.label {
+    -fx-label-padding: 3;
+}
+
+.button {
+    -fx-text-fill: black;
+    -fx-padding: 3;
+    -fx-content-display: right;
+    -fx-graphic-text-gap: 15;
+}
+
+.dialog .button {
+    -fx-pref-width: 70;
+}
+
+/* text */
+.text-field {
+    -fx-font-weight: normal;
+    -fx-background-color: #E5E5E5;
+    -fx-prompt-text-fill: #333333;
+}
+
+.text-area {
+    -fx-font-weight: normal;
+}
+
+/* tooltip */
+.tooltip {
+    -fx-padding: 2;
+    -fx-background-radius: 1;
+    -fx-background-color: #EFEFEF;
+    -fx-text-fill: black;
+    -fx-font-weight: normal;
+    -fx-show-delay: 500ms;
+}
