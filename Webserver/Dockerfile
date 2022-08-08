@@ -1,4 +1,4 @@
-FROM grubbcc/jpro-base:jdk17-fx17
+FROM grubbcc/jpro-base:jdk18-fx18
 WORKDIR /anagrams
 COPY ./AnagramsJPro-jpro ./Client
 COPY ./AnagramsServer ./Server
