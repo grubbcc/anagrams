@@ -7,7 +7,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
 * An artificial intelligence that uses wordTrees to find words and make steals
 */
-
 class Robot {
 
 	final String robotName;
@@ -27,7 +26,6 @@ class Robot {
 	/**
 	*
 	*/
-	
 	Robot(Game game, int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
 
 		this.game = game;
@@ -50,7 +48,6 @@ class Robot {
 	/**
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
-
 	void makePlay(String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
 
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
@@ -77,13 +74,12 @@ class Robot {
 	 * @param poolRemaining 	chars left in the pool from which to form a word
 	 * @param blanksRequired 	Blanks needed to make this word
 	 */
-
 	private void searchInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
 		if(wordFound) return;
 		if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
 			if(!node.anagrams.isEmpty()) {
 				int num = rgen.nextInt(node.anagrams.size());
-				for(String anagram: node.anagrams) {
+				for(String anagram: node.anagrams.keySet()) {
 					if (--num < 0) {
 						wordFound = true;
 						game.doMakeWord(robotName, anagram);
@@ -116,12 +112,9 @@ class Robot {
 	}
 
 
-
-
 	/**
 	*
 	*/
-	
 	void makeTree(String shortWord) {
 		trees.put(shortWord, new WordTree(shortWord.replaceAll("[a-z]",""), dictionary));
 		commonTrees.put(shortWord, new WordTree(shortWord.replaceAll("[a-z]",""), dictionary.common));
@@ -130,7 +123,6 @@ class Robot {
 	/**
 	*
 	*/
-	
 	void removeTree(String stolenWord) {
 		trees.remove(stolenWord);
 		commonTrees.remove(stolenWord);
@@ -141,7 +133,6 @@ class Robot {
 	 *
 	 * @param words All the words on the board grouped by player
 	 */
-	
 	private void searchForSteal(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
 
 		ArrayList<String> players = new ArrayList<>(words.keySet());
