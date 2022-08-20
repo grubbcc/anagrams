@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  *
  */
 
- class GameWindow extends PopWindow {
+class GameWindow extends PopWindow {
 
     private final HBox controlPanel = new HBox();
     private final Label notificationArea = new Label("");
@@ -100,7 +100,6 @@ import java.util.regex.Pattern;
     /**
      *
      */
-
     GameWindow(AnagramsClient client, String gameID, String gameName, String username, String minLength, int blankPenalty, String numSets, String speed, boolean allowsChat, String lexicon, ArrayList<String[]> gameLog, boolean isWatcher) {
         super(client.anchor);
 
@@ -228,17 +227,7 @@ import java.util.regex.Pattern;
                 hideButton.setFocusTraversable(false);
                 hideButton.translateXProperty().bind(translateXProperty().add(widthProperty()).subtract(89));
                 hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
-         /*       hideButton.setOnAction(e -> {
-                    if (hideButton.getText().contains("show")) {
-                        splitPane.setDividerPosition(0, 0);
-                        hideButton.setText("hide chat \u25BC");
-                        hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(chatPanel.heightProperty()).subtract(12));
-                    } else {
-                        splitPane.setDividerPosition(0, 1.0);
-                        hideButton.setText("show chat \u25B2");
-                        hideButton.translateYProperty().bind(translateYProperty().add(heightProperty()).subtract(28));
-                    }
-                });*/
+
                 client.anchor.getChildren().add(hideButton);
                 Platform.runLater(hideButton::toFront);
             }
@@ -272,20 +261,26 @@ import java.util.regex.Pattern;
             makeResizable();
             setAsDragZone(controlPanel, tilePanel);
 
-            maximizeButton.setOnAction(e -> {
-                maximizeButton.maximizeAction.handle(e);
-                Platform.runLater(() -> {
-                    for (int i = 0; i < 3; i++) {
-                        gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
-                        gameGrid.getColumnConstraints().get(i).setPrefWidth(getWidth()/3 - 10);
-                    }
-                    for (GamePanel gamePanel : gamePanels) {
-                        if (!gamePanel.getWords().isEmpty()) {
-                            gamePanel.addWords(gamePanel.getWords().toArray(new String[0]));
+            maximizeButton.setOnAction(click -> {
+                maximizeButton.maximizeAction.handle(click);
+                    Platform.runLater(() -> {
+                        if (gameOver) {
+                            showPosition(gameLog.get(position));
+                            return;
                         }
-                    }
-                    setTiles(tilePool);
-                });
+
+                        for (int i = 0; i < 3; i++) {
+                            gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+                            gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
+                        }
+                        for (GamePanel panel : gamePanels) {
+                            panel.reset();
+                            if (!panel.words.isEmpty()) {
+                                panel.addWords(panel.words.keySet().toArray(new String[0]));
+                            }
+                        }
+                        setTiles(tilePool);
+                    });
             });
         }
 
@@ -345,20 +340,8 @@ import java.util.regex.Pattern;
                 controlPanel.getChildren().addAll(textStack, infoPane);
             }
         }
-        gameGrid.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
-                maximizeButton.fire();
-        });
 
-        controlPanel.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
-                maximizeButton.fire();
-        });
-
-        titleBar.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2)
-                maximizeButton.fire();
-        });
+        setAsMaximizeZone(titleBar, controlPanel, gameGrid);
 
         if (!gameLog.isEmpty()) {
             endGame();
@@ -395,8 +378,8 @@ import java.util.regex.Pattern;
         Play bestPlay = new Play("", entry, tilePool);
         int bestScore = bestPlay.getScore();
         for(GamePanel gamePanel : gamePanels) {
-            for(String word : gamePanel.getWords()) {
-                Play play = new Play(word, entry, tilePool);
+            for(GamePanel.Word word : gamePanel.words.values()) {
+                Play play = new Play(word.letters, entry, tilePool);
                 int score = play.getScore();
                 if (score > bestScore) {
                     bestPlay = play;
@@ -431,12 +414,12 @@ import java.util.regex.Pattern;
     /**
      *
      */
-
     private void exitGame() {
         hide();
         wordDisplay.hide();
         explorer.hide();
         blinker.stop();
+        client.gameWindows.remove(gameID);
         client.anchor.getChildren().remove(hideButton);
         client.exitGame(gameID, isWatcher);
     }
@@ -446,7 +429,6 @@ import java.util.regex.Pattern;
      *
      * @param dark whether the game foreground has a luminance < 40.
      */
-
     void setDark(Boolean dark) {
         if (dark)
             robotImage.setImage(whiteRobot);
@@ -454,44 +436,43 @@ import java.util.regex.Pattern;
             robotImage.setImage(blackRobot);
     }
 
-
     /**
      *
      */
-
     private void allocateSpace() {
-
-        double availableSpace = getWidth() - 10;
         double usedSpace = 0;
+
+        double availableSpace = getMinWidth() - 10;
 
         for (int i = 0; i < 3; i++) {
             usedSpace += gameGrid.getColumnConstraints().get(i).getMinWidth();
+            availableSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
         }
-
-        if(usedSpace >= availableSpace) {
-            setPrefWidth(Math.max(availableSpace, usedSpace + 10));
-        }
-/*        else {
+        if(availableSpace < 0) {
+            setPrefWidth(usedSpace + 20);
             for (int i = 0; i < 3; i++) {
-                availableSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
-            }
-            for(int i = 0; i < 3; i++) {
                 ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
-        //        currentColumn.setPrefWidth(currentColumn.getMinWidth() + availableSpace / 3);
+                currentColumn.setPrefWidth(currentColumn.getMinWidth());
             }
-        }*/
+        }
+        else {
+            setPrefWidth(Math.max(1000, usedSpace + 10));
+            for (int i = 0; i < 3; i++) {
+                ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
+                currentColumn.setPrefWidth(currentColumn.getMinWidth() + availableSpace / 3);
+            }
+        }
     }
+
 
     /**
      * A panel for displaying the tilePool
      */
-
     private class TilePanel extends Pane {
 
         /**
          *
          */
-
         private TilePanel() {
             getStyleClass().add("tile-panel");
             setMinSize(minPanelWidth, minPanelHeight);
@@ -501,9 +482,8 @@ import java.util.regex.Pattern;
         }
 
         /**
-         * Draws the tiles in a spiral pattern
+         * Draws the tiles of the pool in a spiral pattern
          */
-
         private void showTiles() {
 
             getChildren().clear();
@@ -533,7 +513,6 @@ import java.util.regex.Pattern;
     /**
      * A panel for displaying the name, score, and words possessed by a player.
      */
-
     private class GamePanel extends BorderPane {
 
         String playerName = null;
@@ -545,21 +524,19 @@ import java.util.regex.Pattern;
 
         private final SimpleBooleanProperty savingSpace = new SimpleBooleanProperty(false);
 
+        private static final int PADDING = 4;
         int column = -1;
         private int tileWidth;
         private int tileHeight;
         private int tileFontSize;
 
         boolean isAvailable = true;
-        private final LinkedHashMap<String, WordLabel> words = new LinkedHashMap<>();
-        private double prevWidth;
-        private double prevHeight;
+        private final LinkedHashMap<String, Word> words = new LinkedHashMap<>();
         private int score = 0;
 
         /**
          * An empty placeholder gamePanel
          */
-
         private GamePanel() {
             getStyleClass().add("game-panel");
             if (isMobile) pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
@@ -567,8 +544,6 @@ import java.util.regex.Pattern;
 
             infoPane.getChildren().add(playerNameLabel);
             infoPane.getChildren().add(playerScoreLabel);
-
-            playerScoreLabel.setMinWidth(USE_PREF_SIZE);
 
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
@@ -589,7 +564,6 @@ import java.util.regex.Pattern;
         /**
          *
          */
-
         private GamePanel(int column) {
             this();
             this.column = column;
@@ -603,7 +577,6 @@ import java.util.regex.Pattern;
          *
          * @param newPlayer The name of the player to be added.
          */
-
         private GamePanel takeSeat(String newPlayer) {
             pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), false);
             this.playerName = newPlayer;
@@ -625,7 +598,6 @@ import java.util.regex.Pattern;
          * The player has left this seat. If they have any words, they remain.
          * Otherwise, the seat becomes available for another player.
          */
-
         private void abandonSeat() {
             if (!gameOver && column >= 0) {
                 pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), true);
@@ -638,7 +610,6 @@ import java.util.regex.Pattern;
         /**
          * The seat is empty and contains no words, so a new player may occupy it.
          */
-
         private void makeAvailable() {
             isAvailable = true;
             playerNameLabel.setText("");
@@ -651,106 +622,89 @@ import java.util.regex.Pattern;
          * Removes the occupant, as well as any words they may have, from this pane.
          * Used only during endgame analysis.
          */
-
         private void reset() {
             wordPane.getChildren().clear();
+            playerName = null;
+            playerNameLabel.setText("");
             playerNameLabel.setGraphic(null);
-            words.clear();
+            playerScoreLabel.setText("");
+            isAvailable = true;
             makeBig();
-            abandonSeat();
         }
 
         /**
          * Add a new word to the player's collection and recalculate their score.
          *
-         * @param newWord The word to be removed.
+         * @param wordToAdd The word to be removed.
          */
+        private void addWord(String wordToAdd) {
 
-        private void addWord(String newWord) {
-            int PADDING = 4;
+            Word newWord = new Word(wordToAdd);
+            words.put(wordToAdd, newWord);
+
             double paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
 
-            double width = newWord.length() * tileWidth + (newWord.length() - 1) * WordLabel.TILE_GAP + 1 + PADDING;
-
-            if (width > paneWidth) {
+            if (newWord.width() > paneWidth) {
                 makeSmall();
-                gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.length() * 12 + (newWord.length() - 1) * WordLabel.TILE_GAP + 1);
+                gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.width());
             }
 
-            if (prevHeight + wordPane.getHgap() + tileHeight + PADDING > paneHeight) {
-                if (prevWidth + (wordPane.getVgap() + width + PADDING) / 2 > paneWidth) {
-                    if (!savingSpace.get()) {
-                        makeSmall();
-                        wordPane.getChildren().clear();
-                        for (String word : words.keySet()) {
-                            WordLabel newLabel = new WordLabel(word);
-                            wordPane.getChildren().add(newLabel);
-                            words.put(word, newLabel);
+            if(!wordPane.getChildren().isEmpty()) {
+                Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
+
+                if (bounds.getMaxY() + wordPane.getHgap() + tileHeight + PADDING > paneHeight) {
+                    if (bounds.getMaxX() + (wordPane.getVgap() + newWord.width() + PADDING) / 2 > paneWidth) {
+                        if (!savingSpace.get()) {
+                            makeSmall();
+                            addWords(words.keySet().toArray(new String[0]));
+                            return;
+                        } else if (column >= 0) {
+                            gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
+                            allocateSpace();
                         }
-                    } else if (column >= 0) {
-                        gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
                     }
                 }
             }
-            WordLabel newWordLabel = new WordLabel(newWord);
-            newWordLabel.setOpacity(0);
-            wordPane.getChildren().add(newWordLabel);
-            FadeTransition ft = new FadeTransition(Duration.millis(800), newWordLabel);
+
+            newWord.setOpacity(0);
+            wordPane.getChildren().add(newWord);
+            FadeTransition ft = new FadeTransition(Duration.seconds(1), newWord);
             ft.setToValue(1.0);
             ft.play();
 
-            wordPane.layout();
-            prevWidth = newWordLabel.getBoundsInParent().getMaxX();
-            prevHeight = newWordLabel.getBoundsInParent().getMaxY();
-            words.put(newWord, newWordLabel);
             score += newWord.length() * newWord.length();
             playerScoreLabel.setText(score + "");
         }
 
 
         /**
-         * Adds a bunch of words all at once. Used during analysis, when resizing the window,
+         * Adds a bunch of words all at once. Used during postgame analysis, when resizing the window,
          * and when joining or starting a game.
          */
-
         private void addWords(String[] wordsToAdd) {
 
             wordPane.getChildren().clear();
 
-            WordLabel newWordLabel = new WordLabel(wordsToAdd[0]);
-
             for (String word : wordsToAdd) {
-                if (isMobile && column >= 0 && word.length() * 16 + (word.length() - 1) * WordLabel.TILE_GAP + 1 > getPrefWidth()) {
-                    makeSmall();
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(word.length() * 12 + (word.length() - 1) * WordLabel.TILE_GAP + 1);
-                }
-                newWordLabel = new WordLabel(word);
-                wordPane.getChildren().add(newWordLabel);
-                words.put(word, newWordLabel);
+                Word newWord = new Word(word);
+                wordPane.getChildren().add(newWord);
             }
 
-            gameGrid.applyCss();
             gameGrid.layout();
 
             double paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
-            double maxY = newWordLabel.getLayoutY() + newWordLabel.getHeight();
+            double maxY = wordPane.getChildren().get(wordsToAdd.length - 1).getBoundsInParent().getMaxY();
 
             //check if we need to save space by switching to small tiles
-            if (!savingSpace.get() && maxY > paneHeight) {
-                makeSmall();
-                addWords(wordsToAdd);
-                return;
-            }
-
-            if(column >= 0) {
-                gameGrid.getColumnConstraints().get(column).setMinWidth(Math.max(minPanelWidth, paneWidth * maxY / paneHeight));
-
-                score = 0;
-                for (String word : wordsToAdd) {
-                    score += word.length() * word.length();
-                    playerScoreLabel.setText(score + "");
+            if(maxY > paneHeight) {
+                if (!savingSpace.get()) {
+                    makeSmall();
+                    addWords(wordsToAdd);
+                } else if (column >= 0) {
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(Math.max(minPanelWidth, paneWidth * maxY / paneHeight));
+                    allocateSpace();
                 }
             }
         }
@@ -763,23 +717,34 @@ import java.util.regex.Pattern;
          *
          * @param wordToRemove The word to be removed.
          */
-
         private void removeWord(String wordToRemove) {
-            WordLabel labelToRemove = words.remove(wordToRemove);
-            FadeTransition ft = new FadeTransition(Duration.millis(800), labelToRemove);
+            Word word = words.remove(wordToRemove);
+            FadeTransition ft = new FadeTransition(Duration.seconds(0.8), word);
             ft.setToValue(0);
-            ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(labelToRemove));
+            ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(word));
             ft.play();
 
             score -= wordToRemove.length() * wordToRemove.length();
             playerScoreLabel.setText(score + "");
         }
 
+        /**
+         *
+         */
+        private void setScore(String[] words) {
+            score = 0;
+            for (String word : words) {
+                if(word.endsWith("#"))
+                    score += (word.length() - 1) * (word.length() - 1);
+                else
+                    score += word.length() * word.length();
+                playerScoreLabel.setText(score + "");
+            }
+        }
 
         /**
          *
          */
-
         private void makeSmall() {
             savingSpace.set(true);
             tileWidth = 12;
@@ -790,7 +755,6 @@ import java.util.regex.Pattern;
         /**
          *
          */
-
         private void makeBig() {
             savingSpace.set(false);
             tileWidth = 16;
@@ -799,55 +763,67 @@ import java.util.regex.Pattern;
         }
 
         /**
-         * Returns the words at this panel
+         *
          */
+        private class Word extends Region {
 
-        private Set<String> getWords() {
-            return words.keySet();
-        }
-
-        /**
-         * A clickable object that displays a word
-         */
-
-        private class WordLabel extends Region {
-
-            private final String word;
             private final static double TILE_GAP = 2;
+            private final String letters;
+            private boolean highlight = false;
 
             /**
              *
              */
+            private Word(String symbols) {
+                if(symbols.endsWith("#") || symbols.endsWith("$")) {
+                    letters = symbols.substring(0, symbols.length() - 1);
+                    if(client.prefs.getBoolean("highlight_words", false))
+                        highlight = true;
+                }
+                else {
+                    letters = symbols;
+                }
 
-            WordLabel(String word) {
-                this.word = word;
-        //      double width = word.length() * tileWidth + (word.length() - 1) * TILE_GAP;
-                drawWord();
-
-                setOnMouseClicked(event -> {
-                    if (gameOver || isWatcher) {
+                if (gameOver || isWatcher) {
+                    setOnMouseClicked(event -> {
                         if (!explorer.isVisible()) {
                             explorer.show(false);
                         }
-                        explorer.lookUp(word);
-                    }
-                });
+                        explorer.lookUp(letters);
+                    });
+                }
+
+                draw();
             }
 
             /**
-             * Draws a word, showing blanks in red and regular tiles in black.
+             *
              */
+            private int length() {
+                return letters.length();
+            }
 
-            private void drawWord() {
+            /**
+             *
+             */
+            private double width() {
+                return length()*tileWidth + (length() - 1)*TILE_GAP + 1 + PADDING;
+            }
+
+            /**
+             *
+             */
+            void draw() {
                 getChildren().clear();
+
                 int x = 0;
 
-                for (Character tile : word.toCharArray()) {
+                for (Character tile : letters.toCharArray()) {
 
                     Rectangle rect = new Rectangle(x, 0, tileWidth, tileHeight);
                     rect.setArcWidth(2);
                     rect.setArcHeight(2);
-                    rect.setFill(Color.YELLOW);
+                    rect.setFill(highlight ? Color.GOLD : Color.YELLOW);
 
                     Text text = new Text(x + 1, tileHeight - 2, String.valueOf(Character.toUpperCase(tile)));
                     text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize));
@@ -858,6 +834,7 @@ import java.util.regex.Pattern;
                 }
             }
         }
+
     }
 
 
@@ -866,7 +843,6 @@ import java.util.regex.Pattern;
      *
      * @param nextMessage The message to be displayed.
      */
-
     void setNotificationArea(String nextMessage) {
         notificationArea.setText(nextMessage);
     }
@@ -877,7 +853,6 @@ import java.util.regex.Pattern;
      *
      * @param nextTiles The letters that the TilePanel should display.
      */
-
     void setTiles(String nextTiles) {
         if (nextTiles.equals("#"))
             nextTiles = "";
@@ -894,7 +869,6 @@ import java.util.regex.Pattern;
      * @return the GamePanel to which the player has been added or null if
      * none is available
      */
-
     GamePanel addPlayer(String newPlayerName) {
 
         //current player is assigned homePanel
@@ -924,7 +898,6 @@ import java.util.regex.Pattern;
      *
      * @param playerToRemove The name of the player to remove.
      */
-
     void removePlayer(String playerToRemove) {
         if (players.containsKey(playerToRemove)) {
             players.get(playerToRemove).abandonSeat();
@@ -934,9 +907,10 @@ import java.util.regex.Pattern;
     /**
      * Method used during gameplay for adding words and updating the tilePool. Plays a sound.
      */
-
     void makeWord(String playerName, String wordToAdd, String nextTiles) {
+
         players.get(playerName).addWord(wordToAdd);
+
         setTiles(nextTiles);
 
         if (client.prefs.getBoolean("play_sounds", true))
@@ -950,7 +924,6 @@ import java.util.regex.Pattern;
      * @param playerName   the player whose word has been stolen
      * @param wordToRemove the stolen word
      */
-
     void removeWord(String playerName, String wordToRemove) {
         players.get(playerName).removeWord(wordToRemove);
     }
@@ -958,7 +931,6 @@ import java.util.regex.Pattern;
     /**
      *
      */
-
     void doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord, String nextTiles) {
         removeWord(shortPlayer, shortWord);
         makeWord(longPlayer, longWord, nextTiles);
@@ -970,7 +942,6 @@ import java.util.regex.Pattern;
      *
      * @param msg The message to display.
      */
-
     void handleChat(String msg) {
         if (chatBox.getText().isEmpty())
             chatBox.appendText(msg);
@@ -981,7 +952,6 @@ import java.util.regex.Pattern;
     /**
      * Removes the textEntry and exitGame button; adds buttons for navigating through the game history.
      */
-
     void endGame() {
         gameOver = true;
         blinker.stop();
@@ -1075,14 +1045,13 @@ import java.util.regex.Pattern;
      *               consisting of the remaining time, the tile pools, a list of players (even indices)
      *               and their words (odd indices)
      */
-
     void showPosition(String[] tokens) {
+        for (GamePanel panel : gamePanels)
+            panel.reset();
         for (int i = 0; i < 3; i++) {
             gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+            gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
         }
-
-        for (GamePanel panel : gamePanels)
-            panel.abandonSeat(); // or reset()?
 
         notificationArea.setText("Time remaining " + tokens[0]);
 
@@ -1092,9 +1061,10 @@ import java.util.regex.Pattern;
                 GamePanel panel = addPlayer(playerName);
                 String[] words = tokens[i + 1].substring(1, tokens[i + 1].length() - 1).split(",");
                 panel.addWords(words);
+                panel.setScore(words);
             }
         }
-        allocateSpace();
+
         setTiles(tokens[1]);
 
         if (wordDisplay.isVisible()) {
@@ -1108,7 +1078,6 @@ import java.util.regex.Pattern;
      * @param plays A formatted String containing possible plays from the pool and steals, e.g.
      *              [FUMITORY] @ [BLEWARTS + I -> BRAWLIEST, BLEWARTS + I -> WARBLIEST, BLEWARTS + FO -> BATFOWLERS]
      */
-
     void showPlays(String plays) {
 
         Matcher m = Pattern.compile("\\[(.*?)]").matcher(plays);
@@ -1123,7 +1092,6 @@ import java.util.regex.Pattern;
     /**
      * Shows possible plays during postgame analysis
      */
-
     private class WordDisplay extends PopWindow {
 
         private final GamePanel poolPanel = new GamePanel();
@@ -1132,7 +1100,6 @@ import java.util.regex.Pattern;
         /**
          *
          */
-
         private WordDisplay() {
             super(client.anchor);
             setViewOrder(-1000);
@@ -1204,9 +1171,8 @@ import java.util.regex.Pattern;
                     tooltips[i] = tooltip;
                 }
                 stealsPanel.addWords(possibleSteals);
-                int i = 0;
-                for (GamePanel.WordLabel label : stealsPanel.words.values()) {
-                    Tooltip.install(label, tooltips[i++]);
+                for (int i = 0; i < possibleSteals.length; i++) {
+                    Tooltip.install(stealsPanel.wordPane.getChildren().get(i), tooltips[i]);
                 }
             }
         }
@@ -1220,20 +1186,19 @@ import java.util.regex.Pattern;
      *
      * @param input Letters entered by the player into the textField
      */
-
     private void makePlay(String input) {
         if (input.length() >= minLength) {
-            for (Map.Entry<String, GamePanel> entry : players.entrySet()) {
-                String player = entry.getKey();
-                for (String shortWord : entry.getValue().getWords()) {
-                    if (shortWord.equalsIgnoreCase(input)) {
+            for (Map.Entry<String, GamePanel> player : players.entrySet()) {
+                String playerName = player.getKey();
+                for (GamePanel.Word shortWord : player.getValue().words.values()) {
+                    if (shortWord.letters.equalsIgnoreCase(input)) {
                         return; //word is already on the board
                     }
                     else if (input.length() > shortWord.length()) {
                         //Attempt to steal
-                        Play play = new Play(shortWord, input, tilePool);
+                        Play play = new Play(shortWord.letters, input, tilePool);
                         if (play.isValid()) {
-                            client.send("steal " + gameID + " " + player + " " + shortWord + " " + username + " " + input);
+                            client.send("steal " + gameID + " " + playerName + " " + shortWord.letters + " " + username + " " + input);
                             return;
                         }
                     }
@@ -1290,14 +1255,12 @@ import java.util.regex.Pattern;
 
         SnapshotPane snapshotPane = new SnapshotPane(client, gameID, username, minLength + "", blankPenalty, numSets, speed, lexicon, gameLog);
 
-
         ProgressBar progressBar = new ProgressBar();
         progressBar.progressProperty().bind(snapshotPane.progress);
         Platform.runLater(() -> {
             controlPanel.getChildren().remove(saveButton);
             controlPanel.getChildren().add(progressBar);
         });
-
 
         snapshotPane.finished.addListener((finished, wasFinished, isFinished) -> {
             if (isFinished) {
@@ -1353,7 +1316,7 @@ import java.util.regex.Pattern;
                     missingFromPool++;
                 }
             }
-            int unstolen = charsToSteal.length();
+            int unstolen = charsToSteal.replace("#", "").length();
 
             if (shortWord.isEmpty())
                 return longWord.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
