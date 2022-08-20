@@ -5,10 +5,10 @@ import java.util.LinkedList;
 /**
  *
  */
-
 class TreeNode {
 
     private final String word;
+    private String suffix;
     private final String longSteal;
     private String shortSteal;
     private double prob = 0;
@@ -17,25 +17,37 @@ class TreeNode {
     /**
      *
      */
-
-    TreeNode(String word, String steal) {
+    TreeNode(String word, String suffix, String steal) {
         this.word = word.toUpperCase();
+        this.suffix = suffix;
         this.longSteal = steal;
     }
 
     /**
      *
      */
-
-    @Override
-    public String toString() {
+    public String getWord() {
         return word;
     }
 
     /**
      *
      */
+    @Override
+    public String toString() {
+        return word + suffix;
+    }
 
+    /**
+     *
+     */
+    void setSuffix(String suffix) {
+        this.suffix = suffix;
+    }
+
+    /**
+     *
+     */
     String getLongSteal() {
         return longSteal;
     }
@@ -43,7 +55,6 @@ class TreeNode {
     /**
      *
      */
-
     void setShortSteal(String shortSteal) {
         this.shortSteal = shortSteal;
     }
@@ -51,7 +62,6 @@ class TreeNode {
     /**
      *
      */
-
     String getShortSteal() {
         return shortSteal;
     }
@@ -60,7 +70,6 @@ class TreeNode {
     /**
      * @param newChild another TreeNode whose word is a steal of this node according to the rules of Anagrams.
      */
-
     void addChild(TreeNode newChild) {
         children.add(0, newChild);
     }
@@ -68,7 +77,6 @@ class TreeNode {
     /**
      *
      */
-
     LinkedList<TreeNode> getChildren() {
         return children;
     }
@@ -76,7 +84,6 @@ class TreeNode {
     /**
      *
      */
-
     void setProb(double prob) {
         this.prob = prob;
     }
@@ -84,7 +91,6 @@ class TreeNode {
     /**
      *
      */
-
     double getProb() {
         return prob;
     }
