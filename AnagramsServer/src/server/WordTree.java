@@ -3,10 +3,7 @@ package server;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Given a lexicon and a rootWord, creates a hierarchical tree structure graphically depicting
@@ -34,7 +31,7 @@ class WordTree {
 
 	WordTree(String rootWord, AlphagramTrie trie) {
 		this.rootWord = rootWord.toUpperCase();
-		rootNode = new TreeNode(rootWord, "");
+		rootNode = new TreeNode(rootWord, "", "");
 		rootNode.setShortSteal("");
 		rootNode.setProb(1);
 		this.trie = trie;
@@ -50,7 +47,19 @@ class WordTree {
 
 		sort(rootNode);
 
-		if(!trie.contains(rootWord)) {
+		if(trie.contains(rootWord)) {
+			if(trie.getNode(rootWord).anagrams.containsKey(rootWord)) {
+				String suffix = trie.getNode(rootWord).anagrams.get(rootWord);
+				if (suffix != null) {
+					rootNode.setSuffix(suffix);
+					this.rootWord = rootWord + suffix;
+				}
+			}
+			else {
+				this.rootWord = rootWord.toLowerCase();
+			}
+		}
+		else {
 			this.rootWord = rootWord.toLowerCase();
 		}
 
@@ -78,9 +87,9 @@ class WordTree {
 
 		//If the node's path already contains all characters to be found, then automatically add its descendants to the node list
 		else {
-			for(String anagram : node.anagrams) {
-				if(anagram.length() > rootWord.length()) {	 //This prevents the node list from including the node of the search key itself
-					treeNodeList.add(new TreeNode(anagram, otherCharsFound));
+			for(Map.Entry<String, String> anagram : node.anagrams.entrySet()) {
+				if(anagram.getKey().length() > rootWord.length()) {	 //This prevents the node list from including the node of the search key itself
+					treeNodeList.add(new TreeNode(anagram.getKey(), anagram.getValue(), otherCharsFound));
 				}
 			}
 			for(Map.Entry<Character,Node> child : node.children.entrySet())
@@ -92,7 +101,7 @@ class WordTree {
 	 * Given the class's list of DefaultMutableTreeNodes, each representing a single word,
 	 * 	 sort them into a hierarchical structure such that:
 	 * 		(1) each word becomes a child of the longest word whose letters are a strict subset of that word's letters
-	 *		(2) provided that at least two letters of the shorter word must be rearranged to form the longer word
+	 *		(2) provided that at least two letters of the shorter word are rearranged to form the longer word
 	 *		(3) any word whose letters cannot be formed from a shorter word by rearrangement is eliminated
 	 *		(4) the shortest word is the rootWord entered by the user.
 	 */
@@ -100,10 +109,10 @@ class WordTree {
 	private void buildTree() {
 
 		TreeNode currentNode = treeNodeList.pollFirst();
-		String currentWord = currentNode.toString();
+		String currentWord = currentNode.getWord();
 
 		for (TreeNode nextNode : treeNodeList) {
-			String nextWord = nextNode.toString();
+			String nextWord = nextNode.getWord();
 
 			if (isSteal(nextWord, currentWord)) {
 				nextNode.addChild(currentNode);
@@ -122,9 +131,9 @@ class WordTree {
 	static class TreeNodeComparator implements Comparator<TreeNode> {
 		@Override
 		public int compare(TreeNode node1, TreeNode node2) {
-			int result = node2.toString().length() - node1.toString().length();
+			int result = node2.getWord().length() - node1.getWord().length();
 			if(result == 0) {
-				result = (node2.toString()).compareTo(node1.toString());
+				result = (node2.getWord()).compareTo(node1.getWord());
 			}
 			return result;
 		}
@@ -144,11 +153,9 @@ class WordTree {
 	}
 
 	/**
-	 *
 	 * Recursively generates a JSON-formatted list for displaying a word tree diagram
 	 * 	 *'[{"id":"grubb", "longsteal": ""},{"id":"grubb.BUGBEAR", longsteal: "AE"}]'
 	 */
-
 	void generateJSON(String prefix, TreeNode node, double prob) {
 
 		JSONObject jsonObject = new JSONObject();
@@ -156,7 +163,7 @@ class WordTree {
 		jsonObject.put("shortsteal", node.getShortSteal());
 		jsonObject.put("longsteal", node.getLongSteal());
 		jsonObject.put("prob", ProbCalc.round(100 * prob, 1));
-		jsonObject.put("def", trie.getDefinition(node.toString()));
+		jsonObject.put("def", trie.getDefinition(node.getWord()));
 		jsonArray.put(jsonObject);
 
 		double norm = 0;
@@ -182,7 +189,6 @@ class WordTree {
 	 * @param shortWord a shorter word
 	 * @param longWord a longer word
 	 */
-
 	static boolean isSubset(String shortWord, String longWord) {
 
 		if(shortWord.length() >= longWord.length()) {
@@ -218,7 +224,6 @@ class WordTree {
 	 * @param shortWord a shorter word
 	 * @param longWord a longer word
 	 */
-
 	static boolean isSteal(String shortWord, String longWord) {
 
 		if(!isSubset(shortWord, longWord))
@@ -233,7 +238,6 @@ class WordTree {
 		}
 
 		return shortWord.length() > longWord.length();
-
 	}
 
 
@@ -242,7 +246,6 @@ class WordTree {
 	 *
 	 * @param entry: the letters to be rearranged
 	 */
-
 	static String alphabetize(String entry) {
 		char[] chars = entry.toCharArray();
 		Arrays.sort(chars);
