@@ -10,13 +10,12 @@ import java.util.Arrays;
  * words which are anagrams of each other are stored in the same node.
  *
  */
-
-
 class AlphagramTrie {
 
 	final Node rootNode = new Node();
 	final String lexicon;
 	private String currentWord;
+	private String currentSuffix;
 	private String currentDefinition;
 	AlphagramTrie common;
 
@@ -27,7 +26,6 @@ class AlphagramTrie {
 	 * @param lexicon the name of the word list. This should be stored in a file called <lexicon>.txt
 	 *                with one word per line and definition (optional) separated by white space.
 	 */
-
 	AlphagramTrie(String lexicon) {
 
 		this.lexicon = lexicon;
@@ -36,11 +34,20 @@ class AlphagramTrie {
 			InputStream stream = getClass().getResourceAsStream("/wordlists/" + lexicon + ".txt");
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			for(String stringRead = reader.readLine(); stringRead != null; stringRead = reader.readLine()) {
-				if (!stringRead.isBlank() || stringRead.startsWith("#")) {
+				if (!stringRead.isBlank() && !stringRead.startsWith("#")) {
 					String[] entry = stringRead.split("\\s+", 2);
-					currentWord = entry[0].toUpperCase();
+
+					currentSuffix = "";
+					if(entry[0].endsWith("#") || entry[0].endsWith("$")) {
+						currentWord = entry[0].replaceFirst("[#$]", "").toUpperCase();
+						currentSuffix = entry[0].substring(currentWord.length());
+					}
+					else
+						currentWord = entry[0].toUpperCase();
+
 					if (entry.length > 1)
 						currentDefinition = entry[1];
+
 					insertWord(alphabetize(currentWord), rootNode);
 				}
 			}
@@ -57,7 +64,6 @@ class AlphagramTrie {
 	/**
 	 *  Generates the subset of this trie containing only common words
 	 */
-
 	void common() {
 		common = new AlphagramTrie(lexicon + "-common");
 	}
@@ -70,7 +76,6 @@ class AlphagramTrie {
 	 * @param subalphagram: the suffix letters of the current alphagram which have not been added to the trie
 	 * @param node			the node whose path represents the prefix letters which have already been added
 	 */
-
 	private void insertWord(String subalphagram, Node node) {
 
 		final Node nextChild;
@@ -87,7 +92,7 @@ class AlphagramTrie {
 
 		//This node is the end of a word. Store the original word and its definition here.
 		if (subalphagram.length() == 1) {
-			nextChild.anagrams.add(currentWord);
+			nextChild.anagrams.put(currentWord, currentSuffix);
 			nextChild.definitions.put(currentWord, currentDefinition);
 		}
 		else {
@@ -101,14 +106,13 @@ class AlphagramTrie {
 	 *
 	 * @param searchKey the String to be searched for
 	 */
-
 	boolean contains(String searchKey) {
 
 		Node node = getNode(searchKey);
 
 		if(getNode(searchKey) != null) {
 			//A node has been found with the same alphagram as the searchKey
-			for(String anagram : node.anagrams) {
+			for(String anagram : node.anagrams.keySet()) {
 				if(searchKey.toUpperCase().equals(anagram)) {
 					return true; //the node contains the word
 				}
@@ -118,12 +122,25 @@ class AlphagramTrie {
 	}
 
 	/**
+	 *
+	 */
+	String annotate(String word) {
+		Node node = getNode(word.toUpperCase());
+
+		if(node == null)
+			return word;
+		else {
+			return word + node.anagrams.get(word.toUpperCase());
+		}
+
+	}
+
+	/**
 	 * Given a series of letters, not necessarily ordered, returns the corresponding node in
 	 * the trie. If the node does not exist, returns null.
 	 *
 	 * @param searchKey the sequence of letters corresponding to the address of the searched-for node
 	 */
-
 	Node getNode(String searchKey) {
 
 		String alphagram = alphabetize(searchKey.toUpperCase());
@@ -145,7 +162,6 @@ class AlphagramTrie {
 	/**
 	 *
 	 */
-
 	String getDefinition(String searchKey) {
 		Node node = getNode(searchKey);
 		if(node != null)
@@ -159,7 +175,6 @@ class AlphagramTrie {
 	 *
 	 * @param entry: the letters to be rearranged
 	 */
-
 	static String alphabetize(String entry) {
 		char[] chars = entry.toCharArray();
 		Arrays.sort(chars);
