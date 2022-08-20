@@ -160,7 +160,10 @@ class AlphagramTrie {
 	}
 
 	/**
+	 * Gets the definition of the provided word if it exists; otherwise returns null.
 	 *
+	 * @param searchKey a combination of letters (must be UPPERCASE) corresponding to a trie node
+	 * @return the definition for the given word or null if no such definition exists
 	 */
 	String getDefinition(String searchKey) {
 		Node node = getNode(searchKey);
