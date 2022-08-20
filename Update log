@@ -1,13 +1,19 @@
 ## Update Log
 
+#### Version 1.0.1 - August 20, 2022
+    • Added option to highlighting of CSW/NWL only words.
+    • Added option to download .gif game recaps.
+    • Fixed a bug that caused the word finder to somtimes miss valid plays with blanks.
+    • Created sharable links for WordTrees.
+    
 #### Version 1.0.0 - Mar 2, 2022
 
-    • Added main screen hyperlinks to Woogles and Anagrams homepages
-    • Limited robots to common words (Common English Lexicon) according to skill level
-    • Made WordTree widget interactive
-    • Improved robot efficiency
-    • Added public dictionary lookup API
-    • Updated to NWL20 and CSW21
+    • Added main screen hyperlinks to Woogles and Anagrams homepages.
+    • Limited robots to common words (Common English Lexicon) according to skill level.
+    • Made WordTree widget interactive.
+    • Improved robot efficiency.
+    • Added dictionary lookup API.
+    • Updated to NWL20 and CSW21.
 
 #### Version 0.9.9 - August 4, 2021
 
