@@ -26,7 +26,6 @@ import java.util.*;
  * A utility allowing the user to display WordTrees and analysis tools
  *
  */
-
 class WordExplorer extends PopWindow {
 
     private final AnagramsClient client;
@@ -52,7 +51,6 @@ class WordExplorer extends PopWindow {
     /**
      *
      */
-
     WordExplorer(String lexicon, AnagramsClient client) {
         super(client.anchor);
         this.client = client;
@@ -168,7 +166,6 @@ class WordExplorer extends PopWindow {
     /**
      *
      */
-
     void setLexicon(String lexicon) {
         this.lexicon = lexicon;
         lexiconSelector.getSelectionModel().select(lexicon);
@@ -179,12 +176,11 @@ class WordExplorer extends PopWindow {
      *
      * @param query The contents of the textField (stripped of any non-alphabetic characters)
      */
-
     void lookUp(String query) {
         textField.clear();
         treePanel.getChildren().clear();
         messagePane.clear();
-        client.send("lookup " + lexicon + " " + query.toUpperCase());
+        client.send("lookup " + lexicon + " " + query.replaceAll("[^a-zA-Z]", "").toUpperCase());
     }
 
     /**
@@ -193,7 +189,6 @@ class WordExplorer extends PopWindow {
      * @param data A list of nodes containing words, definitions, probabilities, and
      *             instructions on how to place them in the hierarchy.
      */
-
     void setUpTree(JSONArray data) {
         this.data = data;
 
@@ -245,7 +240,6 @@ class WordExplorer extends PopWindow {
      *                address is empty, the node will be placed immediately; otherwise it will be added as a descendant
      *                of the first node referenced in the list.
      */
-
     private void addNode(TreeNode parent, TreeNode child, LinkedList<String>address) {
         if(address.isEmpty()) {
             parent.addChild(child.getWord(), child);
@@ -262,7 +256,6 @@ class WordExplorer extends PopWindow {
      *
      * @param parentItem The TreeItem whose children will be added next.
      */
-
     private void addChildren(TreeItem<TreeNode> parentItem) {
         for(TreeNode child : parentItem.getValue().getChildren()) {
             TreeItem<TreeNode> childItem = new TreeItem<>(child);
@@ -275,13 +268,11 @@ class WordExplorer extends PopWindow {
      * A TreeView cell that can be selected to show a definition, double-clicked to perform a lookup,
      * hovered over to display the steal, and whose background is colored to indicate probability.
      */
-
     private class CustomTreeCell extends TreeCell<TreeNode> {
 
         /**
          * On double-click looks up the selected node and triggers the goButton
          */
-
         private CustomTreeCell () {
             setPickOnBounds(false);
 
@@ -302,13 +293,15 @@ class WordExplorer extends PopWindow {
          * @param item The Java object to be rendered as a TreeCell
          * @param empty Whether the cell is part of the background
          */
-
         @Override
         public void updateItem(TreeNode item, boolean empty) {
             super.updateItem(item, empty);
 
             if(!empty) {
-                setText(item.getWord());
+                if(client.prefs.getBoolean("highlight_words", false))
+                    setText(item.getWord());
+                else
+                    setText(item.getWord().replaceFirst("[#$]", ""));
                 if(item.getParent() != null ) {
                     Tooltip tooltip = new Tooltip(item.longSteal + "   " + item.getProb() + "%");
                     setTooltip(tooltip);
@@ -332,7 +325,6 @@ class WordExplorer extends PopWindow {
      *
      * @param counts The raw data as computed in the setUpTree method
      */
-
     private VBox treeSummary(TreeMap<Integer, Integer> counts) {
 
         VBox summaryPane = new VBox();
@@ -367,7 +359,6 @@ class WordExplorer extends PopWindow {
      * @param prefix Indentations indicating the depth of the node
      * @param node The node currently being visited
      */
-
     private void generateWordList(String prefix, TreeNode node) {
         for(TreeNode child : node.getChildren()) {
             wordList = wordList.concat(prefix + child.getWord() + "\\n");
@@ -378,7 +369,6 @@ class WordExplorer extends PopWindow {
     /**
      * Executes some JavaScript to create the file, insert the word list, and open the download window
      */
-
     private void saveListToFile () {
 
         generateWordList("", rootNode);
@@ -403,7 +393,6 @@ class WordExplorer extends PopWindow {
     /**
      * Sends the tree JSON data to the webpage and opens it.
      */
-
     private void viewListAsImage() {
         WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('lexicon', '" + lexicon + "')");
         WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('json', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
