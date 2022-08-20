@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  *
  */
-
 public class Server extends Thread {
 	
 	private static final int GAME_PORT = 8118;
@@ -32,7 +31,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	public Server() throws IOException {
 
 		System.setOut(new PrintStream(System.out) {
@@ -83,11 +81,9 @@ public class Server extends Thread {
 		System.out.println("Lookup service started on port 8116");
 	}
 
-
 	/**
 	*
 	*/
-	
 	void removeGame(String gameID) {
 		gameList.remove(gameID);
 		broadcast("removegame " + gameID);
@@ -96,7 +92,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	Set<String> getUsernames() {
 		return workerList.keySet();
 	}
@@ -104,7 +99,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	void addWorker(String username, ServerWorker worker) {
 		workerList.put(username, worker);
 	}
@@ -113,7 +107,6 @@ public class Server extends Thread {
 	 * Quietly remove this worker.
 	 * @param username The name of the worker to be removed
 	 */
-
 	synchronized void removeWorker(String username) {
 		workerList.remove(username);
 	}
@@ -121,7 +114,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	synchronized void logoffPlayer(String username) {
 		workerList.remove(username);
 
@@ -136,7 +128,6 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-	
 	ServerWorker getWorker(String username) {
 		return workerList.get(username);
 	}
@@ -144,7 +135,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	void addGame(String gameID, Game game) {
 		gameList.put(gameID, game);
 	}
@@ -152,7 +142,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	Collection<Game> getGames() {
 		return gameList.values();
 	}
@@ -160,7 +149,6 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-
 	int getRobotCount() {
 		Iterator<Game> it = gameList.values().iterator();
 		int robotCount = 0;
@@ -171,11 +159,10 @@ public class Server extends Thread {
 		}
 		return robotCount;
 	}
-	
+
 	/**
 	*
 	*/
-	
 	Game getGame(String gameID) {
 		return gameList.get(gameID);
 	}
@@ -183,7 +170,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	AlphagramTrie getDictionary(String lexicon) {
 		return dictionaries.get(lexicon);
 	}
@@ -191,7 +177,6 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-
 	void logChat(String line) {
 		chatLog.add(line);
 		if(chatLog.size() >= 100) {
@@ -204,7 +189,6 @@ public class Server extends Thread {
 	*
 	* @param msg the message to be sent
 	*/
-	
 	void broadcast(String msg) {
 		
 		synchronized(workerList) {
@@ -217,7 +201,6 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	
 	@Override
 	public void run() {
 		while(!serverSocket.isClosed()) {
@@ -240,14 +223,13 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-
 	private void handleRequest(final HttpExchange exchange) throws IOException {
 
 		String lexicon = exchange.getRequestURI().getPath().split("/")[1].toUpperCase();
 		String query = exchange.getRequestURI().getPath().split("/")[2].toUpperCase();
 		System.out.println("lexicon: " + lexicon +", query: " + query);
 		WordTree tree = new WordTree(query, getDictionary(lexicon));
-		tree.generateJSON(tree.rootWord, tree.rootNode, 1);
+		tree.generateJSON(tree.rootNode.toString(), tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
 
 		byte[] bytes = json.getBytes();
@@ -267,7 +249,6 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-
 	public static void main(String[] args) throws IOException {
 
 		Server server = new Server();
