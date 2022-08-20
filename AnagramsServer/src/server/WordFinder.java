@@ -7,8 +7,9 @@ import java.util.regex.Pattern;
 /**
  *
  */
-
 class WordFinder {
+
+    private final Server server;
 
     private final int blankPenalty;
     private final int minLength;
@@ -22,9 +23,9 @@ class WordFinder {
     /**
      *
      */
+    WordFinder(Server server, int minLength, int blankPenalty, AlphagramTrie dictionary) {
 
-    WordFinder(int minLength, int blankPenalty, AlphagramTrie dictionary) {
-
+        this.server = server;
         this.minLength = minLength;
         this.blankPenalty = blankPenalty;
         this.dictionary = dictionary;
@@ -41,7 +42,6 @@ class WordFinder {
      * @return          a list of all possible (up to 70) valid plays that can be made, e.g.
      *                  [FUMITORY] @ [BLEWARTS + I -> BRAWLIEST, BLEWARTS + I -> WARBLIEST, BLEWARTS + FO -> BATFOWLERS]
      */
-
     synchronized String findWords(String gameState) {
 
         wordsInPool.clear();
@@ -58,15 +58,15 @@ class WordFinder {
         //build string
         StringBuilder wordsFound = new StringBuilder("[");
         for(String word : wordsInPool) {
-            wordsFound.append(word).append(",");
+            wordsFound.append(dictionary.annotate(word)).append(","); //needs testing
         }
         wordsFound.append("] @ [");
 
         //Find steals
         if(!tilePool.isEmpty()) {
-            Matcher m = Pattern.compile("\\[([,A-z]+?)]").matcher(gameState);
+            Matcher m = Pattern.compile("\\[([,A-z#]+?)]").matcher(gameState); //needs testing
             while (m.find()) {
-                wordsFound.append(searchForSteals(m.group(1).split(",")));
+                wordsFound.append(searchForSteals(m.group(1).split("#?,"))); //needs testing
             }
         }
         return wordsFound.append("]").toString();
@@ -80,7 +80,6 @@ class WordFinder {
      * @param poolRemaining 	chars left in the pool from which to form a word
      * @param blanksRequired 	Blanks needed to make this word
      */
-
     private void findInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
 
         if(wordsInPool.size() >= 40) {
@@ -89,10 +88,10 @@ class WordFinder {
 
         else if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
             if(blanksRequired == 0) {
-                wordsInPool.addAll(node.anagrams);
+                wordsInPool.addAll(node.anagrams.keySet());
             }
             else {
-                for(String anagram : node.anagrams) {
+                for(String anagram : node.anagrams.keySet()) {
                     String newWord = "";
                     String tiles = tilePool;
                     for (String s : anagram.split("")) {
@@ -141,7 +140,6 @@ class WordFinder {
      * @param   words   All the words currently on the board
      * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
-
     private synchronized String searchForSteals(String[] words) {
         StringBuilder possibleSteals = new StringBuilder();
         int numWordsFound = 0;
@@ -159,7 +157,13 @@ class WordFinder {
                 else if (entry.length() > shortWord.length() + tilePool.length()) continue;
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
-                    possibleSteals.append(shortWord).append(" + ").append(child.getLongSteal()).append(" -> ").append(play.nextWord()).append(",");
+                    possibleSteals
+                            .append(shortWord)
+                            .append(" + ")
+                            .append(child.getLongSteal())
+                            .append(" -> ")
+                            .append(dictionary.annotate(play.nextWord())) //needs testing
+                            .append(",");
                     if (++numWordsFound >= 30) {
                         break outer;
                     }
