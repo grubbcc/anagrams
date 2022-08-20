@@ -28,7 +28,7 @@ In order to reward longer words, your score is equal to the square of the word's
 
 ##### Prerequisites
 1. The Java 17 JDK
-2. If developing on Linux see [here](https://www.jpro.one/docs/current/2.7/PREPARING_LINUX_FOR_JPRO) for information on setting up a development environment, or use the prepared Docker container: `docker pull grubbcc/jpro-base:jdk17-fx17`.
+2. If developing on Linux see [here](https://www.jpro.one/docs/current/2.7/PREPARING_LINUX_FOR_JPRO) for information on setting up a development environment, or use the prepared Docker container: `docker pull grubbcc/jpro-base:jre18-fx18`.
 3. Recommended: The GitHub CLI tool. See [here](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) for Linux download instructions.
 4. In order to build the webserver: Docker and docker-compose.
 
