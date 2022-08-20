@@ -7,13 +7,13 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
-* 
-*/
-
+ *
+ */
 public class Game {
-	
+
 	private final Server server;
 
 	private final ConcurrentHashMap<String, ServerWorker> playerList = new ConcurrentHashMap<>();
@@ -36,6 +36,7 @@ public class Game {
 	final boolean hasRobot;
 
 	final String lexicon;
+	private final AlphagramTrie dictionary;
 	private final String speed;
 	private final boolean allowsChat;
 	private final boolean allowsWatchers;
@@ -51,22 +52,20 @@ public class Game {
 	final Vector<String> gameLog = new Vector<>();
 	final HashMap<Integer, String> plays = new HashMap<>();
 	private WordFinder wordFinder;
-	
+
 	/**
-	*
-	*/
-	
+	 *
+	 */
 	String getGameParams() {
 		return (gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
 	}
-	
-	
-	/**
-	*
-	*/
 
+
+	/**
+	 *
+	 */
 	Game(Server server, String gameID, String gameName, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
-		
+
 		this.server = server;
 		this.gameID = gameID;
 		this.gameName = gameName;
@@ -80,8 +79,9 @@ public class Game {
 		this.allowsWatchers = allowsWatchers;
 		this.hasRobot = hasRobot;
 
+		this.dictionary = server.getDictionary(lexicon);
 		setUpTileBag(numSets);
-		
+
 		if(speed.equals("slow"))
 			delay = 9;
 		else if(speed.equals("medium"))
@@ -91,15 +91,13 @@ public class Game {
 
 		timeRemaining = delay*tileBag.length + 31;
 		saveState();
-
 	}
-	
+
 	/**
-	* Deletes the game after three minutes of inactivity and saves the log to file.
-	*/
-	
+	 * Deletes the game after three minutes of inactivity and saves the log to file.
+	 */
 	private class DeleteTask extends TimerTask {
-		
+
 		@Override
 		public void run() {
 			server.removeGame(gameID);
@@ -127,12 +125,10 @@ public class Game {
 			}
 		}
 	}
-	
+
 	/**
-	* The sequence of game events
-	*/
-
-
+	 * The sequence of game events
+	 */
 	private class GameTask extends TimerTask {
 
 		private int think = 2;
@@ -212,7 +208,6 @@ public class Game {
 	/**
 	 *
 	 */
-
 	private synchronized void pauseGame() {
 		paused = true;
 		String message = "Game paused";
@@ -220,9 +215,8 @@ public class Game {
 	}
 
 	/**
-	* Stops the gameTimer and sends a notification to the players and watchers that the game is over
-	*/
-	
+	 * Stops the gameTimer and sends a notification to the players and watchers that the game is over
+	 */
 	private synchronized void endGame() {
 
 		gameTimer.cancel();
@@ -237,19 +231,18 @@ public class Game {
 		}
 		server.broadcast("endgame " + gameID);
 
-		wordFinder = new WordFinder(minLength, blankPenalty, server.getDictionary(lexicon));
+		wordFinder = new WordFinder(server, minLength, blankPenalty, dictionary);
 		if(hasRobot) {
 			wordFinder.trees.putAll(robotPlayer.trees);
 		}
 	}
-	
-	/**
-	* Add a new player to the playerList, inform the newPlayer of the other players/
-	* watchers, and inform the other players/watchers of the newPlayer.
-	*
-	* @param newPlayer The player to be added
-	*/
 
+	/**
+	 * Add a new player to the playerList, inform the newPlayer of the other players/
+	 * watchers, and inform the other players/watchers of the newPlayer.
+	 *
+	 * @param newPlayer The player to be added
+	 */
 	synchronized void addPlayer(ServerWorker newPlayer) {
 
 		//stop the delete timer
@@ -285,13 +278,12 @@ public class Game {
 	}
 
 	/**
-	* Remove a player from the playerList and inform the other players.
-	* If there are no more players or watchers left, sends a signal to the server
-	* to end the game.
-	*
-	* @param playerToRemove The name of the player to be removed
-	*/
-	
+	 * Remove a player from the playerList and inform the other players.
+	 * If there are no more players or watchers left, sends a signal to the server
+	 * to end the game.
+	 *
+	 * @param playerToRemove The name of the player to be removed
+	 */
 	synchronized void removePlayer(String playerToRemove) {
 
 		if(playerList.containsKey(playerToRemove)) {
@@ -324,15 +316,14 @@ public class Game {
 		saveState();
 
 	}
-	
-	
-	/**
-	* Add a new watcher to the watcherList, inform the newWatcher of the other players/
-	* watchers, and inform the other players/watchers of the newWatcher.
-	*
-	* @param newWatcher The name of the watcher to be added
-	*/
 
+
+	/**
+	 * Add a new watcher to the watcherList, inform the newWatcher of the other players/
+	 * watchers, and inform the other players/watchers of the newWatcher.
+	 *
+	 * @param newWatcher The name of the watcher to be added
+	 */
 	synchronized void addWatcher(ServerWorker newWatcher) {
 
 		deleteTimer.cancel();
@@ -351,15 +342,15 @@ public class Game {
 		watcherList.put(newWatcher.getUsername(), newWatcher);
 	}
 
-	
+
 	/**
-	* Remove a watcher from the watcherList and inform the other other players.
-	* If there are no more players or watchers left, sends a signal to the server
-	* to end the game.
-	*
-	* @param watcherToRemove The name of the watcher to be removed
-	*/
-	
+	 * Remove a watcher from the watcherList and inform the other other players.
+	 * If there are no more players or watchers left, sends a signal to the server
+	 * to end the game.
+	 *
+	 * @param watcherToRemove The name of the watcher to be removed
+	 */
+
 	synchronized void removeWatcher(String watcherToRemove) {
 		if(watcherList.containsKey(watcherToRemove)) {
 			watcherList.remove(watcherToRemove);
@@ -374,11 +365,10 @@ public class Game {
 	}
 
 	/**
-	* Add an artificially intelligent robot player to this game.
-	*
-	* @param newRobot an artificially intelligent robot player
-	*/
-	
+	 * Add an artificially intelligent robot player to this game.
+	 *
+	 * @param newRobot an artificially intelligent robot player
+	 */
 	synchronized void addRobot(Robot newRobot) {
 
 		robotPlayer = newRobot;
@@ -389,11 +379,10 @@ public class Game {
 		//inform everyone of the newRobot
 		server.broadcast("takeseat " + gameID + " " + newRobot.robotName);
 	}
-	
-	/**
-	* Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
-	*/
 
+	/**
+	 * Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
+	 */
 	private synchronized void drawTile() {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];
@@ -402,20 +391,19 @@ public class Game {
 			notifyRoom("nexttiles " + gameID + " " + tilePool);
 		}
 	}
-	
+
 	/**
-	* Determines whether the longWord can be constructed from letters in the shortWord
-	* and the tilePool. If so, the shortWord is taken from its owner, the shortPlayer, the longWord is 
-	* formed and awarded to the longPlayer, the tilePool is updated, and the players and 
-	* watchers are informed.
-	*
-	* @param	shortPlayer	The owner of the word that is trying to be stolen
-	* @param	shortWord 	The word that the is trying to be stolen.
-	* @param	longPlayer	The player that is attempting the steal.
-	* @param	longWord	The word that the longPlayer is attempting to form.
-	* @return				whether the steal is successful
-	*/
-	
+	 * Determines whether the longWord can be constructed from letters in the shortWord
+	 * and the tilePool. If so, the shortWord is taken from its owner, the shortPlayer, the longWord is
+	 * formed and awarded to the longPlayer, the tilePool is updated, and the players and
+	 * watchers are informed.
+	 *
+	 * @param	shortPlayer	The owner of the word that is trying to be stolen
+	 * @param	shortWord 	The word that the is trying to be stolen.
+	 * @param	longPlayer	The player that is attempting the steal.
+	 * @param	longWord	The word that the longPlayer is attempting to form.
+	 * @return				whether the steal is successful
+	 */
 	synchronized boolean doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord) {
 
 		if(countdown > 0) {
@@ -449,7 +437,7 @@ public class Game {
 		if(tileCount >= tileBag.length)
 			timeRemaining += 15;
 
-		notifyRoom("steal " + gameID + " " + shortPlayer + " " + shortWord + " " + longPlayer + " " + nextWord + " " + tiles);
+		notifyRoom("steal " + gameID + " " + shortPlayer + " " + dictionary.annotate(shortWord) + " " + longPlayer + " " + dictionary.annotate(nextWord) + " " + tiles);
 
 		//if the shortPlayer has left the game and has no words, make room for another player to join
 		if(words.containsKey(shortPlayer)) {
@@ -463,20 +451,19 @@ public class Game {
 				}
 			}
 		}
-		
+
 		return true;
 	}
-	
-	
+
+
 	/**
-	* Given a word, determines whether the appropriate tiles can be found in the pool. If so,
-	* the word is awarded to the player, the tiles are removed from the pool, and the players
-	* and watchers are notified.
-	*
-	* @param    newWordPlayer    The name of the player attempting to make the word.
-	* @param    entry            The word the player is attempting to make.
+	 * Given a word, determines whether the appropriate tiles can be found in the pool. If so,
+	 * the word is awarded to the player, the tiles are removed from the pool, and the players
+	 * and watchers are notified.
+	 *
+	 * @param    newWordPlayer    The name of the player attempting to make the word.
+	 * @param    entry            The word the player is attempting to make.
 	 */
-	
 	synchronized void doMakeWord(String newWordPlayer, String entry) {
 
 		if(countdown > 0) {
@@ -504,17 +491,16 @@ public class Game {
 			timeRemaining += 15;
 
 		//inform players that a new word has been made
-		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + nextWord + " " + tiles);
+		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + dictionary.annotate(nextWord) + " " + tiles);
 
 	}
 
 
-		/**
-        * Initialize the tileBag with the chosen number of tiles sets.
-        *
-        * @param numSets The number of tile sets, each of which consists of 100 tiles
-        */
-
+	/**
+	 * Initialize the tileBag with the chosen number of tiles sets.
+	 *
+	 * @param numSets The number of tile sets, each of which consists of 100 tiles
+	 */
 	private void setUpTileBag(int numSets) {
 		tileBag = new char[numSets*100];
 
@@ -536,11 +522,10 @@ public class Game {
 	}
 
 	/**
-	* Adds a String describing the current game state, e.g.
+	 * Adds a String describing the current game state, e.g.
 	 * "257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]"
 	 * to the gameLog.
-	*/
-
+	 */
 	private synchronized void saveState() {
 		if(!gameOver) {
 			String tiles = tilePool.isEmpty() ? "#" : tilePool;
@@ -548,35 +533,31 @@ public class Game {
 		}
 	}
 
-
 	/**
 	 * Computes what plays can be made at this position, or (if already computed) retrieves from memory.
 	 *
 	 * @param position the time corresponding to the position to be analyzed
 	 */
-
 	synchronized String findPlays(int position) {
 		return plays.computeIfAbsent(position, k -> wordFinder.findWords(gameLog.elementAt(position)));
 	}
-	
+
 	/**
-	* @return the names of all players and Robots that are either active or have at least one word.
-	*/
-	
+	 * @return the names of all players and Robots that are either active or have at least one word.
+	 */
 	synchronized Set<String> getPlayerList() {
 
 		Set<String> union = new HashSet<>(words.keySet());
 		union.addAll(playerList.keySet());
 		if(robotPlayer != null)
 			union.add(robotPlayer.robotName);
-		
+
 		return union;
 	}
-	
+
 	/**
-	* @return a set of all players who have left the game but still have at least one word.
-	*/
-	
+	 * @return a set of all players who have left the game but still have at least one word.
+	 */
 	synchronized Set<String> getInactivePlayers() {
 		Set<String> union = new HashSet<>(words.keySet());
 		union.removeAll(playerList.keySet());
@@ -589,16 +570,20 @@ public class Game {
 	/**
 	 * @return A semantically-ordered String containing all active players and Robots with or without words
 	 * as well as inactive players with words, e.g.
-	 * player1 [HELLO, WORLD] player2 []
-	*/
-
+	 * player1 [HELLO,WORLD] player2 []
+	 */
 	private synchronized String getFormattedWordList() {
 		StringBuilder wordList = new StringBuilder();
 		Set<String> union = getPlayerList();
 
 		for(String playerName : union) {
 			if(words.containsKey(playerName)) {
-				wordList.append(playerName).append(" ").append(words.get(playerName).toString().replace(", ", ",")).append(" ");
+				wordList.append(playerName + " [")
+						.append(words.get(playerName)
+						.stream()
+						.map(word -> dictionary.annotate(word))
+						.collect(Collectors.joining(",")))
+						.append("] ");
 			}
 			else {
 				wordList.append(playerName).append(" [] ");
@@ -607,13 +592,12 @@ public class Game {
 
 		return wordList.toString();
 	}
-	
+
 	/**
-	* Informs players and watchers of events happening in the room.
-	*
-	* @param msg The message containing the information to be shared
-	*/
-	
+	 * Informs players and watchers of events happening in the room.
+	 *
+	 * @param msg The message containing the information to be shared
+	 */
 	void notifyRoom(String msg) {
 		synchronized(playerList) {
 			for(ServerWorker player : playerList.values()) {
@@ -627,5 +611,5 @@ public class Game {
 		}
 	}
 
-	
+
 }
