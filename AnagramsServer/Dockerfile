@@ -1,4 +1,4 @@
-FROM openjdk:17
+FROM openjdk:18
 WORKDIR /usr/anagrams-server
 COPY ./out/artifacts/AnagramsServer_jar/AnagramsServer.jar .
 EXPOSE 8118
