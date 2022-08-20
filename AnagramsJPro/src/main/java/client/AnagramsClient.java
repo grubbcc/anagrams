@@ -26,7 +26,6 @@ import java.util.prefs.Preferences;
  *
  *
  */
-
 class AnagramsClient extends JProApplication {
 
 	private final String host = InetAddress.getLocalHost().getHostAddress();
@@ -62,7 +61,7 @@ class AnagramsClient extends JProApplication {
 	private final BorderPane chatPanel = new BorderPane();
 	private final PlayerPane playerPane = new PlayerPane(this);
 
-	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
+	final HashMap<String, GameWindow> gameWindows = new HashMap<>(1, 2);
 	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
 	private final HashMap<String, Label> playersList = new HashMap<>();
 	String username;
@@ -77,20 +76,22 @@ class AnagramsClient extends JProApplication {
 	private AudioClip newGameClip;
 	boolean guest = false;
 
-	AnagramsClient() throws UnknownHostException {
-	}
+	/**
+	 *
+	 */
+	AnagramsClient() throws UnknownHostException { }
 
 
 	/**
 	 *
 	 */
-
 	enum Colors {
-		MAIN_SCREEN ("-main-screen", "main_screen", "Main Screen", "#002868"),
-		PLAYERS_LIST ("-players-list", "players_list", "Players List", "#bf0a30"),
-		GAME_FOREGROUND ("-game-foreground", "game_foreground", "Game Foreground", "#ffffff"),
-		GAME_BACKGROUND ("-game-background", "game_background", "Game Background", "#bf0a30"),
-		CHAT_AREA ("-chat-area", "chat_area", "Chat Area", "#ffffff"),
+
+		MAIN_SCREEN ("-main-screen", "main_screen", "Main Screen", "#282828"),
+		PLAYERS_LIST ("-players-list", "players_list", "Players List", "#3a3a3a"),
+		GAME_FOREGROUND ("-game-foreground", "game_foreground", "Game Foreground", "#193a57"),
+		GAME_BACKGROUND ("-game-background", "game_background", "Game Background", "#2d6893"),
+		CHAT_AREA ("-chat-area", "chat_area", "Chat Area", "#a4dffc"),
 		GAME_CHAT ("-game-chat", "game_chat", "Game Chat", "#002868")
 		;
 
@@ -110,7 +111,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-
 	static void main(String[] args) {
 		launch(args);
 	}
@@ -119,7 +119,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-
 	@Override
 	public void start(Stage stage) {
 		this.stage = stage;
@@ -143,7 +142,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-
 	private void createAndShowGUI() {
 
 		//control panel
@@ -169,7 +167,6 @@ class AnagramsClient extends JProApplication {
 		gamesScrollPane.setFitToHeight(true);
 		gamesScrollPane.setFitToWidth(true);
 		gamesScrollPane.setContent(gamesPanel);
-
 
 		//players panel
 		Image wooglesLogo = new Image("/images/woogles.png", 162, 33, false, true);
@@ -235,14 +232,6 @@ class AnagramsClient extends JProApplication {
 		AnchorPane.setLeftAnchor(splitPane, 0.0);
 		AnchorPane.setTopAnchor(splitPane, 0.0);
 
-/*		stage.addEventFilter(TouchEvent.TOUCH_PRESSED, e -> {
-			if(e.getTarget() instanceof LabeledText) {
-				Label label = (Label)e.getTarget();
-				if(label.getTooltip() != null)
-					label.getTooltip().show(stage);
-			}
-		});*/
-
 		anchor.setMinSize(Double.MIN_VALUE, Double.MIN_VALUE);
 		anchor.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
@@ -278,14 +267,9 @@ class AnagramsClient extends JProApplication {
 
 	}
 
-
-
-
-
 	/**
 	 *
 	 */
-
 	void setColors() {
 		String newStyle = "";
 		for(Colors color : colors.keySet()) {
@@ -307,7 +291,6 @@ class AnagramsClient extends JProApplication {
 	 * @return a String representing the color "black" if the luminance of the background color > 40
 	 *         and a String representing the color "white" otherwise.
 	 */
-
 	static String getTextColor(String colorCode) {
 		int R = Integer.valueOf(colorCode.substring(1, 3), 16);
 		int G = Integer.valueOf(colorCode.substring(3, 5), 16);
@@ -322,7 +305,6 @@ class AnagramsClient extends JProApplication {
 	 * Connect to the AnagramsServer instance running on the local host
 	 * @return true if connection was successful, false if not
 	 */
-
 	private boolean connect() {
 		try {
 			Socket socket = new Socket(host, port);
@@ -349,7 +331,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-
 	void login(String username) {
 		this.username = username;
 
@@ -375,7 +356,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 * Creates and displays a MessageDialog with information on how to play and use the applicaiton
 	 */
-
 	private void showStartupGuide() {
 
 		String[] titles = {
@@ -460,7 +440,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 * Displays information about a game and tools for joining
 	 */
-
 	private class GamePane extends GridPane {
 
 		private final String gameID;
@@ -478,7 +457,6 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-
 		private GamePane(String gameID, String gameName, String playerMax, String minLength, String numSets, String blanksPenalty, String lexicon, String speed, String allowsChat, String allowsWatchers, String isOver) {
 
 			this.gameID = gameID;
@@ -514,14 +492,13 @@ class AnagramsClient extends JProApplication {
 				speedLabel.setTooltip(new Tooltip("3 seconds per tile"));
 			playersLabel.setText("Players: 0/" + maxPlayers);
 
-
 			//join button
 			Button joinButton = new Button("Join game");
 			joinButton.setTooltip(new Tooltip(gameName.replaceAll("%", " ")));
 			joinButton.setOnAction(e -> {
 				if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
-						gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver));
+						new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver);
 						if(gameOver) {
 							send("watchgame " + gameID);
 						}
@@ -537,9 +514,9 @@ class AnagramsClient extends JProApplication {
 			watchButton.setDisable(!allowWatchers);
 			if(allowWatchers) {
 				watchButton.setOnAction(e -> {
-					if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+					if(gameWindows.isEmpty()) {
 						if(!players.contains(username) || gameOver) {
-							gameWindows.put(gameID, new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true));
+							new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true);
 							send("watchgame " + gameID);
 						}
 					}
@@ -561,7 +538,6 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-
 		private void addPlayerToGame(String newPlayer) {
 			players.add(newPlayer);
 			setPlayersLabel();
@@ -570,7 +546,6 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-
 		private void removePlayer(String playerToRemove) {
 			players.remove(playerToRemove);
 			setPlayersLabel();
@@ -579,7 +554,6 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-
 		private void setPlayersLabel() {
 			playersLabel.setText("Players: " + players.size() + "/" + maxPlayers);
 			playersLabel.setTooltip(null);
@@ -597,10 +571,9 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-
 		private void endGame() {
 			gameOver = true;
-			if(gameWindows.get(gameID) != null) {
+			if(gameWindows.containsKey(gameID)) {
 				gameWindows.get(gameID).gameLog = gameLog;
 				gameWindows.get(gameID).endGame();
 			}
@@ -612,7 +585,6 @@ class AnagramsClient extends JProApplication {
 	 *
 	 * @param newPlayerName The name of the new player
 	 */
-
 	private void addPlayer(String newPlayerName) {
 
 		if(playersList.containsKey(newPlayerName))
@@ -641,7 +613,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-
 	private void removePlayer(String playerToRemove) {
 		playersListPane.getChildren().remove(playersList.remove(playerToRemove));
 		if(playerToRemove.equals(username)) {
@@ -655,22 +626,18 @@ class AnagramsClient extends JProApplication {
 	 * @param gameID the game to exit
 	 * @param isWatcher whether the user is watching
 	 */
-
 	void exitGame(String gameID, boolean isWatcher) {
 
-		gameWindows.remove(gameID);
 		if(isWatcher)
 			send("stopwatching " + gameID);
 		else
 			send("stopplaying " + gameID);
-
 	}
 
 
 	/**
 	 * Respond to commands from the server
 	 */
-
 	private void readMessageLoop() {
 		System.out.println("reading messages");
 		while(connected) {
@@ -706,7 +673,7 @@ class AnagramsClient extends JProApplication {
 										tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
 								case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
 								case "json" -> {
-									if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.substring(5)));
+									if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.replaceFirst("json ", "")));
 								}
 
 								//GamePane commands
@@ -780,7 +747,6 @@ class AnagramsClient extends JProApplication {
 	/**
 	 * Quietly disconnects the client and terminates the session.
 	 */
-
 	private void disconnect() {
 		connected = false;
 		try {
@@ -796,15 +762,15 @@ class AnagramsClient extends JProApplication {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	/**
 	 * Terminates the session and informs the server
 	 */
-
 	private void logOut() {
 		if(connected) {
+			for(String gameID : gameWindows.keySet())
+				exitGame(gameID, gameWindows.get(gameID).isWatcher);
 			send("logoff ");
 		}
 		disconnect();
@@ -816,7 +782,6 @@ class AnagramsClient extends JProApplication {
 	 *
 	 * @param cmd The command to send
 	 */
-
 	void send(String cmd) {
 		try {
 			serverOut.write((cmd + "\n").getBytes());
