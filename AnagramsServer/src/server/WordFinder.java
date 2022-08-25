@@ -51,8 +51,8 @@ class WordFinder {
         String tiles = (gameState.split(" ")[1]).replace("#" ,"");
         tilePool = tiles.length() <= 20 ? tiles : tiles.substring(0, 20); //is this necessary?
         if(tilePool.length() >= minLength) {
-            blanksAvailable = tilePool.length() - tilePool.replace("?","").length();
-            findInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?","")), 0);
+            blanksAvailable = tilePool.length() - tilePool.replaceAll("\\?","").length();
+            findInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replaceAll("\\?","")), 0);
         }
 
         //build string
@@ -64,9 +64,9 @@ class WordFinder {
 
         //Find steals
         if(!tilePool.isEmpty()) {
-            Matcher m = Pattern.compile("\\[([,A-z#]+?)]").matcher(gameState); //needs testing
+            Matcher m = Pattern.compile("\\[([,A-Za-z#$]+?)]").matcher(gameState); //needs testing
             while (m.find()) {
-                wordsFound.append(searchForSteals(m.group(1).split("#?,"))); //needs testing
+                wordsFound.append(searchForSteals(m.group(1).split("[#$]?,"))); //needs testing
             }
         }
         return wordsFound.append("]").toString();
@@ -145,11 +145,12 @@ class WordFinder {
         int numWordsFound = 0;
 
         outer: for(String shortWord : words) {
+
             trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z]", ""), dictionary));
             ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
             while(!wordQueue.isEmpty()) {
                 TreeNode child = wordQueue.pollFirst();
-                String entry = child.toString();
+                String entry = child.getWord();
                 if (entry.length() <= shortWord.length()) {
                     wordQueue.addAll(child.getChildren());
                     continue;
@@ -158,19 +159,18 @@ class WordFinder {
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
                     possibleSteals
-                            .append(shortWord)
-                            .append(" + ")
-                            .append(child.getLongSteal())
-                            .append(" -> ")
-                            .append(dictionary.annotate(play.nextWord())) //needs testing
-                            .append(",");
+                        .append(dictionary.annotate(shortWord))
+                        .append(" + ")
+                        .append(child.getLongSteal())
+                        .append(" -> ")
+                        .append(dictionary.annotate(play.nextWord())) //needs testing
+                        .append(",");
                     if (++numWordsFound >= 30) {
                         break outer;
                     }
                 }
             }
         }
-
         return possibleSteals.toString();
     }
 
