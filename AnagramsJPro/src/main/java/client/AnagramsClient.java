@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
@@ -61,7 +62,8 @@ class AnagramsClient extends JProApplication {
 	private final BorderPane chatPanel = new BorderPane();
 	private final PlayerPane playerPane = new PlayerPane(this);
 
-	final HashMap<String, GameWindow> gameWindows = new HashMap<>(1, 2);
+	//GameWindow gameWindow;
+	final HashMap<String, GameWindow> gameWindows = new HashMap<>();
 	private final HashMap<String, GamePane> gamePanes = new HashMap<>();
 	private final HashMap<String, Label> playersList = new HashMap<>();
 	String username;
@@ -75,6 +77,8 @@ class AnagramsClient extends JProApplication {
 	private AudioClip newPlayerClip;
 	private AudioClip newGameClip;
 	boolean guest = false;
+
+	LinkedBlockingQueue<String> commandQueue = new LinkedBlockingQueue<>();
 
 	/**
 	 *
@@ -148,7 +152,7 @@ class AnagramsClient extends JProApplication {
 		Button createGameButton = new Button("Create Game");
 		createGameButton.setStyle("-fx-font-size: 18");
 		createGameButton.setPrefHeight(39);
-		createGameButton.setOnAction(e -> {if(gameWindows.size() < 1) new GameMenu(this);});
+		createGameButton.setOnAction(e -> {if(gameWindows.isEmpty()) new GameMenu(this);});
 
 		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
 		settingsButton.setStyle("-fx-font-size: 18");
@@ -343,8 +347,9 @@ class AnagramsClient extends JProApplication {
 		setColors();
 
 		//	settingsMenu = new SettingsMenu(this);
-		messageLoop = new Thread(this::readMessageLoop);
-		messageLoop.start();
+		new Thread(this::readMessageLoop).start();
+		new Thread(this::executeCommandLoop).start();
+
 		borderPane.setDisable(false);
 		splitPane.setDisable(false);
 
@@ -495,29 +500,33 @@ class AnagramsClient extends JProApplication {
 			//join button
 			Button joinButton = new Button("Join game");
 			joinButton.setTooltip(new Tooltip(gameName.replaceAll("%", " ")));
-			joinButton.setOnAction(e -> {
-				if(!gameWindows.containsKey(gameID) && gameWindows.size() < 1) {
+			joinButton.setOnMouseClicked(e -> {
+				if(gameWindows.isEmpty()) {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
-						new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver);
-						if(gameOver) {
-							send("watchgame " + gameID);
-						}
-						else {
-							send("joingame " + gameID);
-						}
+						joinButton.setDisable(true);
+						Platform.runLater(() -> {
+							new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver);
+							send((gameOver ? "watchgame " : "joingame ") + gameID);
+							joinButton.setDisable(false);
+						});
 					}
 				}
 			});
 
 			//watch button
 			Button watchButton = new Button("Watch");
+			watchButton.setTooltip(new Tooltip(gameName.replaceAll("%", " ")));
 			watchButton.setDisable(!allowWatchers);
 			if(allowWatchers) {
-				watchButton.setOnAction(e -> {
-					if(gameWindows.isEmpty()) {
-						if(!players.contains(username) || gameOver) {
-							new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true);
-							send("watchgame " + gameID);
+				watchButton.setOnMouseClicked(e -> {
+					if (gameWindows.isEmpty()) {
+						if (!players.contains(username) || gameOver) {
+							watchButton.setDisable(true);
+							Platform.runLater(() -> {
+								new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true);
+								send("watchgame " + gameID);
+								watchButton.setDisable(false);
+							});
 						}
 					}
 				});
@@ -539,18 +548,35 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 		private void addPlayerToGame(String newPlayer) {
+			if(gameOver) return;
 			players.add(newPlayer);
 			setPlayersLabel();
+			if (gameWindows.containsKey(gameID)) {
+				gameWindows.get(gameID).addPlayer(newPlayer);
+			}
 		}
 
 		/**
 		 *
 		 */
-		private void removePlayer(String playerToRemove) {
+		private void removePlayerFromGame(String playerToRemove) {
+			if(gameOver) return;
 			players.remove(playerToRemove);
 			setPlayersLabel();
+			if (gameWindows.containsKey(gameID)) {
+				gameWindows.get(gameID).removePlayer(playerToRemove);
+			}
 		}
 
+		/**
+		 *
+		 */
+		private void setNotificationLabel(String note) {
+			notificationLabel.setText(note);
+			if (gameWindows.containsKey(gameID)) {
+				gameWindows.get(gameID).setNotificationArea(note);
+			}
+		}
 		/**
 		 *
 		 */
@@ -571,11 +597,20 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
+		GameWindow getGame() {
+			return gameWindows.get(gameID);
+		}
+
+		/**
+		 *
+		 */
 		private void endGame() {
 			gameOver = true;
-			if(gameWindows.containsKey(gameID)) {
-				gameWindows.get(gameID).gameLog = gameLog;
-				gameWindows.get(gameID).endGame();
+
+			GameWindow gameWindow = getGame();
+			if(gameWindow != null) {
+				gameWindow.gameLog = gameLog;
+				gameWindow.endGame();
 			}
 		}
 	}
@@ -627,7 +662,7 @@ class AnagramsClient extends JProApplication {
 	 * @param isWatcher whether the user is watching
 	 */
 	void exitGame(String gameID, boolean isWatcher) {
-
+		gameWindows.clear();
 		if(isWatcher)
 			send("stopwatching " + gameID);
 		else
@@ -636,7 +671,7 @@ class AnagramsClient extends JProApplication {
 
 
 	/**
-	 * Respond to commands from the server
+	 * Reads commands from the server and stores them in a BlockingQueue to run later
 	 */
 	private void readMessageLoop() {
 		System.out.println("reading messages");
@@ -644,91 +679,10 @@ class AnagramsClient extends JProApplication {
 			try {
 				String line;
 				while ((line = this.bufferedIn.readLine()) != null) {
-					final String finalLine = line;
-					final String[] tokens = finalLine.split(" ");
-
-					if (tokens.length > 0) {
-
-						final String cmd = tokens[0];
-
-//						if(!cmd.equals("note") && !cmd.equals("nexttiles"))
-//								System.out.println("command received: " + line);
-
-						Platform.runLater(() -> {
-							switch (cmd) {
-								//other commands
-								case "alert" -> {
-									MessageDialog dialog = new MessageDialog(this, "Alert");
-									dialog.setText(finalLine.split("@")[1]);
-									dialog.addOkayButton();
-									dialog.show(true);
-								}
-								case "loginplayer" -> addPlayer(tokens[1]);
-								case "logoffplayer" -> removePlayer(tokens[1]);
-								case "chat" -> {
-									String msg = finalLine.replaceFirst("chat ", "");
-									chatBox.appendText("\n" + msg);
-								}
-								case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
-										tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
-								case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
-								case "json" -> {
-									if (explorer.isVisible()) explorer.setUpTree(new JSONArray(finalLine.replaceFirst("json ", "")));
-								}
-
-								//GamePane commands
-								default -> {
-									GamePane gamePane = gamePanes.get(tokens[1]);
-									if (gamePane != null) {
-										switch (cmd) {
-											case "takeseat" -> {
-												gamePane.addPlayerToGame(tokens[2]);
-												if (gameWindows.containsKey(tokens[1]))
-													if (!gameWindows.get(tokens[1]).gameOver)
-														gameWindows.get(tokens[1]).addPlayer(tokens[2]);
-											}
-											case "removeplayer" -> {
-												gamePane.removePlayer(tokens[2]);
-												if (gameWindows.containsKey(tokens[1])) {
-													gameWindows.get(tokens[1]).removePlayer(tokens[2]);
-												}
-											}
-											case "note" -> {
-												gamePane.notificationLabel.setText(finalLine.split("@")[1]);
-												if (gameWindows.containsKey(tokens[1])) {
-													gameWindows.get(tokens[1]).setNotificationArea(finalLine.split("@")[1]);
-												}
-											}
-											case "endgame" -> gamePane.endGame();
-											case "gamelog" -> gamePane.gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
-
-											//GameWindow commands
-											default -> {
-												GameWindow gameWindow = gameWindows.get(tokens[1]);
-												if (gameWindow != null) {
-													switch (cmd) {
-														case "nexttiles" -> gameWindow.setTiles(tokens[2]);
-														case "makeword" -> gameWindow.makeWord(tokens[2], tokens[3], tokens[4]);
-														case "steal" -> gameWindow.doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
-														case "abandonseat" -> gameWindow.removePlayer(tokens[2]);
-														case "gamechat" -> gameWindow.handleChat(finalLine.replaceFirst("gamechat " + tokens[1] + " ", ""));
-														case "removeword" -> gameWindow.removeWord(tokens[2], tokens[3]);
-														case "gamestate" -> gameWindow.showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
-														case "plays" -> gameWindow.showPlays(finalLine);
-
-														default -> System.out.println("Command not recognized: " + finalLine);
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						});
-					}
+					commandQueue.put(line);
 				}
-
-			} catch (Exception ex) {
+			}
+			catch (Exception ex) {
 				if (stage.isShowing()) {
 					if (connected) {
 						logOut();
@@ -740,6 +694,82 @@ class AnagramsClient extends JProApplication {
 					dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
 					Platform.runLater(() -> dialog.show(true));
 				}
+			}
+		}
+	}
+
+	/**
+	 * Executes commands from the server
+	 */
+	private void executeCommandLoop() {
+		while(connected) {
+			try {
+				final String line = commandQueue.take();
+				final String[] tokens = line.split(" ");
+
+				if (tokens.length == 0) continue;
+
+				final String cmd = tokens[0];
+
+//				if (!cmd.equals("note") && !cmd.equals("nexttiles"))
+//					System.out.println("command received: " + line);
+
+				Platform.runLater(() -> {
+					switch (cmd) {
+						case "alert" -> {
+							MessageDialog dialog = new MessageDialog(this, "Alert");
+							dialog.setText(line.split("@")[1]);
+							dialog.addOkayButton();
+							dialog.show(true);
+						}
+						case "loginplayer" -> addPlayer(tokens[1]);
+						case "logoffplayer" -> removePlayer(tokens[1]);
+						case "chat" -> {
+							String msg = line.replaceFirst("chat ", "");
+							chatBox.appendText("\n" + msg);
+						}
+						case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
+								tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
+						case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
+						case "json" -> {
+							if (explorer.isVisible())
+								explorer.setUpTree(new JSONArray(line.replaceFirst("json ", "")));
+						}
+
+						//GamePane commands
+						default -> {
+							GamePane gamePane = gamePanes.get(tokens[1]);
+							if (gamePane == null) break;
+							switch (cmd) {
+								case "takeseat" -> gamePane.addPlayerToGame(tokens[2]);
+								case "removeplayer" -> gamePane.removePlayerFromGame(tokens[2]);
+								case "note" -> gamePane.setNotificationLabel(line.split("@")[1]);
+								case "endgame" -> gamePane.endGame();
+								case "gamelog" -> gamePane.gameLog.add(Arrays.copyOfRange(tokens, 2, tokens.length));
+
+								//GameWindow commands
+								default -> {
+									GameWindow gameWindow = gamePane.getGame();
+									if (gameWindow == null) break;
+									switch (cmd) {
+										case "nexttiles" -> gameWindow.setTiles(tokens[2]);
+										case "makeword" -> gameWindow.makeWord(tokens[2], tokens[3], tokens[4]);
+										case "steal" -> gameWindow.doSteal(tokens[2], tokens[3], tokens[4], tokens[5], tokens[6]);
+										case "abandonseat" -> gameWindow.removePlayer(tokens[2]);
+										case "gamechat" -> gameWindow.handleChat(line.replaceFirst("gamechat " + tokens[1] + " ", ""));
+										case "removeword" -> gameWindow.removeWord(tokens[2], tokens[3]);
+										case "gamestate" -> gameWindow.showPosition(Arrays.copyOfRange(tokens, 2, tokens.length));
+										case "plays" -> gameWindow.showPlays(line);
+
+										default -> System.out.println("Command not recognized: " + line);
+									}
+								}
+							}
+						}
+					}
+				});
+			} catch(InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -769,8 +799,8 @@ class AnagramsClient extends JProApplication {
 	 */
 	private void logOut() {
 		if(connected) {
-			for(String gameID : gameWindows.keySet())
-				exitGame(gameID, gameWindows.get(gameID).isWatcher);
+			for(GameWindow gameWindow : gameWindows.values())
+				exitGame(gameWindow.gameID, gameWindow.isWatcher);
 			send("logoff ");
 		}
 		disconnect();
