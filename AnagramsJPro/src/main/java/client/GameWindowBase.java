@@ -32,15 +32,12 @@ abstract class GameWindowBase extends BorderPane {
     protected final Image whiteRobot = new Image(getClass().getResourceAsStream("/images/white robot.png"));
     protected final ImageView robotImage = new ImageView(blackRobot);
 
-    protected final double minPanelWidth = 175;
-
+    protected final static double MIN_PANEL_WIDTH = 175;
     protected final String username;
-
     protected final String gameID;
-
     protected String tilePool = "";
+    protected final ArrayList<String[]> gameLog;
 
-    protected ArrayList<String[]> gameLog;
     /**
      *
      */
@@ -70,15 +67,14 @@ abstract class GameWindowBase extends BorderPane {
         ColumnConstraints col1 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col2 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col3 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
+
         RowConstraints row1 = new RowConstraints();
         row1.setPercentHeight(36);
-        row1.setFillHeight(true);
         RowConstraints row2 = new RowConstraints();
         row2.setPercentHeight(36);
-        row2.setFillHeight(true);
         RowConstraints row3 = new RowConstraints();
         row3.setPercentHeight(28);
-        row3.setFillHeight(true);
+
         gameGrid.getColumnConstraints().addAll(col1, col2, col3);
         gameGrid.getRowConstraints().addAll(row1, row2, row3);
 
@@ -119,7 +115,7 @@ abstract class GameWindowBase extends BorderPane {
 
         protected TilePanel() {
             getStyleClass().add("tile-panel");
-            setMinWidth(minPanelWidth);
+            setMinWidth(MIN_PANEL_WIDTH);
 
             widthProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
             heightProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
@@ -249,14 +245,19 @@ abstract class GameWindowBase extends BorderPane {
             double maxY = wordPane.getChildren().get(wordsToAdd.length - 1).getBoundsInParent().getMaxY();
 
             //check if we need to save space by switching to small tiles
+            double minWidth = Math.max(MIN_PANEL_WIDTH, paneWidth * maxY / paneHeight);
             if(maxY > paneHeight) {
                 if (!savingSpace.get()) {
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(324);
                     makeSmall();
                     addWords(wordsToAdd);
                 } else if (column >= 0) {
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(Math.max(minPanelWidth, paneWidth * maxY / paneHeight));
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
                     allocateSpace();
                 }
+            }
+            else if (column >= 0) {
+                gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
             }
         }
 
@@ -429,7 +430,7 @@ abstract class GameWindowBase extends BorderPane {
         for (GamePanel panel : gamePanels)
             panel.reset();
         for (int i = 0; i < 3; i++) {
-            gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+            gameGrid.getColumnConstraints().get(i).setMinWidth(MIN_PANEL_WIDTH);
             gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
         }
 
