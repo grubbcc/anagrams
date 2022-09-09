@@ -25,7 +25,6 @@ import java.util.HashSet;
 /**
  *
  */
-
 class PlayerPane extends PopWindow {
 
     private final String sampleMarkdown = """
@@ -66,33 +65,37 @@ class PlayerPane extends PopWindow {
     private String backgroundColor = "#DDD";
     private final HashSet<Node> nodesToRemove = new HashSet<>();
     private final MarkdownView mdfx = new MarkdownView() {
+
+
+        /**
+         *
+         */
         @Override
         public void setLink(Node node, String link, String description) {
-        switch (description) {
-            case "text-color" -> {
-                textColor = link;
-                nodesToRemove.add(node);
+            switch (description) {
+                case "text-color" -> {
+                    textColor = link;
+                    nodesToRemove.add(node);
+                }
+                case "link-color" -> {
+                    linkColor = link;
+                    nodesToRemove.add(node);
+                }
+                case "background-color" -> {
+                    backgroundColor = link;
+                    nodesToRemove.add(node);
+                }
+                default -> {
+                    node.setCursor(Cursor.HAND);
+                    node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
+                }
             }
-            case "link-color" -> {
-                linkColor = link;
-                nodesToRemove.add(node);
-            }
-            case "background-color" -> {
-                backgroundColor = link;
-                nodesToRemove.add(node);
-            }
-            default -> {
-                node.setCursor(Cursor.HAND);
-                node.setOnMouseClicked(e -> client.getWebAPI().openURLAsTab(link.trim()));
-            }
-        }
         }
     };
 
     /**
      *
      */
-
     PlayerPane(AnagramsClient client) {
         super(client.anchor);
 
@@ -127,8 +130,6 @@ class PlayerPane extends PopWindow {
     /**
      *
      */
-
-
     @Override
     public void hide() {
         super.hide();
@@ -138,7 +139,6 @@ class PlayerPane extends PopWindow {
      *
      * @param playerName The player whose data is to be displayed
      */
-
     void displayPlayerInfo(String playerName) {
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.35); setScaleY(1.35);
@@ -158,7 +158,6 @@ class PlayerPane extends PopWindow {
     /**
      *
      */
-
     private void setColors() {
 
         //Remove non-display nodes
@@ -188,7 +187,6 @@ class PlayerPane extends PopWindow {
     /**
      *
      */
-
     private static void addAllDescendents(Parent parent, ArrayList<Node> nodes) {
         for (Node node : parent.getChildrenUnmodifiable()) {
             nodes.add(node);
@@ -201,7 +199,6 @@ class PlayerPane extends PopWindow {
     /**
      * Turns this pane into an editable pane
      */
-
     void addButtonPanel() {
         HBox buttonPanel = new HBox();
         buttonPanel.setSpacing(10);
