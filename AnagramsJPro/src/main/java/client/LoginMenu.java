@@ -30,7 +30,6 @@ import java.util.prefs.Preferences;
  * user, or logging in as a guest.
  *
  */
-
 class LoginMenu extends PopWindow {
 
     private final AnagramsClient client;
@@ -72,7 +71,6 @@ class LoginMenu extends PopWindow {
     /**
      *
      */
-
     LoginMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
@@ -108,7 +106,7 @@ class LoginMenu extends PopWindow {
         cancelButton.setPrefWidth(90);
 
         usernameField.textProperty().addListener((observable, oldValue, newValue) -> {
-            usernameField.setText(newValue.replace(" ", ""));
+            usernameField.setText(newValue.replaceAll("[ /]", ""));
             if(newValue.length() > 21 )
                 usernameField.setText(newValue.substring(0, 21));
             registerButton.setDisable(isInvalidUsername(newValue));
@@ -183,7 +181,6 @@ class LoginMenu extends PopWindow {
     /**
      * @param actionEvent a click on the regsterButton.
      */
-
     private void registerAction(ActionEvent actionEvent) {
         try {
             if(prefs.nodeExists(usernameField.getText())) {
@@ -239,7 +236,6 @@ class LoginMenu extends PopWindow {
     /**
      * @param actionEvent a click on the guestButton
      */
-
     private void guestAction(ActionEvent actionEvent) {
         String username = usernameField.getText();
         try {
@@ -274,7 +270,6 @@ class LoginMenu extends PopWindow {
      *
      * @param actionEvent a click on the loginButton
      */
-
     private void loginAction(ActionEvent actionEvent) {
         String username = usernameField.getText();
 
@@ -319,7 +314,6 @@ class LoginMenu extends PopWindow {
      *
      * @return true if the password matches, false otherwise
      */
-
     private boolean checkPassword() {
         String username = usernameField.getText();
         String password = passwordField.getText();
@@ -339,8 +333,6 @@ class LoginMenu extends PopWindow {
      *
      * @param guest whether the player has chosen to login in as a guest
      */
-
-
     private void login(boolean guest) {
         String username = usernameField.getText();
         client.send("login " + username);
@@ -381,7 +373,6 @@ class LoginMenu extends PopWindow {
      *
      * @param actionEvent a click on the sendButton
      */
-
     private void sendAction(ActionEvent actionEvent) {
         String email = emailField.getText();
         try {
@@ -451,7 +442,6 @@ class LoginMenu extends PopWindow {
     /**
      *
      */
-
     private void confirmAction(ActionEvent actionEvent) {
         String entry = codeField.getText();
         if(entry.equals(code)) {
@@ -480,7 +470,6 @@ class LoginMenu extends PopWindow {
      *
      * @param click a click on the forgot password label
      */
-
     private void forgotPasswordAction(MouseEvent click) {
         grid.getChildren().removeAll(usernameField, passwordField, loginButton);
         grid.getChildren().addAll(emailField, sendPasswordButton);
@@ -496,7 +485,6 @@ class LoginMenu extends PopWindow {
      *
      * @param click a click on the forgot username label
      */
-
     private void forgotUsernameAction(MouseEvent click) {
         warningLabel.setText("");
         warningLabel.setOnMouseClicked(null);
@@ -511,7 +499,6 @@ class LoginMenu extends PopWindow {
      *
      * @param actionEvent A click on the sendUsername Button
      */
-
     private void sendUsername(ActionEvent actionEvent) {
         String email = emailField.getText();
         if(isInvalidEmailAddress(email)) {
@@ -561,7 +548,6 @@ class LoginMenu extends PopWindow {
      *
      * @param actionEvent a click on the sendPassword Button
      */
-
     private void sendPassword(ActionEvent actionEvent) {
 
         String email = emailField.getText();
@@ -617,7 +603,6 @@ class LoginMenu extends PopWindow {
      * Checks if the email address has between 1 and 21 characters and does not start with "Robot".
      * @return true if the username is invalid, false otherwise
      */
-
     private static boolean isInvalidUsername(String username) {
         return username.startsWith("Robot") || username.isBlank() || username.length() > 21;
     }
@@ -626,7 +611,6 @@ class LoginMenu extends PopWindow {
      * Checks if the contents of the emailField is a valid email address.
      * @return true if the email address is invalid, false otherwise
      */
-
     private static boolean isInvalidEmailAddress(String email) {
         String ePattern = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$";
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(ePattern);
