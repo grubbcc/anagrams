@@ -20,6 +20,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
@@ -702,8 +703,13 @@ class AnagramsClient extends JProApplication {
 	 * Executes commands from the server
 	 */
 	private void executeCommandLoop() {
+		AtomicBoolean blocked = new AtomicBoolean(false);
 		while(connected) {
 			try {
+				if(blocked.get()) {
+					continue;
+				}
+				blocked.set(true);
 				final String line = commandQueue.take();
 				final String[] tokens = line.split(" ");
 
@@ -767,6 +773,7 @@ class AnagramsClient extends JProApplication {
 							}
 						}
 					}
+					blocked.set(false);
 				});
 			} catch(InterruptedException e) {
 				e.printStackTrace();
