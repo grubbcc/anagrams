@@ -505,11 +505,10 @@ class AnagramsClient extends JProApplication {
 				if(gameWindows.isEmpty()) {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
 						joinButton.setDisable(true);
-						Platform.runLater(() -> {
-							new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver);
-							send((gameOver ? "watchgame " : "joingame ") + gameID);
-							joinButton.setDisable(false);
-						});
+						new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength,
+								blankPenalty, numSets, speed, allowChat, lexicon, gameLog, gameOver);
+						send((gameOver ? "watchgame " : "joingame ") + gameID);
+						Platform.runLater(() -> joinButton.setDisable(false));
 					}
 				}
 			});
@@ -523,11 +522,10 @@ class AnagramsClient extends JProApplication {
 					if (gameWindows.isEmpty()) {
 						if (!players.contains(username) || gameOver) {
 							watchButton.setDisable(true);
-							Platform.runLater(() -> {
-								new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength, blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true);
-								send("watchgame " + gameID);
-								watchButton.setDisable(false);
-							});
+							new GameWindow(AnagramsClient.this, gameID, gameName, username, minLength,
+									blankPenalty, numSets, speed, allowChat, lexicon, gameLog, true);
+							send("watchgame " + gameID);
+							Platform.runLater(() -> watchButton.setDisable(false));
 						}
 					}
 				});
@@ -730,10 +728,7 @@ class AnagramsClient extends JProApplication {
 						}
 						case "loginplayer" -> addPlayer(tokens[1]);
 						case "logoffplayer" -> removePlayer(tokens[1]);
-						case "chat" -> {
-							String msg = line.replaceFirst("chat ", "");
-							chatBox.appendText("\n" + msg);
-						}
+						case "chat" -> chatBox.appendText("\n" + line.replaceFirst("chat ", ""));
 						case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
 								tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
 						case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
