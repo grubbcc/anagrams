@@ -81,12 +81,7 @@ class ServerWorker extends Thread {
 		synchronized (server.getGames()) {
 			for(Game game : server.getGames()) {
 				send("addgame " + game.getGameParams());
-				for(String playerName : game.getPlayerList()) {
-					send("takeseat " + game.gameID + " " + playerName);
-				}
-				for(String inactivePlayer : game.getInactivePlayers()) {
-					send("abandonseat " + game.gameID + " " + inactivePlayer);
-				}
+
 				if(game.gameOver) {
 					for(String gameState : game.gameLog) {
 						send("gamelog " + game.gameID + " " + gameState);
@@ -94,13 +89,22 @@ class ServerWorker extends Thread {
 					send("note " + game.gameID + " @" + "Game over");
 					send("endgame " + game.gameID);
 				}
-				else if(game.paused) {
-					send("note " + game.gameID + " @" + "Game paused");
+				else {
+					for(String playerName : game.getPlayerList()) {
+						send("takeseat " + game.gameID + " " + playerName);
+					}
+					for(String inactivePlayer : game.getInactivePlayers()) {
+						send("abandonseat " + game.gameID + " " + inactivePlayer);
+					}
+					if(game.paused) {
+						send("note " + game.gameID + " @" + "Game paused");
+					}
+					else if(game.timeRemaining > 0) {
+						String message = "Time remaining: " + game.timeRemaining;
+						send("note " + game.gameID + " @" + message);
+					}
 				}
-				else if(game.timeRemaining > 0) {
-					String message = "Time remaining: " + game.timeRemaining;
-					send("note " + game.gameID + " @" + message);
-				}
+
 			}
 		}
 
@@ -113,10 +117,14 @@ class ServerWorker extends Thread {
 	*
 	*/
 	private void handleLogoff() throws IOException {
+		disconnect();
+		server.logoffPlayer(username);
+	}
 
-		if(username != null) {
-			server.logoffPlayer(username);
-		}
+	/**
+	 *
+	 */
+	private void disconnect() throws IOException {
 		outputStream.flush();
 		reader.close();
 
@@ -226,7 +234,7 @@ class ServerWorker extends Thread {
 			}
 		}
 	}
-	
+
 	/**
 	* Inform the player about events happening on the server
 	*
@@ -241,7 +249,10 @@ class ServerWorker extends Thread {
 		catch (IOException e) {
 			System.out.println(username + " has unexpectedly disconnected");
 			try {
-				handleLogoff();
+				if(username == null)
+					disconnect();
+				else
+					handleLogoff();
 			}
 			catch (IOException e2) {
 				e2.printStackTrace();
