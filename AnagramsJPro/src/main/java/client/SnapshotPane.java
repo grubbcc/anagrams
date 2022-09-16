@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import com.madgag.gif.fmsware.AnimatedGifEncoder;
 import javafx.scene.image.WritableImage;
 
+import javafx.scene.layout.ColumnConstraints;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -101,8 +102,13 @@ class SnapshotPane extends GameWindowBase {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            System.out.println();
+            for (int i = 0; i < 3; i++) {
+                ColumnConstraints constraints = gameGrid.getColumnConstraints().get(i);
+                constraints.setMinWidth(MIN_PANEL_WIDTH);
+                constraints.setPrefWidth(326);
+            }
         }));
+
 
         animation.playFromStart();
 
