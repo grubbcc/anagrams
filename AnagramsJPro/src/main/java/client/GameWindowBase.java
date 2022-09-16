@@ -1,11 +1,13 @@
 package client;
 
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -25,6 +27,7 @@ abstract class GameWindowBase extends BorderPane {
     protected final Label notificationArea = new Label("");
 
     protected final LinkedHashSet<GamePanel> gamePanels = new LinkedHashSet<>();
+
     protected final GridPane gameGrid = new GridPane();
     protected final GamePanel homePanel = new GamePanel(-1);
     protected final TilePanel tilePanel = new TilePanel();
@@ -36,6 +39,7 @@ abstract class GameWindowBase extends BorderPane {
     protected final String username;
     protected final String gameID;
     protected String tilePool = "";
+
     protected final ArrayList<String[]> gameLog;
 
     /**
@@ -158,6 +162,7 @@ abstract class GameWindowBase extends BorderPane {
         protected int score;
         protected final HBox infoPane = new HBox();
         protected final FlowPane wordPane = new FlowPane();
+
         protected final Label playerNameLabel = new Label();
         protected final Label playerScoreLabel = new Label();
 
@@ -189,7 +194,8 @@ abstract class GameWindowBase extends BorderPane {
 
             setTop(infoPane);
             setCenter(wordPane);
-            makeBig();
+
+            savingSpace.set(false);
         }
 
 
@@ -221,7 +227,7 @@ abstract class GameWindowBase extends BorderPane {
             playerNameLabel.setGraphic(null);
             playerScoreLabel.setText("");
             isAvailable = true;
-            makeBig();
+            savingSpace.set(false);
         }
 
 
@@ -234,7 +240,7 @@ abstract class GameWindowBase extends BorderPane {
             wordPane.getChildren().clear();
 
             for (String word : wordsToAdd) {
-                GamePanel.Word newWord = new GamePanel.Word(word);
+                GamePanel.Word newWord = new GamePanel.Word(word, savingSpace.get());
                 wordPane.getChildren().add(newWord);
             }
 
@@ -248,11 +254,13 @@ abstract class GameWindowBase extends BorderPane {
             double minWidth = Math.max(MIN_PANEL_WIDTH, paneWidth * maxY / paneHeight);
             if(maxY > paneHeight) {
                 if (!savingSpace.get()) {
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(324);
-                    makeSmall();
+                    if(column >= 0)
+                        gameGrid.getColumnConstraints().get(column).setMinWidth(324);
+                    savingSpace.set(true);
                     addWords(wordsToAdd);
                 } else if (column >= 0) {
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
+                    ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
+                    constraints.setMinWidth(Math.max(minWidth, constraints.getMinWidth()));
                     allocateSpace();
                 }
             }
@@ -275,25 +283,6 @@ abstract class GameWindowBase extends BorderPane {
             }
         }
 
-        /**
-         *
-         */
-        protected void makeSmall() {
-            savingSpace.set(true);
-            tileWidth = 12;
-            tileHeight = 16;
-            tileFontSize = 18;
-        }
-
-        /**
-         *
-         */
-        protected void makeBig() {
-            savingSpace.set(false);
-            tileWidth = 16;
-            tileHeight = 20;
-            tileFontSize = 24;
-        }
 
         /**
          *
@@ -304,11 +293,15 @@ abstract class GameWindowBase extends BorderPane {
             protected final String letters;
             protected final boolean highlight;
 
+            private final int tileWidth;
+            private final int tileHeight;
+            private final int tileFontSize;
+
             /**
              *
              */
-            protected Word(String symbols) {
-                if(symbols.endsWith("#")) {
+            protected Word(String symbols, boolean savingSpace) {
+                if(symbols.endsWith("#") || symbols.endsWith("$")) {
                     letters = symbols.substring(0, symbols.length() - 1);
                     highlight = true;
                 }
@@ -316,6 +309,10 @@ abstract class GameWindowBase extends BorderPane {
                     letters = symbols;
                     highlight = false;
                 }
+
+                tileWidth = savingSpace ? 12 : 16;
+                tileHeight = savingSpace ? 16 : 20;
+                tileFontSize = savingSpace ? 18: 24;
 
                 draw();
             }
@@ -390,6 +387,7 @@ abstract class GameWindowBase extends BorderPane {
             return homePanel.takeSeat(newPlayerName);
         }
 
+
         //new player is assigned the first available seat
         else {
             for (GamePanel panel : gamePanels) {
@@ -412,8 +410,8 @@ abstract class GameWindowBase extends BorderPane {
             availableSpace -= gameGrid.getColumnConstraints().get(i).getMinWidth();
         }
         for (int i = 0; i < 3; i++) {
-            ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
-            currentColumn.setPrefWidth(currentColumn.getMinWidth() + availableSpace / 3);
+            ColumnConstraints constraints = gameGrid.getColumnConstraints().get(i);
+            constraints.setPrefWidth(Math.max(constraints.getPrefWidth(), constraints.getMinWidth() + availableSpace / 3));
         }
     }
 
@@ -430,8 +428,9 @@ abstract class GameWindowBase extends BorderPane {
         for (GamePanel panel : gamePanels)
             panel.reset();
         for (int i = 0; i < 3; i++) {
-            gameGrid.getColumnConstraints().get(i).setMinWidth(MIN_PANEL_WIDTH);
-            gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
+            ColumnConstraints constraints = gameGrid.getColumnConstraints().get(i);
+            constraints.setMinWidth(Math.max(constraints.getMinWidth(), MIN_PANEL_WIDTH));
+            constraints.setPrefWidth(Math.max(constraints.getPrefWidth(), 326));
         }
 
         notificationArea.setText("Time remaining " + tokens[0]);
