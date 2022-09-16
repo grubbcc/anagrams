@@ -107,14 +107,15 @@ public class Server extends Thread {
 	 * Quietly remove this worker.
 	 * @param username The name of the worker to be removed
 	 */
-	synchronized void removeWorker(String username) {
+	void removeWorker(String username) {
 		workerList.remove(username);
 	}
 
 	/**
 	*
 	*/
-	synchronized void logoffPlayer(String username) {
+	void logoffPlayer(String username) {
+		if(username == null) return;
 		workerList.remove(username);
 
 		for(Game game : gameList.values()) {
@@ -136,7 +137,7 @@ public class Server extends Thread {
 	*
 	*/
 	void addGame(String gameID, Game game) {
-		gameList.put(gameID, game);
+		gameList.putIfAbsent(gameID, game);
 	}
 
 	/**
@@ -190,7 +191,6 @@ public class Server extends Thread {
 	* @param msg the message to be sent
 	*/
 	void broadcast(String msg) {
-		
 		synchronized(workerList) {
 			for(ServerWorker worker : workerList.values()) {
 				worker.send(msg);
@@ -210,14 +210,10 @@ public class Server extends Thread {
 				System.out.println("Accepted connection from " + clientSocket);
 				ServerWorker newWorker = new ServerWorker(this, clientSocket);
 				newWorker.start();
-			}
-			catch(SocketException e) {
-				System.out.println("Shutting down server");
-			}
-			catch (IOException e) {
+			} catch(IOException e) {
 				e.printStackTrace();
 			}
-		}
+        }
 	}
 
 	/**

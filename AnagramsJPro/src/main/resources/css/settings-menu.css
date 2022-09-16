@@ -1,10 +1,25 @@
+#settings-menu {
+    -fx-max-width: 340;
+    -fx-max-height: 380;
+}
+
+#settings-menu:mobile {
+    -fx-scale-x: 1.45;
+    -fx-scale-y: 1.45;
+}
+
+#settings-grid {
+    -fx-padding: 3;
+    -fx-hgap: 3;
+    -fx-vgap: 3;
+}
+
 
 .color-pane {
     -fx-pref-width: 80;
     -fx-pref-height: 40;
     -fx-hgap: 9;
     -fx-vgap: 0;
-    -fx-hpos: center;
 }
 
 .color-pane .text-field {
@@ -14,6 +29,7 @@
 
 .color-pane .label {
     -fx-alignment: center;
+    -fx-max-width: Infinity;
 }
 
 .color-combo-box {

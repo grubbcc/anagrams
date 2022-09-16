@@ -67,7 +67,6 @@ class GameMenu extends PopWindow {
         });
 
         if(client.getWebAPI().isMobile()) {
-        //    setScaleX(1.45); setScaleY(1.45);
             pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             playersSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
             lengthsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
@@ -199,7 +198,7 @@ class GameMenu extends PopWindow {
 
         getStylesheets().add("css/game-menu.css");
 
-        client.gameWindows.put(gameID, new GameWindow(client, gameID, gameName, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false));
+        new GameWindow(client, gameID, gameName, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false);
 
         final String cmd = "newgame " + gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
         client.send(cmd);

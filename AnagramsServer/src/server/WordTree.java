@@ -16,7 +16,6 @@ import java.util.*;
  * former by insertion of letters without rearrangement.
  *
  */
-
 class WordTree {
 
 	final AlphagramTrie trie;
@@ -28,7 +27,6 @@ class WordTree {
 	/**
 	 * Generates a tree from an existing trie
 	 */
-
 	WordTree(String rootWord, AlphagramTrie trie) {
 		this.rootWord = rootWord.toUpperCase();
 		rootNode = new TreeNode(rootWord, "", "");
@@ -72,7 +70,6 @@ class WordTree {
 	 * @param node : a node in the trie
 	 * @param charsToFind : characters that a descendant of the given node's path must contain to be considered a steal of the rootWord
 	 */
-
 	private void find(Node node, char[] charsToFind, String otherCharsFound) {
 
 		if(charsToFind.length > 0) {
@@ -105,7 +102,6 @@ class WordTree {
 	 *		(3) any word whose letters cannot be formed from a shorter word by rearrangement is eliminated
 	 *		(4) the shortest word is the rootWord entered by the user.
 	 */
-
 	private void buildTree() {
 
 		TreeNode currentNode = treeNodeList.pollFirst();
@@ -127,7 +123,6 @@ class WordTree {
 	/**
 	 * A tool for sorting tree nodes (1) according to length, and in case of ties, (2) in alphabetical order.
 	 */
-
 	static class TreeNodeComparator implements Comparator<TreeNode> {
 		@Override
 		public int compare(TreeNode node1, TreeNode node2) {
@@ -144,7 +139,6 @@ class WordTree {
 	 *
 	 * @param node The node whose children are to be sorted
 	 */
-
 	private void sort(TreeNode node) {
 		node.getChildren().sort(new TreeNodeComparator().reversed());
 		for(TreeNode child : node.getChildren()) {
@@ -244,7 +238,7 @@ class WordTree {
 	/**
 	 * Given a String, returns an "alphagram" consisting of its letters arranged in alphabetical order.
 	 *
-	 * @param entry: the letters to be rearranged
+	 * @param entry the letters to be rearranged
 	 */
 	static String alphabetize(String entry) {
 		char[] chars = entry.toCharArray();

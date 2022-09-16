@@ -36,16 +36,16 @@ javafx {
 apply plugin: 'com.sandec.jpro'
 
 jpro {
-    jproVersion = "2022.1.2"
+    jproVersion = "2022.1.4"
     port = 8079
     jproReleaseFiles << JProReleaseFile(new File("allfonts.properties"), "/fonts/")
 }
 
 dependencies {
     implementation 'javax.mail:mail:1.4.7'
-    implementation "com.sandec:mdfx:0.2.4"
+    implementation "com.sandec:mdfx:0.2.7"
     implementation "one.jpro:one.jpro.sound:0.1.0"
     implementation 'org.json:json:20210307'
-
+    implementation 'com.madgag:animated-gif-lib:1.4'
 
 }

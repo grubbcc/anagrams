@@ -155,7 +155,9 @@ class WordFinder {
                     wordQueue.addAll(child.getChildren());
                     continue;
                 }
-                else if (entry.length() > shortWord.length() + tilePool.length()) continue;
+                else if (entry.length() > shortWord.length() + tilePool.length()) {
+                    continue;
+                }
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
                     possibleSteals

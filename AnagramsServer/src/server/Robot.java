@@ -145,7 +145,7 @@ class Robot {
 
 				if(treeSet.containsKey(shortWord)) {
 					for(TreeNode child : treeSet.get(shortWord).rootNode.getChildren()) {
-						String longWord = child.toString();
+						String longWord = child.getWord();
 						if(game.doSteal(player, shortWord, robotName, longWord)) {
 							return;
 						}

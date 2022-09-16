@@ -7,10 +7,12 @@ import javafx.collections.FXCollections;
 import javafx.css.PseudoClass;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.TouchEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -37,14 +39,8 @@ class SettingsMenu extends PopWindow {
 
         newColors = client.colors.clone();
 
-        if(client.getWebAPI().isMobile()) {
-            setScaleX(1.45); setScaleY(1.45);
-        }
-
         GridPane grid = new GridPane();
-        grid.setPadding(new Insets(3));
-        grid.setHgap(3);
-        grid.setVgap(3);
+        grid.setId("settings-grid");
 
         //labels
         Label lexiconLabel = new Label("Word list");
@@ -54,17 +50,15 @@ class SettingsMenu extends PopWindow {
         lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
         lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
-
         GridPane.setHalignment(soundChooser, HPos.RIGHT);
         soundChooser.setPadding(new Insets(0,10,0,0));
-
         highlightChooser.setSelected(client.prefs.getBoolean("highlight_words", false));
-        highlightChooser.setPadding(new Insets(3,0,-2,0)); //needs testing
         Label goldLabel = new Label("Highlight");
-        goldLabel.setBackground(new Background(new BackgroundFill(Color.GOLD, CornerRadii.EMPTY, new Insets(2,0,1,2))));
+        goldLabel.setAlignment(Pos.TOP_CENTER);
+        goldLabel.setBackground(new Background(new BackgroundFill(Color.GOLD, new CornerRadii(1), new Insets(1,0,-1,1))));
         Label clearLabel = new Label("CSW/NWL-only words");
-        HBox highlightTool = new HBox(highlightChooser, goldLabel, clearLabel);
-        highlightTool.setBorder(new Border(new BorderStroke(Color.TRANSPARENT, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.FULL)));
+
+        HBox higlightBox = new HBox(highlightChooser, goldLabel, clearLabel);
 
         //buttons
         Button OKButton = new Button("Okay");
@@ -74,7 +68,7 @@ class SettingsMenu extends PopWindow {
         grid.add(lexiconLabel, 0, 0, 1, 1);
         grid.add(lexiconChooser, 1, 0, 1, 1);
         grid.add(soundChooser, 2, 0, 1, 1);
-        grid.add(highlightTool, 0, 1, 3, 1);
+        grid.add(higlightBox, 0, 1, 3, 1);
         grid.add(new ColorChooser(AnagramsClient.Colors.MAIN_SCREEN), 0, 2, 3, 1);
         grid.add(new ColorChooser(AnagramsClient.Colors.PLAYERS_LIST), 0, 3, 3, 1);
         grid.add(new ColorChooser(AnagramsClient.Colors.GAME_FOREGROUND), 0, 4, 3, 1);
@@ -167,7 +161,7 @@ class SettingsMenu extends PopWindow {
             getColumnConstraints().add(new ColumnConstraints(130));
             getColumnConstraints().add(new ColumnConstraints(120));
             getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
-            setHgap(4);
+        //    setHgap(4);
 
             setColor(colorCode);
 
@@ -201,6 +195,7 @@ class SettingsMenu extends PopWindow {
         private class ColorPane extends GridPane {
 
             /**
+             *
              */
             ColorPane() {
                 getStyleClass().add("color-pane");
@@ -278,13 +273,12 @@ class SettingsMenu extends PopWindow {
                     if(client.getWebAPI().isMobile())
                         addEventFilter(TouchEvent.TOUCH_RELEASED, event -> setColor(colorCode));
                 }
+
                 /**
                  */
                 @Override
                 public void updateItem(String color, boolean empty) {
-
                     super.updateItem(color, empty);
-
                     if(!empty) {
                         this.colorCode = color;
                         setBackground(new Background(new BackgroundFill(Color.web(color), CornerRadii.EMPTY, Insets.EMPTY)));

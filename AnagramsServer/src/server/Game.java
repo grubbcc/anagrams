@@ -260,10 +260,8 @@ public class Game {
 			newPlayer.send("gamestate " + gameID + " " + gameLog.lastElement());
 
 			//inform newPlayer of inactive players
-			synchronized (getInactivePlayers()) {
-				for (String playerName : getInactivePlayers()) {
-					newPlayer.send("abandonseat " + gameID + " " + playerName);
-				}
+			for (String playerName : getInactivePlayers()) {
+				newPlayer.send("abandonseat " + gameID + " " + playerName);
 			}
 
 			//add the newPlayer
@@ -286,7 +284,8 @@ public class Game {
 	 */
 	synchronized void removePlayer(String playerToRemove) {
 
-		if(playerList.containsKey(playerToRemove)) {
+		watcherList.remove(playerToRemove);
+
 			playerList.remove(playerToRemove);
 
 			if(playerList.isEmpty()) {
@@ -301,7 +300,7 @@ public class Game {
 					deleteTimer.schedule(new DeleteTask(), 180000);
 				}
 			}
-		}
+
 
 		if(words.containsKey(playerToRemove)) {
 			if (words.get(playerToRemove).isEmpty()) {
@@ -314,7 +313,6 @@ public class Game {
 		}
 
 		saveState();
-
 	}
 
 
@@ -333,11 +331,10 @@ public class Game {
 			newWatcher.send("gamestate " + gameID + " " + gameLog.lastElement());
 
 			//inform newWatcher of inactive players
-			synchronized (getInactivePlayers()) {
-				for (String playerName : getInactivePlayers()) {
-					newWatcher.send("abandonseat " + gameID + " " + playerName);
-				}
+			for (String playerName : getInactivePlayers()) {
+				newWatcher.send("abandonseat " + gameID + " " + playerName);
 			}
+
 		}
 		watcherList.put(newWatcher.getUsername(), newWatcher);
 	}
@@ -350,9 +347,9 @@ public class Game {
 	 *
 	 * @param watcherToRemove The name of the watcher to be removed
 	 */
-
 	synchronized void removeWatcher(String watcherToRemove) {
-		if(watcherList.containsKey(watcherToRemove)) {
+		playerList.remove(watcherToRemove);
+
 			watcherList.remove(watcherToRemove);
 
 			if (playerList.isEmpty() && watcherList.isEmpty()) {
@@ -361,7 +358,7 @@ public class Game {
 				deleteTimer.schedule(new DeleteTask(), 180000);
 				System.out.println("Beginning countdown; game will disappear in 3 minutes");
 			}
-		}
+
 	}
 
 	/**
@@ -579,11 +576,11 @@ public class Game {
 		for(String playerName : union) {
 			if(words.containsKey(playerName)) {
 				wordList.append(playerName + " [")
-						.append(words.get(playerName)
-						.stream()
-						.map(word -> dictionary.annotate(word))
-						.collect(Collectors.joining(",")))
-						.append("] ");
+					.append(words.get(playerName)
+					.stream()
+					.map(word -> dictionary.annotate(word))
+					.collect(Collectors.joining(",")))
+					.append("] ");
 			}
 			else {
 				wordList.append(playerName).append(" [] ");
