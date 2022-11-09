@@ -200,8 +200,7 @@ class WordExplorer extends PopWindow {
         for(int i = 1; i < data.length(); i++) {
             TreeNode child = new TreeNode(data.getJSONObject(i));
             child.getAddress().removeFirst();
-            counts.computeIfPresent(child.getWord().length(), (key, val) -> val + 1);
-            counts.putIfAbsent(child.getWord().length(), 1);
+            counts.merge(child.getWord().replaceFirst("[#$]", "").length(), 1, Integer::sum);
             addNode(rootNode, child, child.getAddress());
         }
 
