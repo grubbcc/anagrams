@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -26,7 +27,7 @@ public class Game {
 	private String tilePool = "";
 	private int tileCount = 0;
 	boolean gameOver = false;
-	final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words = new ConcurrentHashMap<>();
+	final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words = new ConcurrentHashMap<>();
 
 	private final int maxPlayers;
 	private final int numSets;
@@ -182,7 +183,7 @@ public class Game {
 						if (tileCount < tileBag.length) {
 							if (tilePool.length() >= 29) {
 								think = 2;
-							} else if (rgen.nextInt(50) <= 3 * (robotPlayer.skillLevel - 1) + delay / 3 + 4 * (tilePool.length() / minLength - 1)) {
+							} else if (rgen.nextInt(50) <= 3*(robotPlayer.skillLevel - 1) + 2*delay/3 + 4*(tilePool.length()/minLength - 1)) {
 								think = 2;
 							}
 						}
@@ -266,7 +267,7 @@ public class Game {
 
 			//add the newPlayer
 			playerList.put(newPlayer.getUsername(), newPlayer);
-			words.putIfAbsent(newPlayer.getUsername(), new CopyOnWriteArrayList<>());
+			words.putIfAbsent(newPlayer.getUsername(), new ConcurrentSkipListSet<>(String.CASE_INSENSITIVE_ORDER));
 
 			saveState();
 
@@ -286,21 +287,20 @@ public class Game {
 
 		watcherList.remove(playerToRemove);
 
-			playerList.remove(playerToRemove);
+		playerList.remove(playerToRemove);
 
-			if(playerList.isEmpty()) {
-				gameTimer.cancel();
-				if(timeRemaining > 0) {
-					String message = "Time remaining: " + timeRemaining;
-					server.broadcast("note " + gameID + " @" + message);
-				}
-				if(watcherList.isEmpty()) {
-					deleteTimer.cancel();
-					deleteTimer = new Timer();
-					deleteTimer.schedule(new DeleteTask(), 180000);
-				}
+		if(playerList.isEmpty()) {
+			gameTimer.cancel();
+			if(timeRemaining > 0) {
+				String message = "Time remaining: " + timeRemaining;
+				server.broadcast("note " + gameID + " @" + message);
 			}
-
+			if(watcherList.isEmpty()) {
+				deleteTimer.cancel();
+				deleteTimer = new Timer();
+				deleteTimer.schedule(new DeleteTask(), 180000);
+			}
+		}
 
 		if(words.containsKey(playerToRemove)) {
 			if (words.get(playerToRemove).isEmpty()) {
@@ -369,7 +369,7 @@ public class Game {
 	synchronized void addRobot(Robot newRobot) {
 
 		robotPlayer = newRobot;
-		words.put(newRobot.robotName, new CopyOnWriteArrayList<>());
+		words.put(newRobot.robotName, new ConcurrentSkipListSet<>(String.CASE_INSENSITIVE_ORDER));
 
 		saveState();
 
@@ -407,7 +407,7 @@ public class Game {
 			return false;
 		}
 
-		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+		for(ConcurrentSkipListSet<String> wordList : words.values()) {
 			if(wordList.contains(longWord)) return false;
 		}
 
@@ -466,7 +466,7 @@ public class Game {
 		if(countdown > 0) {
 			return;
 		}
-		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+		for(ConcurrentSkipListSet<String> wordList : words.values()) {
 			if(wordList.contains(entry)) return;
 		}
 		Play play = new Play("", entry, tilePool, minLength, blankPenalty);
@@ -481,7 +481,6 @@ public class Game {
 
 		tilePool = play.nextTiles;
 		String tiles = tilePool.isEmpty() ? "#" : tilePool;
-
 
 		saveState();
 		if(tileCount >= tileBag.length)
@@ -575,7 +574,8 @@ public class Game {
 
 		for(String playerName : union) {
 			if(words.containsKey(playerName)) {
-				wordList.append(playerName + " [")
+				wordList.append(playerName)
+					.append(" [")
 					.append(words.get(playerName)
 					.stream()
 					.map(word -> dictionary.annotate(word))
