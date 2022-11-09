@@ -266,25 +266,29 @@ class GameWindow extends PopWindow {
             tilePanel.heightProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
 
             maximizeButton.setOnAction(click -> {
+
                 double dividerPosition = splitPane.getDividerPositions()[0];
-
+                for (int i = 0; i < 3; i++) {
+                    gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
+                    gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
+                }
                 maximizeButton.maximizeAction.handle(click);
+                gameGrid.layout();
 
-                splitPane.setDividerPosition(0, dividerPosition);
                 Platform.runLater(() -> {
+
+                    splitPane.setDividerPosition(0, dividerPosition);
+
                     if (gameOver) {
                         showPosition(gameLog.get(position));
                         return;
                     }
 
-                    for (int i = 0; i < 3; i++) {
-                        gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
-                        gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
-                    }
                     for (GamePanel panel : players.values()) {
                         panel.wordPane.getChildren().clear();
-                        panel.savingSpace.set(false);
+
                         if (!panel.words.isEmpty()) {
+                            panel.savingSpace.set(false);
                             panel.addWords(panel.words.keySet().toArray(new String[0]));
                         }
                     }
@@ -1035,6 +1039,7 @@ class GameWindow extends PopWindow {
             gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
             gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
         }
+        gameGrid.layout();
 
         notificationArea.setText("Time remaining " + tokens[0]);
 
