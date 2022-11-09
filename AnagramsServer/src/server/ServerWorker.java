@@ -81,7 +81,9 @@ class ServerWorker extends Thread {
 		synchronized (server.getGames()) {
 			for(Game game : server.getGames()) {
 				send("addgame " + game.getGameParams());
-
+				for(String playerName : game.getPlayerList()) {
+					send("takeseat " + game.gameID + " " + playerName);
+				}
 				if(game.gameOver) {
 					for(String gameState : game.gameLog) {
 						send("gamelog " + game.gameID + " " + gameState);
@@ -90,9 +92,6 @@ class ServerWorker extends Thread {
 					send("endgame " + game.gameID);
 				}
 				else {
-					for(String playerName : game.getPlayerList()) {
-						send("takeseat " + game.gameID + " " + playerName);
-					}
 					for(String inactivePlayer : game.getInactivePlayers()) {
 						send("abandonseat " + game.gameID + " " + inactivePlayer);
 					}
