@@ -44,6 +44,10 @@ class Play {
 
 
      boolean isValid() {
+        if(!shortWord.isEmpty()) {
+            if (!Utils.isSteal(shortWord.toUpperCase(), longWord))
+                return false;
+        }
 
          String entry = longWord;
          String blanksToKeep = "";
