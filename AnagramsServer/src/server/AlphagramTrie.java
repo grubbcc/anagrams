@@ -48,7 +48,7 @@ class AlphagramTrie {
 					if (entry.length > 1)
 						currentDefinition = entry[1];
 
-					insertWord(alphabetize(currentWord), rootNode);
+					insertWord(Utils.alphabetize(currentWord), rootNode);
 				}
 			}
 			System.out.println("new trie created with lexicon = " + lexicon);
@@ -143,7 +143,7 @@ class AlphagramTrie {
 	 */
 	Node getNode(String searchKey) {
 
-		String alphagram = alphabetize(searchKey.toUpperCase());
+		String alphagram = Utils.alphabetize(searchKey.toUpperCase());
 		Node node = rootNode;
 
 		//Recursively searches through the trie, one letter at a time
@@ -171,17 +171,6 @@ class AlphagramTrie {
 			return node.definitions.get(searchKey.toUpperCase());
 		else
 			return null;
-	}
-
-	/**
-	 * Given a String, creates an "alphagram" consisting of its letters arranged in alphabetical order.
-	 *
-	 * @param entry: the letters to be rearranged
-	 */
-	static String alphabetize(String entry) {
-		char[] chars = entry.toCharArray();
-		Arrays.sort(chars);
-		return new String(chars);
 	}
 
 }
