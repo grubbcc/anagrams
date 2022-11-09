@@ -52,21 +52,21 @@ class WordFinder {
         tilePool = tiles.length() <= 20 ? tiles : tiles.substring(0, 20); //is this necessary?
         if(tilePool.length() >= minLength) {
             blanksAvailable = tilePool.length() - tilePool.replaceAll("\\?","").length();
-            findInPool(dictionary.rootNode, "", AlphagramTrie.alphabetize(tilePool.replaceAll("\\?","")), 0);
+            findInPool(dictionary.rootNode, "", Utils.alphabetize(tilePool.replaceAll("\\?","")), 0);
         }
 
         //build string
         StringBuilder wordsFound = new StringBuilder("[");
         for(String word : wordsInPool) {
-            wordsFound.append(dictionary.annotate(word)).append(","); //needs testing
+            wordsFound.append(dictionary.annotate(word)).append(",");
         }
         wordsFound.append("] @ [");
 
         //Find steals
         if(!tilePool.isEmpty()) {
-            Matcher m = Pattern.compile("\\[([,A-Za-z#$]+?)]").matcher(gameState); //needs testing
+            Matcher m = Pattern.compile("\\[([,A-Za-z#$]+?)]").matcher(gameState);
             while (m.find()) {
-                wordsFound.append(searchForSteals(m.group(1).split("[#$]?,"))); //needs testing
+                wordsFound.append(searchForSteals(m.group(1).split("[^A-Za-z]+")));
             }
         }
         return wordsFound.append("]").toString();
