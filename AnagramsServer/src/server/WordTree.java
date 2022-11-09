@@ -95,7 +95,7 @@ class WordTree {
 	}
 
 	/**
-	 * Given the class's list of DefaultMutableTreeNodes, each representing a single word,
+	 * Given the class's list of TreeNodes, each representing a single word,
 	 * 	 sort them into a hierarchical structure such that:
 	 * 		(1) each word becomes a child of the longest word whose letters are a strict subset of that word's letters
 	 *		(2) provided that at least two letters of the shorter word are rearranged to form the longer word
@@ -110,7 +110,7 @@ class WordTree {
 		for (TreeNode nextNode : treeNodeList) {
 			String nextWord = nextNode.getWord();
 
-			if (isSteal(nextWord, currentWord)) {
+			if (Utils.isSteal(nextWord, currentWord)) {
 				nextNode.addChild(currentNode);
 				return;
 			}
@@ -162,7 +162,6 @@ class WordTree {
 
 		double norm = 0;
 		for (TreeNode child : node.getChildren()) {
-
 			String nextSteal = child.getLongSteal();
 			for (String s : node.getLongSteal().split("")) {
 				nextSteal = nextSteal.replaceFirst(s, "");
@@ -177,73 +176,5 @@ class WordTree {
 	}
 
 
-	/**
-	 * Given two words, determines whether one's letters are a strict subset of the other's.
-	 *
-	 * @param shortWord a shorter word
-	 * @param longWord a longer word
-	 */
-	static boolean isSubset(String shortWord, String longWord) {
-
-		if(shortWord.length() >= longWord.length()) {
-			return false;
-		}
-
-		String shortString = alphabetize(shortWord);
-		String longString = alphabetize(longWord);
-
-		while(shortString.length() > 0) {
-
-			if(longString.length() == 0 ) {
-				return false;
-			}
-			else if(shortString.charAt(0) < longString.charAt(0)) {
-				return false;
-			}
-			else if(shortString.charAt(0) > longString.charAt(0)) {
-				longString = longString.substring(1);
-			}
-			else if(shortString.charAt(0) == longString.charAt(0)) {
-				shortString = shortString.substring(1);
-				longString = longString.substring(1);
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Given two words, one longer than the other, determines whether one's letters can be rearranged,
-	 * with the addition of at least one letter not found in the shorter word, to form the longer one.
-	 *
-	 * @param shortWord a shorter word
-	 * @param longWord a longer word
-	 */
-	static boolean isSteal(String shortWord, String longWord) {
-
-		if(!isSubset(shortWord, longWord))
-			return false;
-
-		while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
-
-			if (shortWord.charAt(0) == longWord.charAt(0)) {
-				shortWord = shortWord.substring(1);
-			}
-			longWord = longWord.substring(1);
-		}
-
-		return shortWord.length() > longWord.length();
-	}
-
-
-	/**
-	 * Given a String, returns an "alphagram" consisting of its letters arranged in alphabetical order.
-	 *
-	 * @param entry the letters to be rearranged
-	 */
-	static String alphabetize(String entry) {
-		char[] chars = entry.toCharArray();
-		Arrays.sort(chars);
-		return new String(chars);
-	}
 
 }
