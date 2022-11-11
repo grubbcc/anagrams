@@ -15,6 +15,8 @@ import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polyline;
 
+import java.util.Stack;
+
 /**
  *  A JPro-compatible alternative to the standard JavaFX Window with
  *  draggable, maximizable, and resizable functionality and title bar.
@@ -28,9 +30,10 @@ class PopWindow extends BorderPane {
     final HBox titleBar = new HBox();
     final Label title = new Label();
     final MaximizeButton maximizeButton = new MaximizeButton();
-    private boolean isMaximized;
+    boolean isMaximized;
     final Button closeButton = new Button();
 
+    final static Stack<PopWindow> popWindows = new Stack<>();
     /**
      *
      * @param container The Pane in which this window resides.
@@ -44,8 +47,7 @@ class PopWindow extends BorderPane {
         Line line2 = new Line(6, 15, 14, 7);
         Group closeIcon = new Group(line1, line2);
         closeButton.setGraphic(closeIcon);
-        closeButton.setCancelButton(true);
-        closeButton.setOnAction(e -> hide());
+        closeButton.setOnMouseClicked(e -> hide());
 
         //title bar
         titleBar.getStyleClass().add("title-bar");
@@ -151,6 +153,7 @@ class PopWindow extends BorderPane {
             container.getChildren().add(this);
             setVisible(true);
             setDisable(false);
+            popWindows.push(this);
         }
     }
 
@@ -163,6 +166,9 @@ class PopWindow extends BorderPane {
         container.getChildren().remove(this);
         for(Node child : container.getChildren()) {
             child.setDisable(false);
+        }
+        if(!popWindows.isEmpty()) {
+            popWindows.remove(this);
         }
     }
 

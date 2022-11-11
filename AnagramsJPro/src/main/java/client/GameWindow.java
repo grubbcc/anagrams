@@ -133,7 +133,7 @@ class GameWindow extends PopWindow {
         controlPanel.getStyleClass().add("control-panel");
         if (isMobile) controlPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         controlPanel.setSpacing(isMobile ? 5 : 20);
-        exitGameButton.setOnAction(e -> exitGame());
+        exitGameButton.setOnAction(e -> hide());
 
         infoPane.setText(lexicon + (isMobile ? "" : "      Min length = " + minLength));
         controlPanel.getChildren().addAll(notificationArea, exitGameButton, infoPane);
@@ -357,7 +357,7 @@ class GameWindow extends PopWindow {
         setAsMaximizeZone(titleBar, controlPanel, gameGrid);
 
         client.setColors();
-        closeButton.setOnAction(e -> exitGame());
+        closeButton.setOnAction(e -> hide());
 
         if (!gameLog.isEmpty())
             endGame();
@@ -429,9 +429,9 @@ class GameWindow extends PopWindow {
     /**
      *
      */
-    private void exitGame() {
+    void hide() {
 
-        hide();
+        super.hide();
         wordDisplay.hide();
         explorer.hide();
         blinker.stop();
