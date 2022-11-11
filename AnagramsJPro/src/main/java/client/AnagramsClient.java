@@ -630,7 +630,6 @@ class AnagramsClient extends JProApplication {
 			return;
 
 		if(newPlayerName.equals(username)) {
-			System.out.println("scrooll TO TOP");
 			chatBox.scrollTopProperty().set(0);
 		}
 
@@ -725,8 +724,8 @@ class AnagramsClient extends JProApplication {
 
 				final String cmd = tokens[0];
 
-				if (!cmd.equals("note") && !cmd.equals("nexttiles"))
-					System.out.println("command received: " + line);
+//				if (!cmd.equals("note") && !cmd.equals("nexttiles"))
+//					System.out.println("command received: " + line);
 
 				Platform.runLater(() -> {
 					switch (cmd) {
@@ -738,10 +737,7 @@ class AnagramsClient extends JProApplication {
 						}
 						case "loginplayer" -> addPlayer(tokens[1]);
 						case "logoffplayer" -> removePlayer(tokens[1]);
-						case "chat" -> {
-							System.out.println("\n" + line);
-							chatBox.appendText("\n" + line.replaceFirst("chat ", ""));
-						}
+						case "chat" -> chatBox.appendText("\n" + line.replaceFirst("chat ", ""));
 						case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
 								tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
 						case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
