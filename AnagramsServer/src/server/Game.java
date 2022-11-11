@@ -183,7 +183,8 @@ public class Game {
 						if (tileCount < tileBag.length) {
 							if (tilePool.length() >= 29) {
 								think = 2;
-							} else if (rgen.nextInt(50) <= 3*(robotPlayer.skillLevel - 1) + 2*delay/3 + 4*(tilePool.length()/minLength - 1)) {
+							}
+							else if (rgen.nextInt(100) <= 3 + 4*(robotPlayer.skillLevel - 1) + delay + 6*(tilePool.length()/minLength - 1)) {
 								think = 2;
 							}
 						}
