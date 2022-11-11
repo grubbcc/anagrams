@@ -35,7 +35,7 @@ class TilePanel extends Pane {
             rect.setFill(Color.YELLOW);
 
             char c = tilePool.charAt(i - 1);
-            Text text = new Text(x, c == 'Q' ? y - 4 : y - 2, c + "");
+            Text text = new Text(x, c == 'Q' ? y - 3 : y - 2, c + "");
             text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
 
             getChildren().addAll(rect, text);
