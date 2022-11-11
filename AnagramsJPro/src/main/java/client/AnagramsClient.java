@@ -40,7 +40,8 @@ class AnagramsClient extends JProApplication {
 	BufferedReader bufferedIn;
 
 	Stage stage;
-	private Thread messageLoop;
+
+
 
 	//	private SettingsMenu settingsMenu;
 	WordExplorer explorer;
@@ -250,6 +251,12 @@ class AnagramsClient extends JProApplication {
 		}
 		scene.getStylesheets().setAll("css/anagrams.css", "css/main.css");
 
+		stage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+			if(username != null && e.getCode().equals(KeyCode.ESCAPE)) {
+				if (!PopWindow.popWindows.isEmpty())
+					PopWindow.popWindows.pop().hide();
+			}
+		});
 
 		//main stage
 		stage.setTitle("Anagrams");
@@ -547,9 +554,8 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 		private void addPlayerToGame(String newPlayer) {
-			if(gameOver) return;
 			players.add(newPlayer);
-			setPlayersLabel();
+			updatePlayersLabel();
 			if (gameWindows.containsKey(gameID)) {
 				gameWindows.get(gameID).addPlayer(newPlayer);
 			}
@@ -559,9 +565,8 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 		private void removePlayerFromGame(String playerToRemove) {
-			if(gameOver) return;
 			players.remove(playerToRemove);
-			setPlayersLabel();
+			updatePlayersLabel();
 			if (gameWindows.containsKey(gameID)) {
 				gameWindows.get(gameID).removePlayer(playerToRemove);
 			}
@@ -579,7 +584,7 @@ class AnagramsClient extends JProApplication {
 		/**
 		 *
 		 */
-		private void setPlayersLabel() {
+		private void updatePlayersLabel() {
 			playersLabel.setText("Players: " + players.size() + "/" + maxPlayers);
 			playersLabel.setTooltip(null);
 
@@ -623,6 +628,11 @@ class AnagramsClient extends JProApplication {
 
 		if(playersList.containsKey(newPlayerName))
 			return;
+
+		if(newPlayerName.equals(username)) {
+			System.out.println("scrooll TO TOP");
+			chatBox.scrollTopProperty().set(0);
+		}
 
 		if(prefs.getBoolean("play_sounds", true)) {
 			newPlayerClip.play();
@@ -715,8 +725,8 @@ class AnagramsClient extends JProApplication {
 
 				final String cmd = tokens[0];
 
-//				if (!cmd.equals("note") && !cmd.equals("nexttiles"))
-//					System.out.println("command received: " + line);
+				if (!cmd.equals("note") && !cmd.equals("nexttiles"))
+					System.out.println("command received: " + line);
 
 				Platform.runLater(() -> {
 					switch (cmd) {
@@ -728,7 +738,10 @@ class AnagramsClient extends JProApplication {
 						}
 						case "loginplayer" -> addPlayer(tokens[1]);
 						case "logoffplayer" -> removePlayer(tokens[1]);
-						case "chat" -> chatBox.appendText("\n" + line.replaceFirst("chat ", ""));
+						case "chat" -> {
+							System.out.println("\n" + line);
+							chatBox.appendText("\n" + line.replaceFirst("chat ", ""));
+						}
 						case "addgame" -> new GamePane(tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6],
 								tokens[7], tokens[8], tokens[9], tokens[10], tokens[11]);
 						case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(tokens[1]));
@@ -782,8 +795,6 @@ class AnagramsClient extends JProApplication {
 	private void disconnect() {
 		connected = false;
 		try {
-			if(messageLoop != null) messageLoop.interrupt();
-
 			serverOut.close();
 			serverIn.close();
 			if(guest)
