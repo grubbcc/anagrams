@@ -2,7 +2,7 @@ package server;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
 * An artificial intelligence that uses wordTrees to find words and make steals
@@ -34,21 +34,19 @@ class Robot {
 		this.minLength = minLength;
 		this.blankPenalty = blankPenalty;
 		this.skillLevel = skillLevel;
-		
-		if(skillLevel == 1)
-			robotName = "Robot-Novice";
-		else if(skillLevel == 2)
-			robotName = "Robot-Player";
-		else if(skillLevel == 3)
-			robotName = "Robot-Expert";
-		else
-			robotName = "Robot-Genius";
+
+		robotName = switch(skillLevel) {
+			case 1 -> "Robot-Novice";
+			case 2 -> "Robot-Player";
+			case 3 -> "Robot-Expert";
+			default -> "Robot-Genius";
+		};
 	}
 
 	/**
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
-	void makePlay(String tilePool, ConcurrentHashMap<String,CopyOnWriteArrayList<String>> words) {
+	void makePlay(String tilePool, ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words) {
 
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
@@ -57,7 +55,7 @@ class Robot {
 			//decide whether to search among all words or among common subset
 			Node rootNode = rgen.nextInt(3) + 1 >= skillLevel ? dictionary.common.rootNode : dictionary.rootNode;
 			wordFound = false;
-			searchInPool(rootNode, "", AlphagramTrie.alphabetize(tilePool.replace("?", "")), 0);
+			searchInPool(rootNode, "", Utils.alphabetize(tilePool.replace("?", "")), 0);
 		}
 		else {
 			searchForSteal(words);
@@ -133,7 +131,7 @@ class Robot {
 	 *
 	 * @param words All the words on the board grouped by player
 	 */
-	private void searchForSteal(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
+	private void searchForSteal(ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words) {
 
 		ArrayList<String> players = new ArrayList<>(words.keySet());
 		Collections.shuffle(players);
