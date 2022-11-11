@@ -8,14 +8,17 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 
 import com.madgag.gif.fmsware.AnimatedGifEncoder;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +32,7 @@ class SnapshotPane extends GameWindowBase {
     final SimpleDoubleProperty progress = new SimpleDoubleProperty(0);
     final SimpleBooleanProperty finished = new SimpleBooleanProperty(false);
 
-    AnimatedGifEncoder encoder = new AnimatedGifEncoder();
+    private final AnimatedGifEncoder encoder = new AnimatedGifEncoder();
 
     /**
      *
@@ -37,12 +40,14 @@ class SnapshotPane extends GameWindowBase {
     SnapshotPane(AnagramsClient client, String gameID, String username, String minLength, int blankPenalty, String numSets, String speed, String lexicon, ArrayList<String[]> gameLog) {
         super(client, gameID, username, minLength, blankPenalty, numSets, speed, lexicon, gameLog);
 
-        int WIDTH = numSets.equals("3") ? 1100 : 1000;
-        int HEIGHT = numSets.equals("3") ? 650 : 630;
+        final int WIDTH = numSets.equals("3") ? 1100 : 1000;
+        final int HEIGHT = numSets.equals("3") ? 650 : 630;
 
         setPrefSize(WIDTH, HEIGHT);
         setMinSize(WIDTH, HEIGHT);
         setMaxSize(WIDTH, HEIGHT);
+
+
 
         Scene scene = new Scene(this, WIDTH, HEIGHT);
         Stage stage = new Stage(StageStyle.TRANSPARENT);
