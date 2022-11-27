@@ -2,7 +2,7 @@ package server;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
 * An artificial intelligence that uses wordTrees to find words and make steals
@@ -46,7 +46,7 @@ class Robot {
 	/**
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
-	void makePlay(String tilePool, ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words) {
+	void makePlay(String tilePool, ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
 
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
@@ -131,7 +131,7 @@ class Robot {
 	 *
 	 * @param words All the words on the board grouped by player
 	 */
-	private void searchForSteal(ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words) {
+	private void searchForSteal(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
 
 		ArrayList<String> players = new ArrayList<>(words.keySet());
 		Collections.shuffle(players);

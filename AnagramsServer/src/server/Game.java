@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,7 @@ public class Game {
 	private String tilePool = "";
 	private int tileCount = 0;
 	boolean gameOver = false;
-	final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> words = new ConcurrentHashMap<>();
+	final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words = new ConcurrentHashMap<>();
 
 	private final int maxPlayers;
 	private final int numSets;
@@ -141,9 +140,11 @@ public class Game {
 		public void run() {
 
 			//draw initial tiles
-			if(countdown == 10 && tileCount < minLength - 1)
-				for(int i = 0; i < minLength - 1; i++)
+			if(countdown == 10 && tileCount < minLength - 1) {
+				for (int i = 0; i < minLength - 1; i++)
 					drawTile();
+				saveState();
+			}
 
 			//countdown to start or resume game
 			if(countdown > 0) {
@@ -177,6 +178,7 @@ public class Game {
 			if(tileCount < tileBag.length) {
 				if(timeRemaining % delay == 0) {
 					drawTile();
+					saveState();
 
 					//Robot thinks of a play
 					if (hasRobot && think < 0) {
@@ -184,7 +186,7 @@ public class Game {
 							if (tilePool.length() >= 29) {
 								think = 2;
 							}
-							else if (rgen.nextInt(100) <= 3 + 4*(robotPlayer.skillLevel - 1) + delay + 6*(tilePool.length()/minLength - 1)) {
+							else if (rgen.nextInt(100) <= 1 + 4*(robotPlayer.skillLevel - 1) + delay + 6*(tilePool.length()/minLength - 1)) {
 								think = 2;
 							}
 						}
@@ -268,7 +270,7 @@ public class Game {
 
 			//add the newPlayer
 			playerList.put(newPlayer.getUsername(), newPlayer);
-			words.putIfAbsent(newPlayer.getUsername(), new ConcurrentSkipListSet<>(String.CASE_INSENSITIVE_ORDER));
+			words.putIfAbsent(newPlayer.getUsername(), new CopyOnWriteArrayList<>());
 
 			saveState();
 
@@ -370,7 +372,7 @@ public class Game {
 	synchronized void addRobot(Robot newRobot) {
 
 		robotPlayer = newRobot;
-		words.put(newRobot.robotName, new ConcurrentSkipListSet<>(String.CASE_INSENSITIVE_ORDER));
+		words.put(newRobot.robotName, new CopyOnWriteArrayList<>());
 
 		saveState();
 
@@ -385,7 +387,6 @@ public class Game {
 		if(tileCount < tileBag.length) {
 			tilePool += tileBag[tileCount];
 			tileCount++;
-			saveState();
 			notifyRoom("nexttiles " + gameID + " " + tilePool);
 		}
 	}
@@ -408,8 +409,8 @@ public class Game {
 			return false;
 		}
 
-		for(ConcurrentSkipListSet<String> wordList : words.values()) {
-			if(wordList.contains(longWord)) return false;
+		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+			if(Utils.containsCaseInsensitive(wordList, longWord)) return false;
 		}
 
 		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
@@ -467,9 +468,11 @@ public class Game {
 		if(countdown > 0) {
 			return;
 		}
-		for(ConcurrentSkipListSet<String> wordList : words.values()) {
-			if(wordList.contains(entry)) return;
+
+		for(CopyOnWriteArrayList<String> wordList : words.values()) {
+			if(Utils.containsCaseInsensitive(wordList, entry)) return;
 		}
+
 		Play play = new Play("", entry, tilePool, minLength, blankPenalty);
 		if(!play.isValid())
 			return;
