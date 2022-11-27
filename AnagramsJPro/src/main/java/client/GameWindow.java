@@ -182,6 +182,7 @@ class GameWindow extends PopWindow {
         //chat panel
         BorderPane chatPanel = new BorderPane();
         if (allowsChat) {
+            SplitPane.setResizableWithParent(chatPanel, false);
             chatBox.setEditable(false);
             chatBox.getStyleClass().add("game-chat");
             chatField.setPromptText("Type here to chat");
@@ -266,8 +267,6 @@ class GameWindow extends PopWindow {
             tilePanel.heightProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
 
             maximizeButton.setOnAction(click -> {
-
-                double dividerPosition = splitPane.getDividerPositions()[0];
                 for (int i = 0; i < 3; i++) {
                     gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
                     gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
@@ -276,25 +275,18 @@ class GameWindow extends PopWindow {
                 gameGrid.layout();
 
                 Platform.runLater(() -> {
-
-                    splitPane.setDividerPosition(0, dividerPosition);
-
                     if (gameOver) {
                         showPosition(gameLog.get(position));
                         return;
                     }
-
                     for (GamePanel panel : players.values()) {
                         panel.wordPane.getChildren().clear();
-
                         if (!panel.words.isEmpty()) {
                             panel.savingSpace.set(false);
                             panel.addWords(panel.words.keySet().toArray(new String[0]));
                         }
                     }
-
                 });
-
             });
         }
 
@@ -870,9 +862,8 @@ class GameWindow extends PopWindow {
                     return panel.takeSeat(newPlayerName);
                 }
             }
+            return homePanel;
         }
-
-        return null;
     }
 
     /**
