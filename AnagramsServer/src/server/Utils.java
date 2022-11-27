@@ -1,6 +1,7 @@
 package server;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A collection of static methods for working with Strings
@@ -76,6 +77,13 @@ class Utils {
         char[] chars = entry.toCharArray();
         Arrays.sort(chars);
         return new String(chars);
+    }
+
+    /**
+     *
+     */
+    static boolean containsCaseInsensitive(List<String> l, String s){
+        return l.stream().anyMatch(x -> x.equalsIgnoreCase(s));
     }
 
 }
