@@ -106,7 +106,9 @@ explorer.WordTree visualizations. It has been adapted from:
 <div class='controls'>
     <button id='editButton'>Edit</button>
 
-    <input type="text" id="entry" placeholder="Enter some letters">
+    <form id="form">
+        <input type="text" id="entry" name="query" placeholder="Enter some letters">
+    </form>
 
     <div>
         <label for="lexicon">Word list:</label>
@@ -331,14 +333,14 @@ explorer.WordTree visualizations. It has been adapted from:
             .style("text-anchor", d => d.x < 180 === !d.children ? "start" : "end")
             .attr("transform", d => `rotate(${(d.x < 180 ? d.x - 90 : d.x + 90)})`)
             .attr("angle", d => d.children ? d.x + 180 : d.x)
-            .attr("word", d => d.id.substring(d.id.lastIndexOf(".") + 1))
+            .attr("word", d => d.id.substring(d.id.lastIndexOf(".") + 1).replace('[#$]',''))
             .attr("def", d => d.data.def)
             .attr("steal", d => d.depth === 0 ? d.id.substring(d.id.lastIndexOf(".") + 1) : d.data.shortsteal)
             .text(function(d) {
                 if(document.getElementById("words").checked || d.depth === 0)
                     return this.getAttribute("word");
                 else
-                    return d.data.shortsteal;
+                    return this.getAttribute("steal");
             })
 
             //Create the tooltip and background
