@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.sandec.jpro:jpro-plugin-gradle:2022.1.7'
+        classpath 'com.sandec.jpro:jpro-plugin-gradle:2022.1.8'
         classpath 'org.openjfx:javafx-plugin:0.0.10'
     }
 }
@@ -32,11 +32,11 @@ javafx {
 }
 
 
-/** ******************  jpro Configuration *******************/
+/** ****************** jpro Configuration *******************/
 apply plugin: 'com.sandec.jpro'
 
 jpro {
-    jproVersion = "2022.1.7"
+    jproVersion = "2022.1.8"
     port = 8079
     jproReleaseFiles << JProReleaseFile(new File("allfonts.properties"), "/fonts/")
 }
