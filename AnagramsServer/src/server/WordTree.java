@@ -8,10 +8,10 @@ import java.util.*;
 /**
  * Given a lexicon and a rootWord, creates a hierarchical tree structure graphically depicting
  * how the word can be "stolen" according to the rules of Anagrams.
- *
+ * <p>
  * For instance, LAUNCHPAD is a steal of CHALUPA, since LAUNCHPAD contains all the letters of CHALUPA
  * with at least one rearrangement. ANDROCEPHALOUS is in turn a steal of LAUNCHPAD.
- *
+ * <p>
  * On the other hand, PROMENADE is not a steal of POMADE because the latter can be formed from the
  * former by insertion of letters without rearrangement.
  *
@@ -60,7 +60,6 @@ class WordTree {
 		else {
 			this.rootWord = rootWord.toLowerCase();
 		}
-
 	}
 
 
@@ -174,7 +173,4 @@ class WordTree {
 			generateJSON(prefix + "." + child.toString(), child, prob*child.getProb()/norm);
 		}
 	}
-
-
-
 }

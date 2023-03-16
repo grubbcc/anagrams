@@ -219,7 +219,6 @@ class LoginMenu extends PopWindow {
      *
      * @param actionEvent a click on the cancelButton
      */
-
     private void cancelAction(ActionEvent actionEvent) {
         usernameField.setDisable(false);
         emailField.setText("");

@@ -1,5 +1,6 @@
 /* background */
 .game-background {
+    -fx-font-weight: bold;
     -fx-background-color: -game-background;
 }
 

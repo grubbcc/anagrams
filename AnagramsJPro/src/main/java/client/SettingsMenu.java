@@ -41,6 +41,7 @@ class SettingsMenu extends PopWindow {
 
         GridPane grid = new GridPane();
         grid.setId("settings-grid");
+        client.getWebAPI().registerValue("settings-menu", this);
 
         //labels
         Label lexiconLabel = new Label("Word list");
@@ -161,7 +162,6 @@ class SettingsMenu extends PopWindow {
             getColumnConstraints().add(new ColumnConstraints(130));
             getColumnConstraints().add(new ColumnConstraints(120));
             getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
-        //    setHgap(4);
 
             setColor(colorCode);
 

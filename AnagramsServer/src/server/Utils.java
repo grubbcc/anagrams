@@ -36,7 +36,7 @@ class Utils {
             else if(shortString.charAt(0) > longString.charAt(0)) {
                 longString = longString.substring(1);
             }
-            else if(shortString.charAt(0) == longString.charAt(0)) {
+            else {
                 shortString = shortString.substring(1);
                 longString = longString.substring(1);
             }

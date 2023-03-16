@@ -3,7 +3,6 @@ package server;
 /**
  * An attempt to form a word from the pool or to steal a preexisting word
  */
-
 class Play {
 
     private final String shortWord;
@@ -23,7 +22,6 @@ class Play {
      * @param minLength
      * @param blankPenalty
      */
-
     Play(String shortWord, String longWord, String tilePool, int minLength, int blankPenalty) {
         this.shortWord = shortWord;
         this.longWord = longWord;
@@ -36,13 +34,8 @@ class Play {
      * Checks whether the play can be formed from the pool and preexisting words and
      * whether it long enough, accounting for the number of blanks required.
      *
-     * Note: this method does not check if steal is a rearrangement of a shortWord or
-     * whether it is in the dictionary; that is assumed.
-     *
      * @return whether the play is valid according to the rules of Anagrams
      */
-
-
      boolean isValid() {
         if(!shortWord.isEmpty()) {
             if (!Utils.isSteal(shortWord.toUpperCase(), longWord))
@@ -129,7 +122,6 @@ class Play {
     /**
      * @return a formatted word with lowercase letters representing blanks
      */
-
     String nextWord() {
         String nextWord = longWord;
         for(String s : blanks.split(""))

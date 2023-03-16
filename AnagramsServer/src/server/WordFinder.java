@@ -161,11 +161,11 @@ class WordFinder {
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
                     possibleSteals
-                        .append(dictionary.annotate(shortWord))
+                        .append(shortWord)
                         .append(" + ")
                         .append(child.getLongSteal())
                         .append(" -> ")
-                        .append(dictionary.annotate(play.nextWord())) //needs testing
+                        .append(dictionary.annotate(play.nextWord()))
                         .append(",");
                     if (++numWordsFound >= 30) {
                         break outer;

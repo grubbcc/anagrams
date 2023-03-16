@@ -222,11 +222,12 @@ public class Server extends Thread {
 	private void handleRequest(final HttpExchange exchange) throws IOException {
 
 		String lexicon = exchange.getRequestURI().getPath().split("/")[1].toUpperCase();
-		String query = exchange.getRequestURI().getPath().split("/")[2].toUpperCase();
+		String query = exchange.getRequestURI().getPath().split("/")[2]/*.toUpperCase()*/;
 		System.out.println("lexicon: " + lexicon +", query: " + query);
 		WordTree tree = new WordTree(query, getDictionary(lexicon));
 		tree.generateJSON(tree.rootNode.toString(), tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
+		System.out.println(json);
 
 		byte[] bytes = json.getBytes();
 		exchange.getResponseHeaders().add("Content-type", "application/json");

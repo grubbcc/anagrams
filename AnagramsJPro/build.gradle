@@ -38,6 +38,7 @@ apply plugin: 'com.sandec.jpro'
 jpro {
     jproVersion = "2022.1.8"
     port = 8079
+    openURLOnStartup = false
     jproReleaseFiles << JProReleaseFile(new File("allfonts.properties"), "/fonts/")
 }
 
