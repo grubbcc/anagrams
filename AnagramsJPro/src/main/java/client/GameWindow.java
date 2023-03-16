@@ -514,7 +514,7 @@ class GameWindow extends PopWindow {
 
             setTop(infoPane);
             setCenter(scrollPane);
-            setAsDragZone(infoPane, wordPane);
+            if(!isMobile) setAsDragZone(infoPane, wordPane);
             savingSpace.set(false);
         }
 
