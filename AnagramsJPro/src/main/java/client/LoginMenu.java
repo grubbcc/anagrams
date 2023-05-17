@@ -12,6 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import org.json.JSONObject;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -239,7 +240,7 @@ class LoginMenu extends PopWindow {
         String username = usernameField.getText();
         try {
             if (prefs.nodeExists(username)) {
-                if (prefs.node(username).getByteArray("password", null) != null) {
+                if (prefs.node(username).get("password", null) != null) {
                     MessageDialog dialog = new MessageDialog(client, "Registered username");
                     dialog.setText("<center>The username you entered has already been<br> registered. " +
                             "Please choose a different name<br> or log in using the password.</center>");
@@ -275,17 +276,17 @@ class LoginMenu extends PopWindow {
         try {
             if (!prefs.nodeExists(username)) {
 
-                    MessageDialog dialog = new MessageDialog(client, "Username not recognized");
-                    dialog.setText("<center>The username you entered has not been registered <br>" +
-                            "Please register or choose \"Play as guest\".</center>");
-                    dialog.addOkayButton();
-                    Platform.runLater(() -> dialog.show(true));
-                    warningLabel.setText("Forgot username?");
-                    warningLabel.setOnMouseClicked(this::forgotUsernameAction);
-                    return;
+                MessageDialog dialog = new MessageDialog(client, "Username not recognized");
+                dialog.setText("<center>The username you entered has not been registered <br>" +
+                        "Please register or choose \"Play as guest\".</center>");
+                dialog.addOkayButton();
+                Platform.runLater(() -> dialog.show(true));
+                warningLabel.setText("Forgot username?");
+                warningLabel.setOnMouseClicked(this::forgotUsernameAction);
+                return;
 
             }
-            if (prefs.node(username).getByteArray("password", null) == null) {
+            if (prefs.node(username).get("password", null) == null) {
 
                 MessageDialog dialog = new MessageDialog(client, "Username not recognized");
                 dialog.setText("<center>The username you entered has not been registered <br>" +
@@ -314,17 +315,29 @@ class LoginMenu extends PopWindow {
      * @return true if the password matches, false otherwise
      */
     private boolean checkPassword() {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
-
-        if(password.equals(new String(Base64.getDecoder().decode((prefs.node(username).getByteArray("password", new byte[10])))))) {
-            return true;
+        client.send(new JSONObject()
+            .put("cmd", "password")
+            .put("name", usernameField.getText())
+            .put("password", Base64.getEncoder().encodeToString(passwordField.getText().getBytes()))
+        );
+        try {
+            JSONObject json = new JSONObject(client.bufferedIn.readLine());
+            System.out.println(json);
+            if(json.getString("cmd").equals("password")) {
+                if(json.getBoolean("valid")) {
+                    return true;
+                }
+                else {
+                    warningLabel.setText("Incorrect password. Forgot?");
+                    warningLabel.setOnMouseClicked(this::forgotPasswordAction);
+                    return false;
+                }
+            }
         }
-        else {
-            warningLabel.setText("Incorrect password. Forgot?");
-            warningLabel.setOnMouseClicked(this::forgotPasswordAction);
-            return false;
+        catch (IOException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 
     /**
@@ -334,10 +347,16 @@ class LoginMenu extends PopWindow {
      */
     private void login(boolean guest) {
         String username = usernameField.getText();
-        client.send("login " + username);
-        String response = "";
+        client.send(new JSONObject().put("cmd", "login").put("name", username).put("guest", guest));;
+
         try {
-            response = client.bufferedIn.readLine();
+            JSONObject json = new JSONObject(client.bufferedIn.readLine());
+            System.out.println("command received:\n" + json);
+            if(json.getString("cmd").equals("login")) {
+                client.guest = guest;
+                client.login(username, json.getJSONObject("prefs"));
+                hide();
+            }
         }
         catch (IOException ioe) {
             System.out.println("The connection between client and host has been lost.");
@@ -348,20 +367,6 @@ class LoginMenu extends PopWindow {
             dialog.yesButton.setOnAction(e -> client.getWebAPI().executeScript("window.location.reload(false)"));
             dialog.noButton.setOnAction(e -> dialog.hide());
             Platform.runLater(() -> dialog.show(true));
-        }
-
-        if (response.equals("ok login")) {
-            client.guest = guest;
-            client.login(username);
-            hide();
-        }
-
-        //login was unsuccessful
-        else if (!response.isEmpty()) {
-            MessageDialog dialog = new MessageDialog(client, "Login unsuccessful");
-            dialog.setText(response);
-            dialog.addOkayButton();
-            dialog.show(true);
         }
     }
 
@@ -446,7 +451,7 @@ class LoginMenu extends PopWindow {
         if(entry.equals(code)) {
             String username = usernameField.getText();
             prefs.node(username).put("email", emailField.getText());
-            prefs.node(username).putByteArray("password", Base64.getEncoder().encode(passwordField.getText().getBytes()));
+            prefs.node(username).put("password", Base64.getEncoder().encodeToString(passwordField.getText().getBytes()));
 
             MessageDialog dialog = new MessageDialog(client, "Registration successful");
             dialog.setText("<center>Congratulations, you have successfully registered the username\n" +
@@ -562,7 +567,7 @@ class LoginMenu extends PopWindow {
                             message.setFrom(new InternetAddress(from));
                             message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
                             message.setSubject("Password recovery");
-                            message.setText("Your password for Anagrams is " + new String(Base64.getDecoder().decode((prefs.node(user).getByteArray("password", new byte[10])))));
+                            message.setText("Your password for Anagrams is " + new String(Base64.getDecoder().decode((prefs.node(user).get("password", null)))));
 
                             ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
                             emailExecutor.execute(() -> {
