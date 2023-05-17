@@ -1,11 +1,10 @@
 package server;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * Stores a list of words as a trie data structure for fast lookup.
- * See: https://en.wikipedia.org/wiki/Trie
+ * See: <a href="https://en.wikipedia.org/wiki/Trie">https://en.wikipedia.org/wiki/Trie</a>
  * Words are indexed according to a unique alphabetical ordering ("alphagram") so that
  * words which are anagrams of each other are stored in the same node.
  *
@@ -92,8 +91,7 @@ class AlphagramTrie {
 
 		//This node is the end of a word. Store the original word and its definition here.
 		if (subalphagram.length() == 1) {
-			nextChild.anagrams.put(currentWord, currentSuffix);
-			nextChild.definitions.put(currentWord, currentDefinition);
+			nextChild.words.add(new Word(currentWord, currentSuffix, currentDefinition));
 		}
 		else {
 			//This node is not the end of a word. Remove the first letter and continue
@@ -112,27 +110,13 @@ class AlphagramTrie {
 
 		if(getNode(searchKey) != null) {
 			//A node has been found with the same alphagram as the searchKey
-			for(String anagram : node.anagrams.keySet()) {
-				if(searchKey.toUpperCase().equals(anagram)) {
+			for(Word word : node.words) {
+				if(searchKey.toUpperCase().equals(word.letters)) {
 					return true; //the node contains the word
 				}
 			}
 		}
 		return false;
-	}
-
-	/**
-	 *
-	 */
-	String annotate(String word) {
-		Node node = getNode(word.toUpperCase());
-
-		if(node == null)
-			return word;
-		else {
-			return word + node.anagrams.get(word.toUpperCase());
-		}
-
 	}
 
 	/**
@@ -160,17 +144,41 @@ class AlphagramTrie {
 	}
 
 	/**
+	 *
+	 */
+	Word getWord(String searchKey) {
+		Node node = getNode(searchKey);
+		if(node != null) {
+			for (Word word : node.words) {
+				if (word.letters.equalsIgnoreCase(searchKey)) {
+					return word;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 *
+	 */
+	String annotate(String searchKey) {
+		Word word = getWord(searchKey);
+		if(word == null) return null;
+		return searchKey + word.suffix;
+	}
+
+	/**
 	 * Gets the definition of the provided word if it exists; otherwise returns null.
 	 *
-	 * @param searchKey a combination of letters (must be UPPERCASE) corresponding to a trie node
+	 * @param searchKey a combination of letters corresponding to a trie node
 	 * @return the definition for the given word or null if no such definition exists
 	 */
 	String getDefinition(String searchKey) {
-		Node node = getNode(searchKey);
-		if(node != null)
-			return node.definitions.get(searchKey.toUpperCase());
-		else
-			return null;
+		Word word = getWord(searchKey);
+		if(word != null) {
+			return word.definition;
+		}
+		return null;
 	}
 
 }
