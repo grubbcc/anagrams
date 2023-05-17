@@ -146,7 +146,6 @@ class PlayerPane extends PopWindow {
         }
         setTitle(player.name + " (" + player.rating + ")");
         textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
-        mdfx.setMdString("");
         mdfx.setMdString(player.profile);
         setColors();
         bioScrollPane.setContent(mdfx);
