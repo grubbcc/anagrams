@@ -16,9 +16,12 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 
 abstract class GameWindowBase extends BorderPane {
@@ -40,12 +43,12 @@ abstract class GameWindowBase extends BorderPane {
     protected final String gameID;
     protected String tilePool = "";
 
-    protected final ArrayList<String[]> gameLog;
+    protected final JSONArray gameLog;
 
     /**
      *
      */
-    GameWindowBase(AnagramsClient client, String gameID, String username, String minLength, int blankPenalty, String numSets, String speed, String lexicon, ArrayList<String[]> gameLog) {
+    GameWindowBase(AnagramsClient client, String gameID, String username, String minLength, int blankPenalty, String numSets, String speed, String lexicon, JSONArray gameLog) {
 
         this.client = client;
         this.username = username;
@@ -235,9 +238,12 @@ abstract class GameWindowBase extends BorderPane {
          * Adds a bunch of words all at once. Used during postgame analysis, when resizing the window,
          * and when joining or starting a game.
          */
-        protected void addWords(String[] wordsToAdd) {
+        protected void addWords(List<String> wordsToAdd) {
 
             wordPane.getChildren().clear();
+
+            if(wordsToAdd.isEmpty())
+                return;
 
             for (String word : wordsToAdd) {
                 GamePanel.Word newWord = new GamePanel.Word(word, savingSpace.get());
@@ -248,7 +254,7 @@ abstract class GameWindowBase extends BorderPane {
 
             double paneWidth = getWidth();
             double paneHeight = getHeight() - infoPane.getHeight();
-            double maxY = wordPane.getChildren().get(wordsToAdd.length - 1).getBoundsInParent().getMaxY();
+            double maxY = wordPane.getChildren().get(wordsToAdd.size() - 1).getBoundsInParent().getMaxY();
 
             //check if we need to save space by switching to small tiles
             double minWidth = Math.max(MIN_PANEL_WIDTH, paneWidth * maxY / paneHeight);
@@ -272,7 +278,7 @@ abstract class GameWindowBase extends BorderPane {
         /**
          *
          */
-        protected void setScore(String[] words) {
+        protected void setScore(List<String> words) {
             score = 0;
             for (String word : words) {
                 if(word.endsWith("#"))
@@ -419,33 +425,34 @@ abstract class GameWindowBase extends BorderPane {
      * Displays the provided game position: time remaining, the tile pool, the players, and their words.
      * If the WordDisplay is visible retrieves possible plays from the server.
      *
-     * @param tokens the current game state, an array e.g.
+     * @param gameState the current game state, an array e.g.
      *               ["257", "YUIFOTMR", "GrubbTime", "[HAUYNES]", "Robot-Genius", "[BLEWARTS,POTJIES]"]
      *               consisting of the remaining time, the tile pools, a list of players (even indices)
      *               and their words (odd indices)
      */
-    void showPosition(String[] tokens) {
+    @SuppressWarnings("unchecked")
+    void showPosition(JSONObject gameState) {
+
         for (GamePanel panel : gamePanels)
             panel.reset();
+
         for (int i = 0; i < 3; i++) {
             ColumnConstraints constraints = gameGrid.getColumnConstraints().get(i);
             constraints.setMinWidth(Math.max(constraints.getMinWidth(), MIN_PANEL_WIDTH));
             constraints.setPrefWidth(Math.max(constraints.getPrefWidth(), 326));
         }
 
-        notificationArea.setText("Time remaining " + tokens[0]);
+        notificationArea.setText("Time remaining " + gameState.getInt("time"));
+        setTiles(gameState.getString("tiles"));
 
-        if (tokens.length > 2) {
-            for (int i = 2; i < tokens.length; i += 2) {
-                String playerName = tokens[i];
-                GamePanel panel = addPlayer(playerName);
-                String[] words = tokens[i + 1].substring(1, tokens[i + 1].length() - 1).split(",");
-                panel.addWords(words);
-                panel.setScore(words);
-            }
+        JSONArray players = gameState.getJSONArray("players");
+        for(int p = 0; p < players.length(); p++) {
+            JSONObject player = players.getJSONObject(p);
+            GamePanel panel = addPlayer(player.getString("name"));
+            panel.addWords((List<String>)(List<?>)player.getJSONArray("words").toList());
+            panel.setScore((List<String>)(List<?>)player.getJSONArray("words").toList());
         }
 
-        setTiles(tokens[1]);
     }
 
 }
