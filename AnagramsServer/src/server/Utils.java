@@ -6,7 +6,6 @@ import java.util.List;
 /**
  * A collection of static methods for working with Strings
  */
-
 class Utils {
 
     /**
@@ -15,7 +14,6 @@ class Utils {
      * @param shortWord a shorter word
      * @param longWord a longer word
      */
-
     private static boolean isSubset(String shortWord, String longWord) {
 
         if(shortWord.length() >= longWord.length()) {
@@ -51,7 +49,7 @@ class Utils {
      * @param shortWord a shorter word
      * @param longWord a longer word
      */
-    static boolean isSteal(String shortWord, String longWord) {
+    static boolean isRearrangement(String shortWord, String longWord) {
 
         if(!isSubset(shortWord, longWord))
             return false;
@@ -80,7 +78,8 @@ class Utils {
     }
 
     /**
-     *
+     * Check whether the List contains any String with exactly the same letters in the same order
+     * but possibly of different case.
      */
     static boolean containsCaseInsensitive(List<String> l, String s){
         return l.stream().anyMatch(x -> x.equalsIgnoreCase(s));
