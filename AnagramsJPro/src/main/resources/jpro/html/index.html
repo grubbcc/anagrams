@@ -19,6 +19,7 @@
 <script>
 
 var isMobile = Math.min(screen.width, screen.height) < 560;
+if(isMobile) console.log("mobile device detected");
 
 if(isMobile) {
     var jpro = document.getElementById('jpro');
@@ -29,6 +30,14 @@ if(isMobile) {
         jpro.setWidth(window.innerWidth);
         jpro.setHeight(window.innerHeight);
     }
+
+    window.addEventListener("resize", (e) => {
+        console.log("resize detected");
+        console.log("visual viewport: " + window.visualViewport.height);
+
+        jpro.setWidth(window.visualViewport.width);
+        jpro.setHeight(window.visualViewport.height);
+    });
 
     document.addEventListener('fullscreenchange', (event) => {
         jpro.toggleFullscreenIcon();
