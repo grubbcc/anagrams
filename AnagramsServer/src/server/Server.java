@@ -138,8 +138,8 @@ public class Server extends Thread {
 	/**
 	 *
 	 */
-	ServerWorker getWorker(String username) {
-		return workerList.get(username);
+	Optional<ServerWorker> getWorker(String username) {
+		return Optional.ofNullable(workerList.get(username));
 	}
 	
 	/**
@@ -228,8 +228,7 @@ public class Server extends Thread {
 				System.out.println("Ready to accept client connections on port " + GAME_PORT);
 				Socket clientSocket = serverSocket.accept();
 				System.out.println("Accepted connection from " + clientSocket);
-				ServerWorker newWorker = new ServerWorker(this, clientSocket);
-				newWorker.start();
+				new Thread(new ServerWorker(this, clientSocket)).start();
 			} catch(IOException e) {
 				e.printStackTrace();
 			}
@@ -245,7 +244,7 @@ public class Server extends Thread {
 		String query = exchange.getRequestURI().getPath().split("/")[2]/*.toUpperCase()*/;
 		System.out.println("lexicon: " + lexicon +", query: " + query);
 		WordTree tree = new WordTree(query, getDictionary(lexicon));
-		tree.generateJSON(tree.rootNode.toString(), tree.rootNode, 1);
+		tree.generateJSON(tree.rootNode.getWord().letters, tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
 
 		byte[] bytes = json.getBytes();
@@ -274,13 +273,8 @@ public class Server extends Thread {
 		adminServer.start();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-<<<<<<< Updated upstream
-			for(String username : server.getUsernames()) {
-				server.getWorker(username).send("logoffplayer " + username );
-=======
 			for(String username : gameServer.getUsernames()) {
 				gameServer.getWorker(username).ifPresent(player -> player.send("logoffplayer", new JSONObject().put("name", username)));
->>>>>>> Stashed changes
 			}
 			try {
 				BufferedWriter writer = new BufferedWriter(new FileWriter("chat.log"));
@@ -298,6 +292,6 @@ public class Server extends Thread {
 			System.out.println("Program exiting");
 		}));
 
-
 	}
+
 }
