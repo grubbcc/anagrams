@@ -18,6 +18,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -137,20 +138,20 @@ class PlayerPane extends PopWindow {
     }
     /**
      *
-     * @param playerName The player whose data is to be displayed
+     * @param player The player whose data is to be displayed
      */
-    void displayPlayerInfo(String playerName) {
+    void displayPlayerInfo(AnagramsClient.Player player) {
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.35); setScaleY(1.35);
         }
-        setTitle(playerName);
+        setTitle(player.name + " (" + player.rating + ")");
         textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
         mdfx.setMdString("");
-        mdfx.setMdString(client.prefs.parent().node(playerName).get("bio", playerName));
+        mdfx.setMdString(player.profile);
         setColors();
         bioScrollPane.setContent(mdfx);
         contents.setBottom(null);
-        if(playerName.equals(client.username) && !client.guest) {
+        if(player.name.equals(client.username) && !client.guest) {
             addButtonPanel();
         }
     }
@@ -241,10 +242,11 @@ class PlayerPane extends PopWindow {
             Platform.runLater(editorPane::requestFocus);
         });
         confirmButton.setOnAction(e -> {
-            client.prefs.put("bio", editorPane.getText());
+            String newProfile = editorPane.getText();
+            client.send("updateprofile", new JSONObject().put("profile", newProfile));
             textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
-            mdfx.setMdString("");
-            mdfx.setMdString(editorPane.getText());
+        //    mdfx.setMdString("");
+            mdfx.setMdString(newProfile);
             setColors();
             bioScrollPane.setContent(mdfx);
             buttonPanel.getChildren().clear();
