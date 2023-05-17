@@ -38,7 +38,7 @@ class Play {
      */
      boolean isValid() {
         if(!shortWord.isEmpty()) {
-            if (!Utils.isSteal(shortWord.toUpperCase(), longWord))
+            if (!Utils.isRearrangement(shortWord.toUpperCase(), longWord))
                 return false;
         }
 
