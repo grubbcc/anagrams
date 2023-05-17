@@ -29,7 +29,9 @@ class WordTree {
 	 */
 	WordTree(String rootWord, AlphagramTrie trie) {
 		this.rootWord = rootWord.toUpperCase();
-		rootNode = new TreeNode(rootWord, "", "");
+		Word trieNode = trie.getWord(rootWord);
+		rootNode = new TreeNode(Objects.requireNonNullElseGet(trieNode,
+				() -> new Word(rootWord.toUpperCase(), "", "")), "");
 		rootNode.setShortSteal("");
 		rootNode.setProb(1);
 		this.trie = trie;
@@ -45,19 +47,7 @@ class WordTree {
 
 		sort(rootNode);
 
-		if(trie.contains(rootWord)) {
-			if(trie.getNode(rootWord).anagrams.containsKey(rootWord)) {
-				String suffix = trie.getNode(rootWord).anagrams.get(rootWord);
-				if (suffix != null) {
-					rootNode.setSuffix(suffix);
-					this.rootWord = rootWord + suffix;
-				}
-			}
-			else {
-				this.rootWord = rootWord.toLowerCase();
-			}
-		}
-		else {
+		if(trie.getWord(rootWord) == null) {
 			this.rootWord = rootWord.toLowerCase();
 		}
 	}
@@ -66,8 +56,8 @@ class WordTree {
 	/**
 	 * Recursively searches the children of a given node for words containing the given list of characters.
 	 *
-	 * @param node : a node in the trie
-	 * @param charsToFind : characters that a descendant of the given node's path must contain to be considered a steal of the rootWord
+	 * @param node a node in the trie
+	 * @param charsToFind characters that a descendant of the given node's path must contain to be considered a steal of the rootWord
 	 */
 	private void find(Node node, char[] charsToFind, String otherCharsFound) {
 
@@ -83,9 +73,9 @@ class WordTree {
 
 		//If the node's path already contains all characters to be found, then automatically add its descendants to the node list
 		else {
-			for(Map.Entry<String, String> anagram : node.anagrams.entrySet()) {
-				if(anagram.getKey().length() > rootWord.length()) {	 //This prevents the node list from including the node of the search key itself
-					treeNodeList.add(new TreeNode(anagram.getKey(), anagram.getValue(), otherCharsFound));
+			for(Word word : node.words) {
+				if(word.letters.length() > rootWord.length()) {	 //This prevents the node list from including the node of the search key itself
+					treeNodeList.add(new TreeNode(word, otherCharsFound));
 				}
 			}
 			for(Map.Entry<Character,Node> child : node.children.entrySet())
@@ -104,10 +94,10 @@ class WordTree {
 	private void buildTree() {
 
 		TreeNode currentNode = treeNodeList.pollFirst();
-		String currentWord = currentNode.getWord();
+		String currentWord = currentNode.getWord().letters;
 
 		for (TreeNode nextNode : treeNodeList) {
-			String nextWord = nextNode.getWord();
+			String nextWord = nextNode.getWord().letters;
 
 			if (Utils.isRearrangement(nextWord, currentWord)) {
 				nextNode.addChild(currentNode);
@@ -125,9 +115,9 @@ class WordTree {
 	static class TreeNodeComparator implements Comparator<TreeNode> {
 		@Override
 		public int compare(TreeNode node1, TreeNode node2) {
-			int result = node2.getWord().length() - node1.getWord().length();
+			int result = node2.getWord().letters.length() - node1.getWord().letters.length();
 			if(result == 0) {
-				result = (node2.getWord()).compareTo(node1.getWord());
+				result = (node2.getWord().letters).compareTo(node1.getWord().letters);
 			}
 			return result;
 		}
@@ -151,21 +141,12 @@ class WordTree {
 	 */
 	void generateJSON(String prefix, TreeNode node, double prob) {
 
-<<<<<<< Updated upstream
-		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("id", prefix);
-		jsonObject.put("shortsteal", node.getShortSteal());
-		jsonObject.put("longsteal", node.getLongSteal());
-		jsonObject.put("prob", ProbCalc.round(100 * prob, 1));
-		jsonObject.put("def", trie.getDefinition(node.getWord()));
-=======
 		JSONObject jsonObject = new JSONObject()
 			.put("id", prefix)
 			.put("shortsteal", node.getShortSteal())
 			.put("longsteal", node.getLongSteal())
 			.put("prob", ProbCalc.round(100 * prob, 1))
 			.put("def", node.getWord().definition);
->>>>>>> Stashed changes
 		jsonArray.put(jsonObject);
 
 		double norm = 0;
@@ -179,7 +160,7 @@ class WordTree {
 			norm += child.getProb();
 		}
 		for (TreeNode child : node.getChildren()) {
-			generateJSON(prefix + "." + child.toString(), child, prob*child.getProb()/norm);
+			generateJSON(prefix + "." + child.annotate(), child, prob*child.getProb()/norm);
 		}
 	}
 }
