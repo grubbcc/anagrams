@@ -1,20 +1,22 @@
 package server;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.prefs.Preferences;
 
 /**
 * An artificial intelligence that uses wordTrees to find words and make steals
 */
-class Robot {
+class Robot extends Player {
 
-	final String robotName;
+	int thinkTime = 2;	//when thinkTime reaches 0, Robot will attempt a play
+
 	final int skillLevel;
+	final private Game game;
 
-	private final Game game;
+	private final static String[] NAMES = {"Robot-Novice", "Robot-Player", "Robot-Expert", "Robot-Genius"};
 	private final int blankPenalty;
 	private final int minLength;
+	private final int rating;
 	final HashMap<String, WordTree> trees = new HashMap<>();
 	private final HashMap<String, WordTree> commonTrees = new HashMap<>();
 	private final AlphagramTrie dictionary;
@@ -23,30 +25,62 @@ class Robot {
 
 	private int blanksAvailable;
 
+	Preferences prefs;
+
 	/**
 	*
 	*/
 	Robot(Game game, int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
-
+		super(game, NAMES[skillLevel]);
+		this.name = NAMES[skillLevel];
+		prefs = Preferences.userNodeForPackage(getClass()).node(name);
+		this.rating = prefs.getInt("rating", 1500);
 		this.game = game;
+
 		this.dictionary = dictionary;
 
 		this.minLength = minLength;
 		this.blankPenalty = blankPenalty;
 		this.skillLevel = skillLevel;
+	}
 
-		robotName = switch(skillLevel) {
-			case 1 -> "Robot-Novice";
-			case 2 -> "Robot-Player";
-			case 3 -> "Robot-Expert";
-			default -> "Robot-Genius";
-		};
+	/**
+	 *
+	 */
+	@Override
+	int getRating() {
+		return rating;
+	}
+
+	/**
+	 *
+	 */
+	@Override
+	void updateRating(int newRating) {
+		prefs.putInt("rating", newRating);
+	}
+
+	/**
+	 * Determines whether the Robot will attempt to make a play.
+	 */
+	boolean think(int tilesPlayed, int tilesInBag, int tilesInPool) {
+		if (tilesPlayed < tilesInBag) {
+			if (tilesInPool >= 29) {
+				return true;
+			}
+			if (rgen.nextInt(100) <= 1 + 4*(skillLevel - 1) + game.delay + 6*(tilesInPool/minLength - 1)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
 	 * Either attempt to steal a word or to make a word from the letters in the pool
 	 */
-	void makePlay(String tilePool, ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
+	void makePlay() {
+
+		String tilePool = game.tilePool;
 
 		blanksAvailable = tilePool.length() - tilePool.replace("?", "").length();
 
@@ -58,7 +92,7 @@ class Robot {
 			searchInPool(rootNode, "", Utils.alphabetize(tilePool.replace("?", "")), 0);
 		}
 		else {
-			searchForSteal(words);
+			searchForSteal();
 		}
 	}
 
@@ -75,12 +109,12 @@ class Robot {
 	private void searchInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
 		if(wordFound) return;
 		if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
-			if(!node.anagrams.isEmpty()) {
-				int num = rgen.nextInt(node.anagrams.size());
-				for(String anagram: node.anagrams.keySet()) {
+			if(!node.words.isEmpty()) {
+				int num = rgen.nextInt(node.words.size());
+				for(Word anagram : node.words) {
 					if (--num < 0) {
 						wordFound = true;
-						game.doMakeWord(robotName, anagram);
+						game.doMakeWord(name, anagram.letters);
 						return;
 					}
 				}
@@ -131,20 +165,20 @@ class Robot {
 	 *
 	 * @param words All the words on the board grouped by player
 	 */
-	private void searchForSteal(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words) {
+	private void searchForSteal() {
 
-		ArrayList<String> players = new ArrayList<>(words.keySet());
+		List<Player> players = new ArrayList<>(game.players.values());
 		Collections.shuffle(players);
-		for(String player : players) {
-			for(String shortWord : words.get(player)) {
+		for(Player player : players) {
+			for(String shortWord : player.words) {
 
 				//decide whether to search among all words or among common subset
 				HashMap<String, WordTree> treeSet = rgen.nextInt(3) + 1 >= skillLevel ? commonTrees : trees;
 
 				if(treeSet.containsKey(shortWord)) {
 					for(TreeNode child : treeSet.get(shortWord).rootNode.getChildren()) {
-						String longWord = child.getWord();
-						if(game.doSteal(player, shortWord, robotName, longWord)) {
+						String longWord = child.getWord().letters;
+						if(game.doSteal(player.name, shortWord, name, longWord)) {
 							return;
 						}
 					}
