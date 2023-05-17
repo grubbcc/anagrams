@@ -48,18 +48,9 @@ class WordFinder {
         }
         foundWords.put("pool", new JSONArray(wordsInPool));
 
-<<<<<<< Updated upstream
-        //build string
-        StringBuilder wordsFound = new StringBuilder("[");
-        for(String word : wordsInPool) {
-            wordsFound.append(dictionary.annotate(word)).append(",");
-        }
-        wordsFound.append("] @ [");
-=======
         JSONArray steals = new JSONArray();
         JSONArray players = gameState.getJSONArray("players");
         players.forEach(player -> searchForSteals(((JSONObject)player).getJSONArray("words")));
->>>>>>> Stashed changes
 
         foundWords.put("steals", possibleSteals);
         return foundWords;
@@ -84,13 +75,13 @@ class WordFinder {
 
         else if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
             if(blanksRequired == 0) {
-                wordsInPool.addAll(node.anagrams.keySet());
+                node.words.forEach(word -> wordsInPool.add(word.letters + word.suffix));
             }
             else {
-                for(String anagram : node.anagrams.keySet()) {
+                for(Word anagram : node.words) {
                     String newWord = "";
                     String tiles = tilePool;
-                    for (String s : anagram.split("")) {
+                    for (String s : anagram.letters.split("")) {
                         //move a non-blank tile to the new word
                         if (tiles.contains(s)) {
                             tiles = tiles.replaceFirst(s, "");
@@ -102,7 +93,7 @@ class WordFinder {
                             newWord = newWord.concat(s.toLowerCase());
                         }
                     }
-                    wordsInPool.add(newWord);
+                    wordsInPool.add(newWord + anagram.suffix);
                 }
             }
         }
@@ -136,13 +127,7 @@ class WordFinder {
      * @param   words   All the words currently on the board
      * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
-<<<<<<< Updated upstream
-    private synchronized String searchForSteals(String[] words) {
-        StringBuilder possibleSteals = new StringBuilder();
-        int numWordsFound = 0;
-=======
     private synchronized void searchForSteals(JSONArray words) {
->>>>>>> Stashed changes
 
         Iterator<Object> it = words.iterator();
         while(it.hasNext() && possibleSteals.length() < 30) {
@@ -152,7 +137,7 @@ class WordFinder {
             ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
             while(!wordQueue.isEmpty()) {
                 TreeNode child = wordQueue.pollFirst();
-                String entry = child.getWord();
+                String entry = child.getWord().letters;
                 if (entry.length() <= shortWord.length()) {
                     wordQueue.addAll(child.getChildren());
                     continue;
@@ -162,23 +147,10 @@ class WordFinder {
                 }
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
-<<<<<<< Updated upstream
-                    possibleSteals
-                        .append(shortWord)
-                        .append(" + ")
-                        .append(child.getLongSteal())
-                        .append(" -> ")
-                        .append(dictionary.annotate(play.nextWord()))
-                        .append(",");
-                    if (++numWordsFound >= 30) {
-                        break outer;
-                    }
-=======
                     possibleSteals.put(new JSONObject()
                             .put("shortWord", shortWord)
                             .put("steal", child.getLongSteal())
                             .put("longWord", play.nextWord() + dictionary.getWord(entry).suffix));
->>>>>>> Stashed changes
                 }
             }
         }
