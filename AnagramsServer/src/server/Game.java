@@ -1,5 +1,8 @@
 package server;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -7,89 +10,97 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
+import java.util.prefs.Preferences;
 
 /**
  *
  */
-public class Game {
+class Game {
 
 	private final Server server;
 
-	private final ConcurrentHashMap<String, ServerWorker> playerList = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, ServerWorker> watcherList = new ConcurrentHashMap<>();
-
-	final String gameID;
-	final String gameName;
 	private static final String LETTERS = "AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ??";
 	private char[] tileBag;
-	private String tilePool = "";
-	private int tileCount = 0;
-	boolean gameOver = false;
-	final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> words = new ConcurrentHashMap<>();
+	String tilePool = "";
+	private int tilesPlayed = 0;
 
+	final JSONObject params;
+	final String gameID;
+	final String gameName;
 	private final int maxPlayers;
 	private final int numSets;
 	final int minLength;
 	final int blankPenalty;
-	private final int delay;
+	final int delay;
 	final boolean hasRobot;
-
+	final boolean rated;
 	final String lexicon;
-	private final AlphagramTrie dictionary;
+	final AlphagramTrie dictionary;
 	private final String speed;
-	private final boolean allowsChat;
-	private final boolean allowsWatchers;
+	private final boolean allowChat;
+	private final boolean allowWatchers;
+
 	private Timer gameTimer = new Timer();
 	private Timer deleteTimer = new Timer();
 	private final Random rgen = new Random();
 
-	boolean paused = false;
+	boolean paused = false;		//true if game stops due to inactivity
+	boolean stopped = true;		//true if there are no Players playing
+	boolean gameOver = false;
+
 	private int countdown = 10;
 	int timeRemaining;
 	private Robot robotPlayer;
 
-	final Vector<String> gameLog = new Vector<>();
-	final HashMap<Integer, String> plays = new HashMap<>();
+	final HashMap<Integer, JSONObject> plays = new HashMap<>();
+
+	final ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ServerWorker> watchers = new ConcurrentHashMap<>();
+
 	private WordFinder wordFinder;
 
-	/**
-	 *
-	 */
-	String getGameParams() {
-		return (gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowsChat + " " + allowsWatchers + " " + gameOver);
-	}
-
+	JSONArray gameLog = new JSONArray();
 
 	/**
 	 *
 	 */
-	Game(Server server, String gameID, String gameName, int maxPlayers, int minLength, int numSets, int blankPenalty, String lexicon, String speed, boolean allowChat, boolean allowsWatchers, boolean hasRobot) {
+	Game(Server server, JSONObject params) {
 
 		this.server = server;
-		this.gameID = gameID;
-		this.gameName = gameName;
-		this.maxPlayers = maxPlayers;
-		this.minLength = minLength;
-		this.numSets = numSets;
-		this.blankPenalty = blankPenalty;
-		this.lexicon = lexicon;
-		this.speed = speed;
-		this.allowsChat = allowChat;
-		this.allowsWatchers = allowsWatchers;
-		this.hasRobot = hasRobot;
+		this.params = params;
+		gameID = params.getString("gameID");
+		gameName = params.getString("game_name");
+		maxPlayers = params.getInt("max_players");
+		minLength = params.getInt("min_length");
+		numSets = params.getInt("num_sets");
+		blankPenalty = params.getInt("blank_penalty");
+		lexicon = params.getString("lexicon");
+		dictionary = server.getDictionary(lexicon);
+		speed = params.getString("speed");
+		allowChat = params.getBoolean("allow_chat");
+		allowWatchers = params.getBoolean("allow_watchers");
+		hasRobot = params.getBoolean("add_robot");
+		int skillLevel = params.getInt("skill_level");
+		rated = params.getBoolean("rated");
 
-		this.dictionary = server.getDictionary(lexicon);
+		switch(speed) {
+			case "slow" -> delay = 9;
+			case "medium" -> delay = 6;
+			default -> delay = 3;
+		}
+
 		setUpTileBag(numSets);
+		for (int i = 0; i < minLength - 1; i++)
+			drawTile();
 
-		if(speed.equals("slow"))
-			delay = 9;
-		else if(speed.equals("medium"))
-			delay = 6;
-		else
-			delay = 3;
+		saveState();
 
 		timeRemaining = delay*tileBag.length + 31;
+
+		if(hasRobot) {
+			addRobot(new Robot(this, skillLevel, dictionary, minLength, blankPenalty));
+		}
+
 		saveState();
 	}
 
@@ -103,7 +114,7 @@ public class Game {
 			server.removeGame(gameID);
 			deleteTimer.cancel();
 
-			if (gameLog.size() > 20) {
+			if (gameLog.length() > 20) {
 				try {
 					Files.createDirectories(Paths.get("gamelogs"));
 					PrintStream logger = new PrintStream(new FileOutputStream("gamelogs/log" + gameID + ".txt"));
@@ -114,9 +125,7 @@ public class Game {
 					logger.println("blankPenalty " + blankPenalty);
 					logger.println("speed " + speed);
 					logger.println();
-					for (String gameState : gameLog) {
-						logger.println(gameState);
-					}
+					logger.println(gameLog);
 					logger.close();
 				}
 				catch (Exception e) {
@@ -131,30 +140,30 @@ public class Game {
 	 */
 	private class GameTask extends TimerTask {
 
-		private int think = 2;
+		int thinkTime = 0;
+
+		/**
+		 *
+		 */
 		private GameTask() {
 			countdown = 10;
 		}
 
+		/**
+		 *
+		 */
 		@Override
 		public void run() {
 
-			//draw initial tiles
-			if(countdown == 10 && tileCount < minLength - 1) {
-				for (int i = 0; i < minLength - 1; i++)
-					drawTile();
-				saveState();
-			}
-
 			//countdown to start or resume game
 			if(countdown > 0) {
-				if(tileCount < minLength) {
+				if(tilesPlayed < minLength) {
 					String message = "Game will begin in " + countdown + " seconds";
-					server.broadcast("note " + gameID + " @" + message);
+					server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
 				}
 				else if (timeRemaining > 0) {
 					String message = "Game will resume in " + countdown + " seconds";
-					server.broadcast("note " + gameID + " @" + message);
+					server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
 				}
 				countdown--;
 				return;
@@ -169,26 +178,22 @@ public class Game {
 
 			//update timer and check for game over
 			String message = "Time remaining: " + --timeRemaining;
-			server.broadcast("note " + gameID + " @" + message);
+			server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
+
 			if(timeRemaining <= 0) {
 				endGame();
 				return;
 			}
 
-			if(tileCount < tileBag.length) {
+			if(tilesPlayed < tileBag.length) {
 				if(timeRemaining % delay == 0) {
 					drawTile();
 					saveState();
 
-					//Robot thinks of a play
-					if (hasRobot && think < 0) {
-						if (tileCount < tileBag.length) {
-							if (tilePool.length() >= 29) {
-								think = 2;
-							}
-							else if (rgen.nextInt(100) <= 1 + 4*(robotPlayer.skillLevel - 1) + delay + 6*(tilePool.length()/minLength - 1)) {
-								think = 2;
-							}
+					//Robot tries to think of a play
+					if(hasRobot && thinkTime < 0) {
+						if (robotPlayer.think(tilesPlayed, tileBag.length, tilePool.length())) {
+							thinkTime = 2;
 						}
 					}
 				}
@@ -198,13 +203,13 @@ public class Game {
 					timeRemaining = 0;
 					endGame();
 				}
-				else if (hasRobot && think < 0) {
-					think = 15 + rgen.nextInt(50 / robotPlayer.skillLevel);
+				else if (hasRobot && thinkTime < 0) {
+					thinkTime = 15 + rgen.nextInt(50 / robotPlayer.skillLevel);
 				}
 			}
 
-			if (hasRobot && think-- == 0) {
-				robotPlayer.makePlay(tilePool, words);
+			if (hasRobot && thinkTime-- == 0) {
+				robotPlayer.makePlay();
 			}
 		}
 	}
@@ -212,33 +217,62 @@ public class Game {
 	/**
 	 *
 	 */
-	private synchronized void pauseGame() {
+	private void pauseGame() {
 		paused = true;
 		String message = "Game paused";
-		server.broadcast("note " + gameID + " @" + message);
+		server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
 	}
+
 
 	/**
 	 * Stops the gameTimer and sends a notification to the players and watchers that the game is over
 	 */
-	private synchronized void endGame() {
+	private void endGame() {
 
 		gameTimer.cancel();
 		gameOver = true;
 
+		if(rated) {
+			JSONArray ratings = new JSONArray();
+			StringJoiner ratingsSummary = new StringJoiner(", ", "New ratings: ", "");
+			for(Player player : players.values()) {
+				int newRating = player.getNewRating(player.getRating(), players.values());
+				player.updateRating(newRating);
+				ratings.put(new JSONObject()
+						.put("name", player.name)
+						.put("rating", String.valueOf(newRating)));
+				ratingsSummary.add(player.name + " → " + newRating);
+			}
+			if(allowChat) {
+				notifyRoom(new JSONObject()
+					.put("cmd", "gamechat")
+					.put("gameID", gameID)
+					.put("msg", ratingsSummary.toString()));
+			}
+
+			server.broadcast(new JSONObject()
+				.put("cmd", "ratings")
+				.put("ratings", ratings));
+		}
+
 		saveState();
 
-		server.broadcast("note " + gameID + " @" + "Game over");
+		server.broadcast(new JSONObject()
+			.put("cmd", "endgame")
+			.put("gameID", gameID)
+			.put("gamelog", gameLog));
 
-		for(String gameState : gameLog) {
-			notifyRoom("gamelog " + gameID + " " + gameState);
-		}
-		server.broadcast("endgame " + gameID);
-
-		wordFinder = new WordFinder(server, minLength, blankPenalty, dictionary);
+		wordFinder = new WordFinder(minLength, blankPenalty, dictionary);
 		if(hasRobot) {
-			wordFinder.trees.putAll(robotPlayer.trees);
+			wordFinder.trees = robotPlayer.trees;
 		}
+	}
+
+	/**
+	 *
+	 */
+	JSONObject getState() {
+		return gameLog.getJSONObject(gameLog.length() - 1);
 	}
 
 	/**
@@ -247,36 +281,68 @@ public class Game {
 	 *
 	 * @param newPlayer The player to be added
 	 */
-	synchronized void addPlayer(ServerWorker newPlayer) {
+	synchronized void addPlayer(Player newPlayer) {
 
-		//stop the delete timer
+		if(players.size() >= maxPlayers) return;
+
+		newPlayer = players.getOrDefault(newPlayer.name, newPlayer);
+		newPlayer.abandoned = false;
+
 		deleteTimer.cancel();
 
-		if(!gameOver) {
-			//restart the game timer
-			if (timeRemaining > 0 && playerList.isEmpty()) {
-				gameTimer.cancel();
-				gameTimer = new Timer();
-				gameTimer.schedule(new GameTask(), 1000, 1000);
-			}
-
-			//inform newPlayer of players and their words
-			newPlayer.send("gamestate " + gameID + " " + gameLog.lastElement());
-
-			//inform newPlayer of inactive players
-			for (String playerName : getInactivePlayers()) {
-				newPlayer.send("abandonseat " + gameID + " " + playerName);
-			}
-
-			//add the newPlayer
-			playerList.put(newPlayer.getUsername(), newPlayer);
-			words.putIfAbsent(newPlayer.getUsername(), new CopyOnWriteArrayList<>());
-
-			saveState();
-
-			//inform everyone of the newPlayer
-			server.broadcast("takeseat " + gameID + " " + newPlayer.getUsername());
+		//resume game if stopped
+		if(stopped) {
+			stopped = false;
+			gameTimer.cancel();
+			gameTimer = new Timer();
+			gameTimer.schedule(new GameTask(), 1000, 1000);
 		}
+
+		//inform newPlayer of players and their words
+		server.getWorker(newPlayer.name).ifPresent(p -> p.send(getState()
+				.put("cmd", "gamestate")
+				.put("gameID", gameID)
+		));
+
+		//inform newPlayer of inactive players
+		for (Player player : players.values()) {
+			if (player.abandoned)
+				server.getWorker(newPlayer.name).ifPresent(p -> p.send(new JSONObject()
+						.put("cmd", "abandonseat")
+						.put("gameID", gameID)
+						.put("name", player.name)
+				));
+		}
+
+		//add the newPlayer
+		players.put(newPlayer.name, newPlayer);
+
+		saveState();
+
+		//inform everyone of the newPlayer
+		server.broadcast(new JSONObject()
+				.put("cmd", "takeseat")
+				.put("gameID", gameID)
+				.put("name", newPlayer.name)
+				.put("rating", String.valueOf(newPlayer.getRating())));
+	}
+
+
+	/**
+	 *
+	 */
+	void addRobot(Robot newRobot) {
+		robotPlayer = newRobot;
+		players.put(newRobot.name, newRobot);
+
+		saveState();
+
+		//inform everyone of the newRobot
+		server.broadcast(new JSONObject()
+				.put("cmd", "takeseat")
+				.put("gameID", gameID)
+				.put("name", newRobot.name)
+				.put("rating", String.valueOf(newRobot.getRating())));
 	}
 
 	/**
@@ -286,32 +352,39 @@ public class Game {
 	 *
 	 * @param playerToRemove The name of the player to be removed
 	 */
-	synchronized void removePlayer(String playerToRemove) {
+	synchronized void removePlayer(String playerName) {
 
-		watcherList.remove(playerToRemove);
+		Player playerToRemove = players.get(playerName);
+		if(playerToRemove == null) return;
 
-		playerList.remove(playerToRemove);
+		if(playerToRemove.words.isEmpty()) {
+			players.remove(playerName);
+			server.broadcast(new JSONObject()
+					.put("cmd", "removeplayer")
+					.put("gameID", gameID)
+					.put("name", playerName));
+		}
+		else {
+			playerToRemove.abandoned = true;
+			notifyRoom(new JSONObject()
+					.put("cmd", "abandonseat")
+					.put("gameID", gameID)
+					.put("name", playerName));
+		}
 
-		if(playerList.isEmpty()) {
+		if(players.values().stream().allMatch(player -> player instanceof Robot || player.abandoned)) {
+			stopped = true;
 			gameTimer.cancel();
 			if(timeRemaining > 0) {
-				String message = "Time remaining: " + timeRemaining;
-				server.broadcast("note " + gameID + " @" + message);
+				server.broadcast(new JSONObject()
+						.put("cmd", "note")
+						.put("gameID", gameID)
+						.put("msg", "Time remaining: " + timeRemaining));
 			}
-			if(watcherList.isEmpty()) {
+			if(watchers.isEmpty()) {
 				deleteTimer.cancel();
 				deleteTimer = new Timer();
 				deleteTimer.schedule(new DeleteTask(), 180000);
-			}
-		}
-
-		if(words.containsKey(playerToRemove)) {
-			if (words.get(playerToRemove).isEmpty()) {
-				words.remove(playerToRemove);
-				server.broadcast("removeplayer " + gameID + " " + playerToRemove);
-			}
-			else {
-				notifyRoom("abandonseat " + gameID + " " + playerToRemove);
 			}
 		}
 
@@ -330,16 +403,23 @@ public class Game {
 		deleteTimer.cancel();
 
 		if(!gameOver) {
-			//inform newPlayer of players and their words
-			newWatcher.send("gamestate " + gameID + " " + gameLog.lastElement());
-
+			//inform newWatcher of players and their words
+			newWatcher.send(getState()
+					.put("cmd", "gamestate")
+					.put("gameID", gameID)
+			);
 			//inform newWatcher of inactive players
-			for (String playerName : getInactivePlayers()) {
-				newWatcher.send("abandonseat " + gameID + " " + playerName);
+			for(Player player : players.values()) {
+				if(player.abandoned) {
+					newWatcher.send(new JSONObject()
+						.put("cmd", "abandonseat")
+						.put("gameID", gameID)
+						.put("name", player.name));
+				}
 			}
-
 		}
-		watcherList.put(newWatcher.getUsername(), newWatcher);
+
+		watchers.put(newWatcher.getUsername(), newWatcher);
 	}
 
 
@@ -351,43 +431,24 @@ public class Game {
 	 * @param watcherToRemove The name of the watcher to be removed
 	 */
 	synchronized void removeWatcher(String watcherToRemove) {
-		playerList.remove(watcherToRemove);
+		watchers.remove(watcherToRemove);
 
-			watcherList.remove(watcherToRemove);
-
-			if (playerList.isEmpty() && watcherList.isEmpty()) {
-				deleteTimer.cancel();
-				deleteTimer = new Timer();
-				deleteTimer.schedule(new DeleteTask(), 180000);
-				System.out.println("Beginning countdown; game will disappear in 3 minutes");
-			}
-
-	}
-
-	/**
-	 * Add an artificially intelligent robot player to this game.
-	 *
-	 * @param newRobot an artificially intelligent robot player
-	 */
-	synchronized void addRobot(Robot newRobot) {
-
-		robotPlayer = newRobot;
-		words.put(newRobot.robotName, new CopyOnWriteArrayList<>());
-
-		saveState();
-
-		//inform everyone of the newRobot
-		server.broadcast("takeseat " + gameID + " " + newRobot.robotName);
+		if(watchers.isEmpty() && players.values().stream().allMatch(player -> player instanceof Robot)) {
+			deleteTimer.cancel();
+			deleteTimer = new Timer();
+			deleteTimer.schedule(new DeleteTask(), 180000);
+			System.out.println("Beginning countdown; game will disappear in 3 minutes");
+		}
 	}
 
 	/**
 	 * Removes the next tile from the tileBag and puts it in the tilePool. Notifies the players and watchers.
 	 */
 	private synchronized void drawTile() {
-		if(tileCount < tileBag.length) {
-			tilePool += tileBag[tileCount];
-			tileCount++;
-			notifyRoom("nexttiles " + gameID + " " + tilePool);
+		if(tilesPlayed < tileBag.length) {
+			tilePool += tileBag[tilesPlayed];
+			tilesPlayed++;
+			notifyRoom(new JSONObject().put("cmd", "nexttiles").put("gameID", gameID).put("tiles", tilePool));
 		}
 	}
 
@@ -405,17 +466,15 @@ public class Game {
 	 */
 	synchronized boolean doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord) {
 
-		if(countdown > 0) {
-			return false;
-		}
+		if(countdown > 0) return false;
 
-		for(CopyOnWriteArrayList<String> wordList : words.values()) {
-			if(Utils.containsCaseInsensitive(wordList, longWord)) return false;
+		//prevent duplicate words
+		for(Player player : players.values()) {
+			if(Utils.containsCaseInsensitive(player.words, longWord)) return false;
 		}
 
 		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
-		if(!play.isValid())
-			return false;
+		if(!play.isValid()) return false;
 
 		String nextWord = play.nextWord();
 		if(hasRobot) {
@@ -423,33 +482,38 @@ public class Game {
 			robotPlayer.makeTree(nextWord);
 		}
 
-		if(words.containsKey(shortPlayer))
-			words.get(shortPlayer).remove(shortWord);
-
-		words.get(longPlayer).add(nextWord);
+		players.get(shortPlayer).words.remove(shortWord);
+		players.get(longPlayer).words.add(nextWord);
 
 		tilePool = play.nextTiles;
 		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		saveState();
 
-		if(tileCount >= tileBag.length)
+		if(tilesPlayed >= tileBag.length)
 			timeRemaining += 15;
 
-		notifyRoom("steal " + gameID + " " + shortPlayer + " " + dictionary.annotate(shortWord) + " " + longPlayer + " " + dictionary.annotate(nextWord) + " " + tiles);
+		notifyRoom(new JSONObject()
+				.put("cmd", "steal")
+				.put("gameID",gameID)
+				.put("shortPlayer", shortPlayer)
+				.put("shortWord", dictionary.annotate(shortWord))
+				.put("longPlayer", longPlayer)
+				.put("longWord", dictionary.annotate(nextWord))
+				.put("tiles", tiles));
 
-		//if the shortPlayer has left the game and has no words, make room for another player to join
-		if(words.containsKey(shortPlayer)) {
-			if (words.get(shortPlayer).isEmpty()) {
-				if (!shortPlayer.startsWith("Robot")) {
-					if (server.getWorker(shortPlayer) == null) { //player is not logged in
-						server.broadcast("removeplayer " + gameID + " " + shortPlayer);
-					} else if (!playerList.containsKey(shortPlayer)) { //player has left the game
-						server.broadcast("removeplayer " + gameID + " " + shortPlayer);
-					}
-				}
+		//if the shortPlayer has abandoned the game and has no words, make room for another player to join
+		Player player = players.get(shortPlayer);
+		if(player.abandoned) {
+			if(player.words.isEmpty()) {
+				players.remove(shortPlayer);
+				server.broadcast(new JSONObject()
+						.put("cmd", "removeplayer")
+						.put("gameID", gameID)
+						.put("name", player.name));
 			}
 		}
+
 
 		return true;
 	}
@@ -465,21 +529,19 @@ public class Game {
 	 */
 	synchronized void doMakeWord(String newWordPlayer, String entry) {
 
-		if(countdown > 0) {
-			return;
-		}
+		if(countdown > 0) return;
 
-		for(CopyOnWriteArrayList<String> wordList : words.values()) {
-			if(Utils.containsCaseInsensitive(wordList, entry)) return;
+		//prevent duplicate words
+		for(Player player : players.values()) {
+			if(Utils.containsCaseInsensitive(player.words, entry)) return;
 		}
 
 		Play play = new Play("", entry, tilePool, minLength, blankPenalty);
-		if(!play.isValid())
-			return;
+		if(!play.isValid()) return;
 
 		String nextWord = play.nextWord();
 
-		words.get(newWordPlayer).add(nextWord);
+		players.get(newWordPlayer).words.add(nextWord);
 
 		if(hasRobot) robotPlayer.makeTree(nextWord);
 
@@ -487,17 +549,20 @@ public class Game {
 		String tiles = tilePool.isEmpty() ? "#" : tilePool;
 
 		saveState();
-		if(tileCount >= tileBag.length)
-			timeRemaining += 15;
+		if(tilesPlayed >= tileBag.length) timeRemaining += 15;
 
 		//inform players that a new word has been made
-		notifyRoom("makeword " + gameID + " " + newWordPlayer + " " + dictionary.annotate(nextWord) + " " + tiles);
-
+		notifyRoom(new JSONObject()
+				.put("cmd", "makeword")
+				.put("gameID", gameID)
+				.put("player", newWordPlayer)
+				.put("word", dictionary.annotate(nextWord))
+				.put("tiles", tiles));
 	}
 
 
 	/**
-	 * Initialize the tileBag with the chosen number of tiles sets.
+	 * Initialize the tileBag with the chosen number of tiles in random order.
 	 *
 	 * @param numSets The number of tile sets, each of which consists of 100 tiles
 	 */
@@ -524,13 +589,16 @@ public class Game {
 	/**
 	 * Adds a String describing the current game state, e.g.
 	 * "257 YU?IFOT GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]"
-	 * to the gameLog.
+	 * to the gameLog. The symbol "#" stands in for an empty tile pool.
 	 */
 	private synchronized void saveState() {
 		if(!gameOver) {
-			String tiles = tilePool.isEmpty() ? "#" : tilePool;
-			gameLog.add(timeRemaining + " " + tiles + " " + getFormattedWordList());
+			gameLog.put(new JSONObject()
+				.put("time", timeRemaining)
+				.put("tiles", tilePool.isEmpty() ? "#" : tilePool)
+				.put("players", getFormattedWordList()));
 		}
+
 	}
 
 	/**
@@ -538,33 +606,15 @@ public class Game {
 	 *
 	 * @param position the time corresponding to the position to be analyzed
 	 */
-	synchronized String findPlays(int position) {
-		return plays.computeIfAbsent(position, k -> wordFinder.findWords(gameLog.elementAt(position)));
-	}
-
-	/**
-	 * @return the names of all players and Robots that are either active or have at least one word.
-	 */
-	synchronized Set<String> getPlayerList() {
-
-		Set<String> union = new HashSet<>(words.keySet());
-		union.addAll(playerList.keySet());
-		if(robotPlayer != null)
-			union.add(robotPlayer.robotName);
-
-		return union;
-	}
-
-	/**
-	 * @return a set of all players who have left the game but still have at least one word.
-	 */
-	synchronized Set<String> getInactivePlayers() {
-		Set<String> union = new HashSet<>(words.keySet());
-		union.removeAll(playerList.keySet());
-		if(robotPlayer != null)
-			union.removeAll(Collections.singleton(robotPlayer.robotName));
-
-		return union;
+	JSONObject findPlays(int position) {
+		synchronized(plays) {
+			return new JSONObject()
+					.put("cmd", "plays")
+					.put("gameID", gameID)
+					.put("data", plays.computeIfAbsent(position, k ->
+							wordFinder.findWords(gameLog.getJSONObject(position))
+					));
+		}
 	}
 
 	/**
@@ -572,26 +622,15 @@ public class Game {
 	 * as well as inactive players with words, e.g.
 	 * player1 [HELLO,WORLD] player2 []
 	 */
-	private synchronized String getFormattedWordList() {
-		StringBuilder wordList = new StringBuilder();
-		Set<String> union = getPlayerList();
-
-		for(String playerName : union) {
-			if(words.containsKey(playerName)) {
-				wordList.append(playerName)
-					.append(" [")
-					.append(words.get(playerName)
-					.stream()
-					.map(word -> dictionary.annotate(word))
-					.collect(Collectors.joining(",")))
-					.append("] ");
-			}
-			else {
-				wordList.append(playerName).append(" [] ");
-			}
+	synchronized JSONArray getFormattedWordList() {
+		JSONArray json = new JSONArray();
+		for(Player player : players.values()) {
+			json.put(new JSONObject()
+					.put("name", player.name)
+					.put("rating", String.valueOf(player.getRating()))
+					.put("words", new JSONArray(player.words)));
 		}
-
-		return wordList.toString();
+		return json;
 	}
 
 	/**
@@ -599,14 +638,14 @@ public class Game {
 	 *
 	 * @param msg The message containing the information to be shared
 	 */
-	void notifyRoom(String msg) {
-		synchronized(playerList) {
-			for(ServerWorker player : playerList.values()) {
-				player.send(msg);
+	void notifyRoom(JSONObject msg) {
+		synchronized(players) {
+			for(Player player : players.values()) {
+				server.getWorker(player.name).ifPresent(worker -> worker.send(msg));
 			}
 		}
-		synchronized(watcherList) {
-			for(ServerWorker watcher : watcherList.values()) {
+		synchronized(watchers) {
+			for(ServerWorker watcher : watchers.values()) {
 				watcher.send(msg);
 			}
 		}
