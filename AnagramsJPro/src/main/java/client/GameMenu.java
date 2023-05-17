@@ -7,39 +7,40 @@ import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 /**
  * A menu for choosing game options and saving them for future use
  *
  */
-
 class GameMenu extends PopWindow {
 
     private final AnagramsClient client;
 
-    private final String[] numPlayersChoices = {"1", "2", "3", "4", "5", "6"};
-    private final String[] minLengthChoices = {"4", "5", "6", "7", "8", "9", "10"};
-    private final String[] numSetsChoices = {"1", "2", "3"};
-    private final String[] blankPenaltyChoices = {"1", "2"};
-    private final String[] speedChoices = {"slow", "medium", "fast"};
-    private final String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
+    private final static Integer[] numPlayersChoices = {1, 2, 3, 4, 5, 6};
+    private final static Integer[] minLengthChoices = {4, 5, 6, 7, 8, 9, 10};
+    private final static Integer[] numSetsChoices = {1, 2, 3};
+    private final static Integer[] blankPenaltyChoices = {1, 2};
+    private final static String[] speedChoices = {"slow", "medium", "fast"};
+    private final static String[] skillLevelChoices = {"novice", "standard", "expert", "genius"};
 
-    private final ChoiceBox<String> playersSelector = new ChoiceBox<>(FXCollections.observableArrayList(numPlayersChoices));
-    private final ChoiceBox<String> lengthsSelector = new ChoiceBox<>(FXCollections.observableArrayList(minLengthChoices));
-    private final ChoiceBox<String> setsSelector = new ChoiceBox<>(FXCollections.observableArrayList(numSetsChoices));
-    private final ChoiceBox<String> blanksSelector = new ChoiceBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
-    private final ChoiceBox<String> lexiconSelector = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
-    private final ChoiceBox<String> speedSelector = new ChoiceBox<>(FXCollections.observableArrayList(speedChoices));
-    private final ChoiceBox<String> skillLevelSelector = new ChoiceBox<>(FXCollections.observableArrayList(skillLevelChoices));
+    private final ChoiceBox<Integer> playersChooser = new ChoiceBox<>(FXCollections.observableArrayList(numPlayersChoices));
+    private final ChoiceBox<Integer> lengthChooser = new ChoiceBox<>(FXCollections.observableArrayList(minLengthChoices));
+    private final ChoiceBox<Integer> setsChooser = new ChoiceBox<>(FXCollections.observableArrayList(numSetsChoices));
+    private final ChoiceBox<Integer> blankChooser = new ChoiceBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
+    private final ChoiceBox<String> lexiconChooser = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
+    private final ChoiceBox<String> speedChooser = new ChoiceBox<>(FXCollections.observableArrayList(speedChoices));
+    private final ChoiceBox<String> skillChooser = new ChoiceBox<>(FXCollections.observableArrayList(skillLevelChoices));
 
-    private final CheckBox chatChooser = new CheckBox("Allow chatting");
-    private final CheckBox watchersChooser = new CheckBox("Allow watchers");
-    private final CheckBox robotChooser = new CheckBox("Add robot player");
-    private final CheckBox defaultChooser = new CheckBox("Save as default");
+    private final CheckBox chatBox = new CheckBox("Allow chatting");
+    private final CheckBox watchersBox = new CheckBox("Allow watchers");
+    private final CheckBox robotBox = new CheckBox("Add robot player");
+    private final CheckBox ratedBox = new CheckBox("Rated");
+    private final CheckBox defaultBox = new CheckBox("Save as default");
 
     private final TextField nameField = new TextField();
     private final Button startButton = new Button("Start");
@@ -48,10 +49,11 @@ class GameMenu extends PopWindow {
     /**
      *
      */
-
     GameMenu(AnagramsClient client) {
         super(client.stack);
         this.client = client;
+
+        getStylesheets().add("css/game-menu.css");
 
         final Date now = new Date();
         final SimpleDateFormat ft = new SimpleDateFormat("hhmmss");
@@ -68,13 +70,13 @@ class GameMenu extends PopWindow {
 
         if(client.getWebAPI().isMobile()) {
             pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            playersSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            lengthsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            setsSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            blanksSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            lexiconSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            speedSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
-            skillLevelSelector.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            playersChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            lengthChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            setsChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            blankChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            speedChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
+            skillChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), true);
         }
 
         final GridPane grid = new GridPane();
@@ -98,50 +100,52 @@ class GameMenu extends PopWindow {
         final Label speedLabel = new Label("Speed");
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
 
-        //selectors
-        playersSelector.getSelectionModel().select(client.prefs.get("max_players", "6"));
-        lengthsSelector.getSelectionModel().select(client.prefs.get("min_length", "7"));
-        setsSelector.getSelectionModel().select(client.prefs.get("num_sets", "1"));
-        blanksSelector.getSelectionModel().select(client.prefs.get("blank_penalty", "2"));
-        lexiconSelector.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
-        speedSelector.getSelectionModel().select(client.prefs.get("speed", "medium"));
-        skillLevelSelector.getSelectionModel().select(client.prefs.get("robot_skill", "standard"));
-        skillLevelSelector.disableProperty().bind(robotChooser.selectedProperty().not());
-
         //choosers
-        chatChooser.setSelected(client.prefs.getBoolean("allow_chat",true));
-        watchersChooser.setSelected(client.prefs.getBoolean("allow_watchers", true));
-        robotChooser.setSelected(client.prefs.getBoolean("add_robot", false));
+        playersChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("max_players")));
+        lengthChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("min_length")));
+        setsChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("num_sets")));
+        blankChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("blank_penalty")));
+        lexiconChooser.getSelectionModel().select(client.prefs.getString("lexicon"));
+        speedChooser.getSelectionModel().select(client.prefs.getString("speed"));
+        skillChooser.getSelectionModel().select(client.prefs.getString("robot_skill"));
+        skillChooser.disableProperty().bind(robotBox.selectedProperty().not());
+
+        //checkboxes
+        chatBox.setSelected(client.prefs.getBoolean("allow_chat"));
+        watchersBox.setSelected(client.prefs.getBoolean("allow_watchers"));
+        robotBox.setSelected(client.prefs.getBoolean("add_robot"));
+        ratedBox.setSelected(client.prefs.getBoolean("rated"));
 
         grid.add(nameLabel, 0, 0);
         grid.add(nameField, 1, 0);
         grid.add(new Label("Maximum number of players"), 0, 1);
-        grid.add(playersSelector, 1, 1);
+        grid.add(playersChooser, 1, 1);
         grid.add(new Label("Minimum word length"), 0, 2);
-        grid.add(lengthsSelector, 1, 2);
+        grid.add(lengthChooser, 1, 2);
         grid.add(tileSetsLabel, 0, 3);
-        grid.add(setsSelector, 1, 3);
+        grid.add(setsChooser, 1, 3);
         grid.add(blankPenaltyLabel, 0, 4);
-        grid.add(blanksSelector, 1, 4);
+        grid.add(blankChooser, 1, 4);
         grid.add(wordListLabel, 0, 5);
-        grid.add(lexiconSelector, 1, 5);
+        grid.add(lexiconChooser, 1, 5);
         grid.add(speedLabel, 0, 6);
-        grid.add(speedSelector, 1, 6);
-        grid.add(chatChooser, 0, 7);
-        grid.add(watchersChooser, 1, 7);
-        grid.add(robotChooser, 0, 8);
-        grid.add(skillLevelSelector, 1, 8);
-        grid.add(startButton, 0, 9);
-        grid.add(defaultChooser, 1, 9);
+        grid.add(speedChooser, 1, 6);
+        grid.add(chatBox, 0, 7);
+        grid.add(watchersBox, 1, 7);
+        grid.add(robotBox, 0, 8);
+        grid.add(skillChooser, 1, 8);
+        grid.add(ratedBox,0, 9);
+        grid.add(defaultBox, 1,9);
+        grid.add(startButton, 0, 10);
 
         setTitle("Game Options");
         setContents(grid);
-        setMaxSize(335, 363);
+        setMaxSize(335, 387);
 
         startButton.setPrefWidth(75.0);
         startButton.setPrefHeight(25.0);
         startButton.setOnAction(e -> {
-            if(defaultChooser.isSelected())
+            if(defaultBox.isSelected())
                 savePreferences();
             createGame();
             hide();
@@ -159,48 +163,48 @@ class GameMenu extends PopWindow {
     /**
      *
      */
-
     private void savePreferences() {
-        client.prefs.put("max_players", playersSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("min_length", lengthsSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("num_sets", setsSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("blank_penalty", blanksSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("lexicon", lexiconSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("speed", speedSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.put("robot_skill", skillLevelSelector.getSelectionModel().getSelectedItem() + "");
-        client.prefs.putBoolean("allow_chat", chatChooser.isSelected());
-        client.prefs.putBoolean("allow_watchers", watchersChooser.isSelected());
-        client.prefs.putBoolean("add_robot", robotChooser.isSelected());
+        client.prefs.put("max_players", playersChooser.getSelectionModel().getSelectedItem())
+            .put("min_length", lengthChooser.getSelectionModel().getSelectedItem())
+            .put("num_sets", setsChooser.getSelectionModel().getSelectedItem())
+            .put("blank_penalty", blankChooser.getSelectionModel().getSelectedItem())
+            .put("lexicon", lexiconChooser.getSelectionModel().getSelectedItem())
+            .put("speed", speedChooser.getSelectionModel().getSelectedItem())
+            .put("robot_skill", skillChooser.getSelectionModel().getSelectedItem())
+            .put("allow_chat", chatBox.isSelected())
+            .put("allow_watchers", watchersBox.isSelected())
+            .put("add_robot", robotBox.isSelected())
+            .put("rated", ratedBox.isSelected());
+        if(!client.guest)
+            client.send("updateprefs", new JSONObject().put("type", "game").put("prefs", client.prefs));
     }
 
     /**
      *
      */
-
     void createGame() {
 
-        String maxPlayers = playersSelector.getSelectionModel().getSelectedItem() + "";
-        String gameName = nameField.getText().replaceAll(" ", "%");
-        if(gameName.isBlank()) gameName = nameField.getPromptText().replaceAll(" ", "%");
-        final String minLength = lengthsSelector.getSelectionModel().getSelectedItem() + "";
-        final String numSets = setsSelector.getSelectionModel().getSelectedItem() + "";
-        final int blankPenalty = Integer.parseInt(blanksSelector.getSelectionModel().getSelectedItem());
-        final String lexicon = lexiconSelector.getSelectionModel().getSelectedItem() + "";
-        final String speed = speedSelector.getSelectionModel().getSelectedItem() + "";
-        final String skillLevel = (skillLevelSelector.getSelectionModel().getSelectedIndex() + 1) + "";
-        final String allowChat = chatChooser.isSelected() + "";
-        final String allowWatchers = watchersChooser.isSelected() + "";
-        final String addRobot = robotChooser.isSelected() + "";
+        int maxPlayers = playersChooser.getSelectionModel().getSelectedItem();
+        if(robotBox.isSelected())
+            maxPlayers = Math.min(6, maxPlayers + 1);
 
-        if(addRobot.equals("true")) {
-            maxPlayers = Math.min(6, Integer.parseInt(maxPlayers) + 1) + "";
-        }
+        JSONObject newGameParams = new JSONObject()
+            .put("max_players", maxPlayers)
+            .put("gameID", gameID)
+            .put("game_name", nameField.getText().isBlank() ? nameField.getPromptText() : nameField.getText())
+            .put("min_length", lengthChooser.getSelectionModel().getSelectedItem())
+            .put("num_sets", setsChooser.getSelectionModel().getSelectedItem())
+            .put("blank_penalty", blankChooser.getSelectionModel().getSelectedItem())
+            .put("lexicon", lexiconChooser.getSelectionModel().getSelectedItem())
+            .put("speed", speedChooser.getSelectionModel().getSelectedItem())
+            .put("skill_level", skillChooser.getSelectionModel().getSelectedIndex())
+            .put("allow_chat", chatBox.isSelected())
+            .put("allow_watchers", watchersBox.isSelected())
+            .put("add_robot", robotBox.isSelected())
+            .put("rated", ratedBox.isSelected());
 
-        getStylesheets().add("css/game-menu.css");
+        new GameWindow(client, newGameParams, client.username, false, null);
 
-        new GameWindow(client, gameID, gameName, client.username, minLength, blankPenalty, numSets, speed, chatChooser.isSelected(), lexicon, new ArrayList<>(), false);
-
-        final String cmd = "newgame " + gameID + " " + gameName + " " + maxPlayers + " " + minLength + " " + numSets + " " + blankPenalty + " " + lexicon + " " + speed + " " + allowChat + " " + allowWatchers + " " + addRobot + " " + skillLevel;
-        client.send(cmd);
+        client.send(new JSONObject().put("cmd", "newgame").put("params", newGameParams));
     }
 }
