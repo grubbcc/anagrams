@@ -12,8 +12,7 @@ import java.util.HashMap;
 
 class Node {
 
-	final HashMap<String, String> anagrams = new HashMap<>(2);
-	final HashMap<String, String> definitions = new HashMap<>(2);
+	final HashSet<Word> words = new HashSet<>(2);
 
 	final TreeMap<Character, Node> children = new TreeMap<>();
 
