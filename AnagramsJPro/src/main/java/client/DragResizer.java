@@ -5,10 +5,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 
 /**
- * Adapted from https://gist.github.com/andytill/4369729
+ * Adapted from <a href="https://gist.github.com/andytill/4369729">...</a>
  * @author atill
  */
-@SuppressWarnings("UnnecessaryReturnStatement")
 class DragResizer {
 
     /**
@@ -142,10 +141,6 @@ class DragResizer {
         if (draggingEast) resizeEast(event);
         if (draggingNorth) resizeNorth(event);
         if (draggingWest) resizeWest(event);
-
-        if(draggingSouth || draggingEast || draggingNorth || draggingWest) {
-            return;
-        }
     }
 
     /**

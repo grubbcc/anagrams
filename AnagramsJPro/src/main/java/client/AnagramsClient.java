@@ -33,7 +33,7 @@ class AnagramsClient extends JProApplication {
 
 	private final String host = InetAddress.getLocalHost().getHostAddress();
 	private final int port = 8118;
-	private static final String version = "1.0.1";
+	private static final String version = "1.0.2";
 
 	private boolean connected = false;
 	private InputStream serverIn;
