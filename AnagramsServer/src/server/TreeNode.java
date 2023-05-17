@@ -7,7 +7,8 @@ import java.util.LinkedList;
  */
 class TreeNode {
 
-    private final String word;
+    private final Word word;
+//    private final String word;
     private String suffix;
     private final String longSteal;
     private String shortSteal;
@@ -17,32 +18,32 @@ class TreeNode {
     /**
      *
      */
-    TreeNode(String word, String suffix, String steal) {
-        this.word = word.toUpperCase();
-        this.suffix = suffix;
+    TreeNode(Word word, String steal) {
+        this.word = word;
         this.longSteal = steal;
     }
 
     /**
      *
      */
-    public String getWord() {
+//    TreeNode(String word, String suffix, String steal) {
+//        this.word = word.toUpperCase();
+//        this.suffix = suffix;
+//        this.longSteal = steal;
+//    }
+
+    /**
+     *
+     */
+    public Word getWord() {
         return word;
     }
 
     /**
      *
      */
-    @Override
-    public String toString() {
-        return word + suffix;
-    }
-
-    /**
-     *
-     */
-    void setSuffix(String suffix) {
-        this.suffix = suffix;
+    public String getLetters() {
+        return word.letters;
     }
 
     /**
@@ -72,6 +73,13 @@ class TreeNode {
      */
     void addChild(TreeNode newChild) {
         children.add(0, newChild);
+    }
+
+    /**
+     *
+     */
+    String annotate() {
+        return word.letters + word.suffix;
     }
 
     /**
