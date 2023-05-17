@@ -12,7 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.TouchEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import org.json.JSONObject;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -48,12 +48,12 @@ class SettingsMenu extends PopWindow {
         lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
 
         //selectors
-        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
+        lexiconChooser.getSelectionModel().select(client.prefs.getString("lexicon"));
         lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
-        soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
+        soundChooser.setSelected(client.prefs.getBoolean("play_sounds"));
         GridPane.setHalignment(soundChooser, HPos.RIGHT);
         soundChooser.setPadding(new Insets(0,10,0,0));
-        highlightChooser.setSelected(client.prefs.getBoolean("highlight_words", false));
+        highlightChooser.setSelected(client.prefs.getBoolean("highlight_words"));
         Label goldLabel = new Label("Highlight");
         goldLabel.setAlignment(Pos.TOP_CENTER);
         goldLabel.setBackground(new Background(new BackgroundFill(Color.GOLD, new CornerRadii(1), new Insets(1,0,-1,1))));
@@ -112,23 +112,25 @@ class SettingsMenu extends PopWindow {
      * Saves current color configuration to preferences file.
      */
     private void savePreferences() {
-        client.prefs.put("lexicon", lexiconChooser.getSelectionModel().getSelectedItem() + "");
-        client.prefs.putBoolean("play_sounds", soundChooser.isSelected());
-        client.prefs.putBoolean("highlight_words", highlightChooser.isSelected());
+        client.prefs.put("lexicon", lexiconChooser.getSelectionModel().getSelectedItem())
+            .put("play_sounds", soundChooser.isSelected())
+            .put("highlight_words", highlightChooser.isSelected());
         for(AnagramsClient.Colors color : client.colors.keySet()) {
             client.prefs.put(color.key, client.colors.get(color));
         }
+        if(!client.guest)
+            client.send("updateprefs", new JSONObject().put("type", "settings").put("prefs", client.prefs));
     }
 
     /**
      * Restores colors to previous values.
      */
     private void revertChanges() {
-        lexiconChooser.getSelectionModel().select(client.prefs.get("lexicon", "CSW21"));
-        soundChooser.setSelected(client.prefs.getBoolean("play_sounds", true));
-        highlightChooser.setSelected(client.prefs.getBoolean("highlight_words", false));
+        lexiconChooser.getSelectionModel().select(client.prefs.getString("lexicon"));
+        soundChooser.setSelected(client.prefs.getBoolean("play_sounds"));
+        highlightChooser.setSelected(client.prefs.getBoolean("highlight_words"));
         for (AnagramsClient.Colors color : AnagramsClient.Colors.values()) {
-            client.colors.put(color, client.prefs.get(color.key, color.defaultCode));
+            client.colors.put(color, client.prefs.getString(color.key));
             colorChoosers.get(color).setColor(client.colors.get(color));
         }
         client.setColors();
