@@ -57,6 +57,11 @@
     -fx-text-fill: -game-foreground-text;
 }
 
+.game-panel #player-rating-label {
+	-fx-font-size: 16px;
+	-fx-text-fill: gold;
+}
+
 .game-panel:mobile .label {
     -fx-font-size: 19px;
 }
@@ -73,6 +78,6 @@
 }
 
 /* word-display */
-.word-display {
+#word-display {
     -fx-background-color: -game-background;
 }
