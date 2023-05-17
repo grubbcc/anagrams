@@ -18,6 +18,7 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import com.jpro.webapi.WebAPI;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.*;
 
@@ -180,7 +181,12 @@ class WordExplorer extends PopWindow {
         textField.clear();
         treePanel.getChildren().clear();
         messagePane.clear();
-        client.send("lookup " + lexicon + " " + query.replaceAll("[^a-zA-Z]", "").toUpperCase());
+        client.send(new JSONObject()
+                .put("cmd", "lookup")
+                .put("lexicon", lexicon)
+                .put("query", query.replaceAll("[^a-zA-z]","").toUpperCase())
+        );
+
     }
 
     /**
@@ -297,7 +303,7 @@ class WordExplorer extends PopWindow {
             super.updateItem(item, empty);
 
             if(!empty) {
-                if(client.prefs.getBoolean("highlight_words", false))
+                if(client.prefs.getBoolean("highlight_words"))
                     setText(item.getWord());
                 else
                     setText(item.getWord().replaceFirst("[#$]", ""));
