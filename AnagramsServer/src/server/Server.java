@@ -2,6 +2,7 @@ package server;
 
 import com.sun.net.httpserver.*;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.net.*;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Server extends Thread {
 	
 	private static final int GAME_PORT = 8118;
+	private static final int ADMIN_PORT = 8117;
 	private static final int LOOKUP_PORT = 8116;
 
 	private static final String[] lexicons = {"NWL20", "CSW21"};
@@ -86,20 +88,27 @@ public class Server extends Thread {
 	*/
 	void removeGame(String gameID) {
 		gameList.remove(gameID);
-		broadcast("removegame " + gameID);
+		broadcast(new JSONObject().put("cmd", "removegame").put("gameID", gameID));
 	}
 	
 	/**
 	*
 	*/
-	Set<String> getUsernames() {
+	synchronized Set<String> getUsernames() {
 		return workerList.keySet();
 	}
+
+	/**
+	 *
+	 */
+	synchronized Collection<ServerWorker> getWorkers() {
+		return workerList.values();
+	}
 	
 	/**
 	*
 	*/
-	void addWorker(String username, ServerWorker worker) {
+	synchronized void addWorker(String username, ServerWorker worker) {
 		workerList.put(username, worker);
 	}
 
@@ -123,7 +132,7 @@ public class Server extends Thread {
 			game.removeWatcher(username);
 		}
 
-		broadcast("logoffplayer " + username);
+		broadcast("logoffplayer", new JSONObject().put("name", username));
 	}
 
 	/**
@@ -190,10 +199,21 @@ public class Server extends Thread {
 	*
 	* @param msg the message to be sent
 	*/
-	void broadcast(String msg) {
+	void broadcast(JSONObject json) {
 		synchronized(workerList) {
-			for(ServerWorker worker : workerList.values()) {
-				worker.send(msg);
+			for(ServerWorker worker : getWorkers()) {
+				worker.send(json);
+			}
+		}
+	}
+
+	/**
+	 * Helper method for broadcast(JSONObject json)
+	 */
+	void broadcast(String cmd, JSONObject json) {
+		synchronized(workerList) {
+			for(ServerWorker worker : getWorkers()) {
+				worker.send(json.put("cmd", cmd));
 			}
 		}
 	}
@@ -227,7 +247,6 @@ public class Server extends Thread {
 		WordTree tree = new WordTree(query, getDictionary(lexicon));
 		tree.generateJSON(tree.rootNode.toString(), tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
-		System.out.println(json);
 
 		byte[] bytes = json.getBytes();
 		exchange.getResponseHeaders().add("Content-type", "application/json");
@@ -248,22 +267,31 @@ public class Server extends Thread {
 	 */
 	public static void main(String[] args) throws IOException {
 
-		Server server = new Server();
-		server.start();
+		Server gameServer = new Server();
+		gameServer.start();
+
+		AdminServer adminServer = new AdminServer(gameServer);
+		adminServer.start();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+<<<<<<< Updated upstream
 			for(String username : server.getUsernames()) {
 				server.getWorker(username).send("logoffplayer " + username );
+=======
+			for(String username : gameServer.getUsernames()) {
+				gameServer.getWorker(username).ifPresent(player -> player.send("logoffplayer", new JSONObject().put("name", username)));
+>>>>>>> Stashed changes
 			}
 			try {
 				BufferedWriter writer = new BufferedWriter(new FileWriter("chat.log"));
-				for(String line : server.chatLog) {
+				for(String line : gameServer.chatLog) {
 					writer.write(line + "\n");
 				}
 				System.out.println("chat file saved");
 				writer.close();
-				server.serverSocket.close();
-				server.httpServer.stop(3);
+				gameServer.serverSocket.close();
+				gameServer.httpServer.stop(3);
+
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

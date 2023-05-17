@@ -109,7 +109,7 @@ class WordTree {
 		for (TreeNode nextNode : treeNodeList) {
 			String nextWord = nextNode.getWord();
 
-			if (Utils.isSteal(nextWord, currentWord)) {
+			if (Utils.isRearrangement(nextWord, currentWord)) {
 				nextNode.addChild(currentNode);
 				return;
 			}
@@ -151,12 +151,21 @@ class WordTree {
 	 */
 	void generateJSON(String prefix, TreeNode node, double prob) {
 
+<<<<<<< Updated upstream
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", prefix);
 		jsonObject.put("shortsteal", node.getShortSteal());
 		jsonObject.put("longsteal", node.getLongSteal());
 		jsonObject.put("prob", ProbCalc.round(100 * prob, 1));
 		jsonObject.put("def", trie.getDefinition(node.getWord()));
+=======
+		JSONObject jsonObject = new JSONObject()
+			.put("id", prefix)
+			.put("shortsteal", node.getShortSteal())
+			.put("longsteal", node.getLongSteal())
+			.put("prob", ProbCalc.round(100 * prob, 1))
+			.put("def", node.getWord().definition);
+>>>>>>> Stashed changes
 		jsonArray.put(jsonObject);
 
 		double norm = 0;

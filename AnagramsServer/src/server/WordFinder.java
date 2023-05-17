@@ -1,76 +1,72 @@
 package server;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
  */
 class WordFinder {
 
-    private final Server server;
-
     private final int blankPenalty;
     private final int minLength;
-    private String tilePool;
     private final AlphagramTrie dictionary;
+
+    private String tilePool;
     private int blanksAvailable = 0;
 
     private final HashSet<String> wordsInPool = new HashSet<>();
+    private final JSONArray possibleSteals = new JSONArray();
     HashMap<String, WordTree> trees = new HashMap<>();
 
     /**
      *
      */
-    WordFinder(Server server, int minLength, int blankPenalty, AlphagramTrie dictionary) {
-
-        this.server = server;
+    WordFinder(int minLength, int blankPenalty, AlphagramTrie dictionary) {
         this.minLength = minLength;
         this.blankPenalty = blankPenalty;
         this.dictionary = dictionary;
-
     }
 
     /**
      * Given a gameState, generates a list of all possible (up to 70) valid plays, e.g.
-     * [FUMITORY] @ [BLEWARTS + I -> BRAWLIEST, BLEWARTS + I -> WARBLIEST, BLEWARTS + FO -> BATFOWLERS]
-     *
-     * @param gameState a description of the current position on the board,
-     *                  including the pool and words already formed, e.g.
-     *                 "257 YUIFOTMR GrubbTime [HAUYNES] Robot-Genius [BLEWARTS,POTJIES]"
-     * @return          a list of all possible (up to 70) valid plays that can be made, e.g.
-     *                  [FUMITORY] @ [BLEWARTS + I -> BRAWLIEST, BLEWARTS + I -> WARBLIEST, BLEWARTS + FO -> BATFOWLERS]
      */
-    synchronized String findWords(String gameState) {
-
+    synchronized JSONObject findWords(JSONObject gameState) {
         wordsInPool.clear();
+        possibleSteals.clear();
         blanksAvailable = 0;
 
-        //Find words in pool
-        String tiles = (gameState.split(" ")[1]).replace("#" ,"");
-        tilePool = tiles.length() <= 20 ? tiles : tiles.substring(0, 20); //is this necessary?
-        if(tilePool.length() >= minLength) {
-            blanksAvailable = tilePool.length() - tilePool.replaceAll("\\?","").length();
-            findInPool(dictionary.rootNode, "", Utils.alphabetize(tilePool.replaceAll("\\?","")), 0);
-        }
+        String tiles = gameState.getString("tiles").replace("#", "");
+        tilePool = tiles.length() <= 20 ? tiles : tiles.substring(0, 20);
 
+        JSONObject foundWords = new JSONObject();
+        if(tilePool.length() >= minLength) {
+            blanksAvailable = tiles.length() - tiles.replaceAll("\\?","").length();
+            findInPool(dictionary.rootNode, "", Utils.alphabetize(tiles.replaceAll("\\?","")), 0);
+        }
+        foundWords.put("pool", new JSONArray(wordsInPool));
+
+<<<<<<< Updated upstream
         //build string
         StringBuilder wordsFound = new StringBuilder("[");
         for(String word : wordsInPool) {
             wordsFound.append(dictionary.annotate(word)).append(",");
         }
         wordsFound.append("] @ [");
+=======
+        JSONArray steals = new JSONArray();
+        JSONArray players = gameState.getJSONArray("players");
+        players.forEach(player -> searchForSteals(((JSONObject)player).getJSONArray("words")));
+>>>>>>> Stashed changes
 
-        //Find steals
-        if(!tilePool.isEmpty()) {
-            Matcher m = Pattern.compile("\\[([,A-Za-z#$]+?)]").matcher(gameState);
-            while (m.find()) {
-                wordsFound.append(searchForSteals(m.group(1).split("[^A-Za-z]+")));
-            }
-        }
-        return wordsFound.append("]").toString();
+        foundWords.put("steals", possibleSteals);
+        return foundWords;
     }
+
+
+
 
     /**
      * Recursively searches the pool for words and adds them to the wordsInPool Set
@@ -140,11 +136,17 @@ class WordFinder {
      * @param   words   All the words currently on the board
      * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
+<<<<<<< Updated upstream
     private synchronized String searchForSteals(String[] words) {
         StringBuilder possibleSteals = new StringBuilder();
         int numWordsFound = 0;
+=======
+    private synchronized void searchForSteals(JSONArray words) {
+>>>>>>> Stashed changes
 
-        outer: for(String shortWord : words) {
+        Iterator<Object> it = words.iterator();
+        while(it.hasNext() && possibleSteals.length() < 30) {
+            String shortWord = (String)it.next();
 
             trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z]", ""), dictionary));
             ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
@@ -160,6 +162,7 @@ class WordFinder {
                 }
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
+<<<<<<< Updated upstream
                     possibleSteals
                         .append(shortWord)
                         .append(" + ")
@@ -170,10 +173,16 @@ class WordFinder {
                     if (++numWordsFound >= 30) {
                         break outer;
                     }
+=======
+                    possibleSteals.put(new JSONObject()
+                            .put("shortWord", shortWord)
+                            .put("steal", child.getLongSteal())
+                            .put("longWord", play.nextWord() + dictionary.getWord(entry).suffix));
+>>>>>>> Stashed changes
                 }
             }
         }
-        return possibleSteals.toString();
+
     }
 
 }
