@@ -263,6 +263,7 @@ class PlayerPane extends PopWindow {
             confirmDialog.setText("Are you sure you want to delete your account?");
             confirmDialog.addYesNoButtons();
             confirmDialog.yesButton.setOnAction(click -> {
+                client.send("delete");
                 client.guest = true;
                 confirmDialog.hide();
                 MessageDialog infoDialog = new MessageDialog(client, "Account deleted");
