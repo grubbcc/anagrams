@@ -1,6 +1,8 @@
 package server;
 
 import org.json.JSONObject;
+
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
@@ -10,7 +12,7 @@ public class UserData {
 
     private JSONObject prefs;
     private Preferences backingStore;
-    private final boolean guest;
+    private boolean guest;
 
     private final String username;
     private String profile;
@@ -33,19 +35,12 @@ public class UserData {
         .put("blank_penalty", 2)
 
         .put("allow_chat", true)
-        .put("allow_watchers", false)
+        .put("allow_watchers", true)
         .put("add_robot", false)
         .put("rated", false)
         .put("show_guide", true)
         .put("highlight_words", false)
         .put("play_sounds", true);
-
-    /**
-     *
-     */
-    private static JSONObject getDefaults() {
-        return defaults;
-    }
 
 
     /**
@@ -180,5 +175,16 @@ public class UserData {
         }
     }
 
+    /**
+     *
+     */
+    void remove() {
+        guest = true;
+        try {
+            backingStore.removeNode();
+        } catch (BackingStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
