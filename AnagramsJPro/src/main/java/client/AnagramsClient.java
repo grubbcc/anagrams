@@ -70,7 +70,7 @@ class AnagramsClient extends JProApplication {
 	final HashMap<String, Player> playersList = new HashMap<>();
 
 	String username;
-	boolean guest = false;
+	boolean guest = true;
 	JSONObject prefs;
 
 	static final String[] lexicons = {"CSW21", "NWL20"}; //change to enum
@@ -343,8 +343,9 @@ class AnagramsClient extends JProApplication {
 	/**
 	 *
 	 */
-	void login(String username, JSONObject prefs) {
+	void login(String username, boolean guest, JSONObject prefs) {
 		this.username = username;
+		this.guest = guest;
 		this.prefs = prefs;
 
 		explorer = new WordExplorer(prefs.getString("lexicon"), this);
@@ -516,7 +517,7 @@ class AnagramsClient extends JProApplication {
 					if(players.size() < maxPlayers || gameOver && allowWatchers) {
 						joinButton.setDisable(true);
 						new GameWindow(AnagramsClient.this, gameParams, username, gameOver, gameLog);
-						send(new JSONObject().put("cmd", "joingame").put("gameID", gameID));
+						send("joingame", new JSONObject().put("gameID", gameID));
 						Platform.runLater(() -> joinButton.setDisable(false));
 					}
 				}
@@ -532,7 +533,7 @@ class AnagramsClient extends JProApplication {
 						if (!players.contains(username) || gameOver) {
 							watchButton.setDisable(true);
 							new GameWindow(AnagramsClient.this, gameParams, username, true, gameLog);
-                            send(new JSONObject().put("cmd", "watchgame").put("gameID", gameID));
+                            send("watchgame", new JSONObject().put("gameID", gameID));
 							Platform.runLater(() -> watchButton.setDisable(false));
 						}
 					}
@@ -764,21 +765,21 @@ class AnagramsClient extends JProApplication {
 				final JSONObject json = commandQueue.take();
 				final String cmd = json.getString("cmd");
 
-				if (!cmd.equals("note") && !cmd.equals("nexttiles") && !cmd.equals("chat"))
-					System.out.println("command received: " + json);
+//				if (!cmd.equals("note") && !cmd.equals("nexttiles") && !cmd.equals("chat"))
+//					System.out.println("command received: " + json);
 
 				Platform.runLater(() -> {
 					switch (cmd) {
-/*						case "alert" -> {
+						case "addgame" -> new GamePane(json);
+						case "alert" -> {
 							MessageDialog dialog = new MessageDialog(this, "Alert");
-							dialog.setText(data);
+							dialog.setText(json.getString("msg"));
 							dialog.addOkayButton();
 							dialog.show(true);
-						}*/
-						case "ratings" -> updateRatings(json.getJSONArray("ratings"));
-						case "logoffplayer" -> removePlayer(json.getString("name"));
+						}
 						case "chat" -> chatBox.appendText("\n" + json.getString("msg"));
-						case "addgame" -> new GamePane(json);
+						case "logoffplayer" -> removePlayer(json.getString("name"));
+						case "ratings" -> updateRatings(json.getJSONArray("ratings"));
 						case "removegame" -> gamesPanel.getChildren().remove(gamePanes.remove(json.getString("gameID")));
 						case "tree" -> {
 							if (explorer.isVisible())
@@ -788,29 +789,29 @@ class AnagramsClient extends JProApplication {
 
 						//GamePane commands
 						default -> {
-							String gameID = json.optString("gameID", null);
-							if (gameID == null) break;
+							String gameID = json.optString("gameID");
+							if(gameID.isEmpty()) break;
 							GamePane gamePane = gamePanes.get(gameID);
 							if(gamePane == null) break;
 
 							switch (cmd) {
-								case "takeseat" -> gamePane.addPlayerToGame(json.getString("name"), json.getString("rating"));
-								case "removeplayer" -> gamePane.removePlayerFromGame(json.getString("name"));
-								case "note" -> gamePane.setNotificationLabel(json.getString("msg"));
 								case "endgame" -> gamePane.endGame(json.getJSONArray("gamelog"));
+								case "note" -> gamePane.setNotificationLabel(json.getString("msg"));
+								case "removeplayer" -> gamePane.removePlayerFromGame(json.getString("name"));
+								case "takeseat" -> gamePane.addPlayerToGame(json.getString("name"), json.getString("rating"));
 
 								//GameWindow commands
 								default -> {
 									GameWindow gameWindow = gamePane.getGame();
 									if (gameWindow == null) break;
 									switch (cmd) {
-										case "nexttiles" -> gameWindow.setTiles(json.getString("tiles"));
-										case "makeword" -> gameWindow.makeWord(json.getString("player"), json.getString("word"), json.getString("tiles"));
-										case "steal" -> gameWindow.doSteal(json.getString("shortPlayer"), json.getString("shortWord"), json.getString("longPlayer"),json.getString("longWord"),json.getString("tiles"));
 										case "abandonseat" -> gameWindow.removePlayer(json.getString("name"));
 										case "gamechat" -> gameWindow.handleChat(json.getString("msg"));
 										case "gamestate" -> gameWindow.showPosition(json);
+										case "makeword" -> gameWindow.makeWord(json.getString("player"), json.getString("word"), json.getString("tiles"));
+										case "nexttiles" -> gameWindow.setTiles(json.getString("tiles"));
 										case "plays" -> gameWindow.showPlays(json.getJSONObject("data"));
+										case "steal" -> gameWindow.doSteal(json.getString("shortPlayer"), json.getString("shortWord"), json.getString("longPlayer"),json.getString("longWord"),json.getString("tiles"));
 
 										default -> System.out.println("Command not recognized: " + cmd);
 									}
@@ -850,20 +851,21 @@ class AnagramsClient extends JProApplication {
 		if(connected) {
 			for(GameWindow gameWindow : gameWindows.values())
 				exitGame(gameWindow.gameID, gameWindow.isWatcher);
-			send(new JSONObject().put("cmd", "logoff"));
+			send("logoff");
 		}
 		disconnect();
 	}
 
 
 	/**
-	 * Transmit a command to the server
-	 *
-	 * @param json The command to send
+	 * Transmits a command to the server
+	 * @param cmd The command to send
+	 * @param json The payload of data
 	 */
-	void send(JSONObject json) {
+	void send(String cmd, JSONObject json) {
+
 		try {
-			serverOut.write((json + "\n").getBytes());
+			serverOut.write((json.put("cmd", cmd) + "\n").getBytes());
 		}
 		catch (Exception e) {
 			System.out.println("Command not transmitted: \n" + json);
@@ -871,10 +873,12 @@ class AnagramsClient extends JProApplication {
 	}
 
 	/**
-	 *
+	 * Transmits a simple command ot the server which consists an empty JSONObject
+	 * containing just the command.
+	 * @param cmd The command to send
 	 */
-	void send(String cmd, JSONObject json) {
-		send(json.put("cmd", cmd));
+	void send(String cmd) {
+		send(cmd, new JSONObject());
 	}
 
 }
