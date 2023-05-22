@@ -195,6 +195,7 @@ public class Server extends Thread {
 	}
 	
 	/**
+	 * //deprecated
 	* Send a message or command to every client
 	*
 	* @param msg the message to be sent

@@ -181,8 +181,7 @@ class WordExplorer extends PopWindow {
         textField.clear();
         treePanel.getChildren().clear();
         messagePane.clear();
-        client.send(new JSONObject()
-                .put("cmd", "lookup")
+        client.send("lookup", new JSONObject()
                 .put("lexicon", lexicon)
                 .put("query", query.replaceAll("[^a-zA-z]","").toUpperCase())
         );

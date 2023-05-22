@@ -1,6 +1,7 @@
 package client;
 
 import com.jpro.webapi.HTMLView;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
@@ -80,6 +81,7 @@ class MessageDialog extends PopWindow {
 
     void addOkayButton() {
         buttonPane.getChildren().add(okayButton);
+        Platform.runLater(okayButton::requestFocus);
         okayButton.setOnAction(e -> hide());
     }
 

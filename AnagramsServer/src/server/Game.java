@@ -338,8 +338,7 @@ class Game {
 		saveState();
 
 		//inform everyone of the newRobot
-		server.broadcast(new JSONObject()
-				.put("cmd", "takeseat")
+		server.broadcast("takeseat", new JSONObject()
 				.put("gameID", gameID)
 				.put("name", newRobot.name)
 				.put("rating", String.valueOf(newRobot.getRating())));
@@ -514,7 +513,6 @@ class Game {
 			}
 		}
 
-
 		return true;
 	}
 
@@ -625,10 +623,11 @@ class Game {
 	synchronized JSONArray getFormattedWordList() {
 		JSONArray json = new JSONArray();
 		for(Player player : players.values()) {
+
 			json.put(new JSONObject()
-					.put("name", player.name)
-					.put("rating", String.valueOf(player.getRating()))
-					.put("words", new JSONArray(player.words)));
+				.put("name", player.name)
+				.put("rating", String.valueOf(player.getRating()))
+				.put("words", new JSONArray(player.words.stream().map(word -> dictionary.annotate(word)).toArray())));
 		}
 		return json;
 	}

@@ -191,10 +191,8 @@ class GameWindow extends PopWindow {
             chatField.setOnAction(ae -> {
                 String msg = String.format("%1.500s", chatField.getText()); //truncate to 500 characters
                 if(!msg.isBlank())
-                    client.send(new JSONObject()
-                            .put("cmd", "gamechat")
+                    client.send("gamechat", new JSONObject()
                             .put("gameID", gameID)
-                            .put("player", username)
                             .put("msg", username + ": " + chatField.getText())
                     );
                 chatField.clear();
@@ -582,6 +580,7 @@ class GameWindow extends PopWindow {
          * Makes the GamePanel available for another player to occupy.
          */
         private void reset() {
+            words.clear();
             wordPane.getChildren().clear();
             isAvailable = true;
             playerNameLabel.setText("");
@@ -750,8 +749,7 @@ class GameWindow extends PopWindow {
             private Word(String symbols, boolean savingSpace) {
                 if(symbols.endsWith("#") || symbols.endsWith("$")) {
                     letters = symbols.substring(0, symbols.length() - 1);
-                    if(client.prefs.getBoolean("highlight_words"))
-                        highlight = true;
+                    highlight = client.prefs.getBoolean("highlight_words");
                 }
                 else {
                     letters = symbols;
@@ -759,7 +757,7 @@ class GameWindow extends PopWindow {
 
                 tileWidth = savingSpace ? 12 : 16;
                 tileHeight = savingSpace ? 16 : 20;
-                tileFontSize = savingSpace ? 18: 24;
+                tileFontSize = savingSpace ? 18 : 24;
 
                 if (gameOver || isWatcher) {
                     setOnMouseClicked(event -> {
@@ -960,7 +958,7 @@ class GameWindow extends PopWindow {
                 wordDisplay.hide();
             } else {
                 wordDisplay.show(false);
-                client.send(new JSONObject().put("cmd", "findplays").put("gameID", gameID).put("position", position));
+                client.send("findplays", new JSONObject().put("gameID", gameID).put("position", position));
             }
         });
 
@@ -1039,9 +1037,9 @@ class GameWindow extends PopWindow {
 
         players.clear();
 
-        for (int i = 0; i < 3; i++) {
-            gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
-            gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
+        for (int c = 0; c < 3; c++) {
+            gameGrid.getColumnConstraints().get(c).setMinWidth(minPanelWidth);
+            gameGrid.getColumnConstraints().get(c).setPrefWidth(326);
         }
         gameGrid.layout();
 
@@ -1057,8 +1055,7 @@ class GameWindow extends PopWindow {
         }
 
         if (wordDisplay.isVisible()) {
-            client.send(new JSONObject()
-                    .put("cmd", "findplays")
+            client.send("findplays", new JSONObject()
                     .put("gameID", gameID)
                     .put("position", position)
             );
@@ -1188,8 +1185,7 @@ class GameWindow extends PopWindow {
                         //Attempt to steal
                         Play play = new Play(shortWord.letters, input, tilePool);
                         if (play.isValid()) {
-                            client.send(new JSONObject()
-                                .put("cmd", "steal")
+                            client.send("steal", new JSONObject()
                                 .put("gameID", gameID)
                                 .put("shortPlayer", playerName)
                                 .put("shortWord", shortWord.letters)
@@ -1204,8 +1200,7 @@ class GameWindow extends PopWindow {
             //Attempt to form word from pool
             Play play = new Play("", input, tilePool);
             if (play.isValid()) {
-                client.send(new JSONObject()
-                        .put("cmd", "makeword")
+                client.send("makeword", new JSONObject()
                         .put("gameID", gameID)
                         .put("player", username)
                         .put("word", input)

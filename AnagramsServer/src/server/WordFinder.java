@@ -150,7 +150,7 @@ class WordFinder {
                     possibleSteals.put(new JSONObject()
                             .put("shortWord", shortWord)
                             .put("steal", child.getLongSteal())
-                            .put("longWord", play.nextWord() + dictionary.getWord(entry).suffix));
+                            .put("longWord", dictionary.annotate(play.nextWord())));
                 }
             }
         }

@@ -204,6 +204,6 @@ class GameMenu extends PopWindow {
 
         new GameWindow(client, newGameParams, client.username, false, null);
 
-        client.send(new JSONObject().put("cmd", "newgame").put("params", newGameParams));
+        client.send("newgame", new JSONObject().put("params", newGameParams));
     }
 }
