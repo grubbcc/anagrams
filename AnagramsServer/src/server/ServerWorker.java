@@ -5,9 +5,15 @@ import org.json.JSONObject;
 
 import java.net.Socket;
 import java.io.*;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
 
 /**
 * Handles tasks for a client on the server side including communication between server and client.
@@ -17,11 +23,28 @@ class ServerWorker implements Runnable {
 	private final Socket clientSocket;
 	private String username;
 	final Server server;
-	private boolean guest = true;
 	private OutputStream outputStream;
 	private InputStream inputStream;
 	private BufferedReader reader;
 	private UserData prefs;
+
+	private static final Properties props = new Properties() {{
+		put("mail.smtp.auth", "true");
+		put("mail.smtp.starttls.enable", "true");
+		put("mail.smtp.ssl.protocols", "TLSv1.2");
+		put("mail.smtp.host", "mail.anagrams.site");
+		put("mail.smtp.port", "587");
+	}};
+	private static final String from = "admin@anagrams.site";
+	private String code;
+	private final Session session = Session.getInstance(props, new Authenticator() {
+		@Override
+		protected PasswordAuthentication getPasswordAuthentication() {
+			Preferences prefs = Preferences.userNodeForPackage(Server.class);
+			String password = prefs.get("password", "");
+			return new PasswordAuthentication(from, password);
+		}
+	});
 
 	/**
 	*
@@ -48,32 +71,154 @@ class ServerWorker implements Runnable {
 		}
 	}
 
+    /**
+     *
+     * Checks whether the provided username is available and, if not, whether
+     * the username is registered or currently being used.
+     */
+    private void checkUsername(String username) {
+		boolean inUse = server.getUsernames().contains(username);
+
+		try {
+			boolean registered = Preferences.userNodeForPackage(Server.class).nodeExists(username);
+			boolean available = !(inUse || registered);
+			send("availability", new JSONObject()
+					.put("available", available)
+					.put("registered", registered));
+		} catch (BackingStoreException e) {
+			throw new RuntimeException(e);
+		}
+    }
+
+	/**
+	 * Check if the provided email address is already associated with a username. If it is not,
+	 * send an email with a 6-digit code to verify ownership of the email account.
+	 */
+	void checkEmail(String email) {
+
+		Preferences prefs = Preferences.userNodeForPackage(Server.class);
+		try {
+			for (String user : prefs.childrenNames()) {
+				if (prefs.node(user).get("email", "").equals(email)) {
+					send("availability", new JSONObject().put("available", false));
+					return;
+				}
+			}
+		}
+		catch(BackingStoreException bse) {
+			bse.printStackTrace();
+		}
+		send("availability", new JSONObject().put("available", true));
+		try {
+			Random rand = new Random();
+			code = String.format("%06d", rand.nextInt(1000000));
+
+			MimeMessage message = new MimeMessage(session);
+			message.setFrom(new InternetAddress(from));
+			message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
+			message.setSubject("Anagrams registration");
+			message.setText("Your registration code for Anagrams is: " + code);
+
+			ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
+			emailExecutor.execute(() -> {
+				try {
+					Transport.send(message);
+				}
+				catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			});
+			emailExecutor.shutdown();
+		}
+		catch (MessagingException mex) {
+			mex.printStackTrace();
+		}
+
+	}
+
+	/**
+	 *
+	 */
+	private void register(JSONObject json) {
+		if(json.getString("code").equals(code)) {
+			String username = json.getString("username");
+			Preferences prefs = Preferences.userNodeForPackage(Server.class).node(username);
+
+			prefs.put("password", json.getString("password"));
+			prefs.put("email", json.getString("email"));
+			handleLogin(json.getString("username"), false);
+		}
+		else {
+			send("code", new JSONObject().put("valid", false));
+		}
+	}
+
 	/**
 	 * Checks whether the provided password matches the stored data
 	 *
 	 */
 	private void checkPassword(String username, String password) {
-		System.out.println("received password: " + password);
-		Preferences prefs = Preferences.userNodeForPackage(getClass());
-		System.out.println("stored password: " + prefs.get("password", null));
-		try {
-			if(prefs.nodeExists(username)) {
-				if(password.equals(prefs.node(username).get("password", null))) {
-					System.out.println("response 1");
-					send(new JSONObject().put("cmd", "password").put("valid", true));
-					return;
-				}
-				System.out.println("response 2");
-				send(new JSONObject().put("cmd", "password").put("valid", false));
-				return;
-			}
-			System.out.println("response 3");
-			send(new JSONObject().put("cmd", "username").put("valid", false));
 
-		} catch (BackingStoreException e) {
-			throw new RuntimeException(e);
+		Preferences prefs = Preferences.userNodeForPackage(Server.class).node(username);
+
+		if(password.equals(prefs.get("password", ""))) {
+			send("password", new JSONObject().put("valid", true));
 		}
+		else {
+			send("password", new JSONObject().put("valid", false));
+		}
+	}
 
+
+	/**
+	 *
+	 */
+	void recover(JSONObject json) {
+		Preferences prefs = Preferences.userNodeForPackage(Server.class);
+		String email = json.getString("email");
+		String type = json.getString("type");
+		try {
+			for (String user : prefs.childrenNames()) {
+				if (prefs.node(user).get("email", "").equals(email)) {
+					MimeMessage message = new MimeMessage(session);
+					try {
+						message.setFrom(new InternetAddress(from));
+						message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
+						if(type.equals("password")) {
+							message.setSubject("Password recovery");
+							message.setText("Your password for Anagrams is " + new String(Base64.getDecoder().decode(prefs.node(user).get("password", ""))));
+						}
+						else {
+							message.setSubject("Username recovery");
+							message.setText("Your username for Anagrams is " + user);
+						}
+						send(type + "-recovery", new JSONObject().put("success", true));
+
+						ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
+						emailExecutor.execute(() -> {
+
+							try {
+								Transport.send(message);
+							} catch (MessagingException e) {
+								throw new RuntimeException(e);
+							}
+
+						});
+						emailExecutor.shutdown();
+						return;
+					}
+					catch(MessagingException mex) {
+						mex.printStackTrace();
+					}
+				}
+
+			}
+			//email not found among registered accounts
+			send(type + "-recovery", new JSONObject().put("success", false));
+		}
+		catch(BackingStoreException bse) {
+			bse.printStackTrace();
+			}
 	}
 
 	/**
@@ -96,7 +241,6 @@ class ServerWorker implements Runnable {
 		send("login", prefs.get());
 
 		this.username = username;
-		this.guest = guest;
 		System.out.println("User logged in successfully: " + username);
 
 		for (String s : server.announcements) {
@@ -104,7 +248,7 @@ class ServerWorker implements Runnable {
 		}
 
 		for (String s : server.chatLog) {
-			send(new JSONObject().put("cmd", "chat").put("msg", s));
+			send("chat", new JSONObject().put("msg", s));
 		}
 
 		for (ServerWorker worker : server.getWorkers()) {
@@ -123,18 +267,18 @@ class ServerWorker implements Runnable {
 						.put("rating", game.players.get(playerName).getRating() + ""));
 				}
 				if(game.gameOver) {
-					send(new JSONObject().put("cmd","endgame").put("gameID", game.gameID).put("gamelog", game.gameLog));
+					send("endgame", new JSONObject().put("gameID", game.gameID).put("gamelog", game.gameLog));
 				}
 				else {
 					for(Player player : game.players.values()) {
 						if(player.abandoned)
-							send(new JSONObject().put("cmd", "abandonseat").put("gameID", game.gameID).put("name", player.name));
+							send("abanodnseat", new JSONObject().put("gameID", game.gameID).put("name", player.name));
 					}
 					if(game.paused) {
-						send(new JSONObject().put("cmd", "note").put("game", game.gameID).put("msg", "Game paused"));
+						send("note", new JSONObject().put("game", game.gameID).put("msg", "Game paused"));
 					}
 					else if(game.timeRemaining > 0) {
-						send(new JSONObject().put("cmd", "note").put("game", game.gameID).put("msg", "Time remaining: " + game.timeRemaining));
+						send("note", new JSONObject().put("game", game.gameID).put("msg", "Time remaining: " + game.timeRemaining));
 					}
 				}
 			}
@@ -143,6 +287,13 @@ class ServerWorker implements Runnable {
 		//notify other players of the new player
 		server.addWorker(username, this);
 		server.broadcast("userdata", prefs.getPublicData());
+	}
+
+	/**
+	 *
+	 */
+	void deleteAccount() {
+		prefs.remove();
 	}
 
 	/**
@@ -182,7 +333,7 @@ class ServerWorker implements Runnable {
 
 		Thread.currentThread().interrupt();
 	}
-	
+
 	/**
 	* Creates the game and informs all players
 	*/
@@ -205,7 +356,6 @@ class ServerWorker implements Runnable {
 
 		String line;
 		while((line = reader.readLine()) != null) {
-			System.out.println("command received: " + line);
 			JSONObject json;
 			String cmd;
 			try {
@@ -218,14 +368,19 @@ class ServerWorker implements Runnable {
 			}
 
 			switch (cmd) {
-				case "login" -> handleLogin(json.getString("name"), json.getBoolean("guest"));
-				case "password" -> checkPassword(json.getString("name"), json.getString("password"));
- 				case "logoff" -> handleLogoff();
 				case "chat" -> {
 					server.logChat(json.getString("msg"));
 					server.broadcast(json);
 				}
+				case "delete" -> deleteAccount();
+				case "email" -> checkEmail(json.getString("email"));
+				case "forgot" -> recover(json);
+				case "login" -> handleLogin(json.getString("name"), json.getBoolean("guest"));
+				case "logoff" -> handleLogoff();
 				case "newgame" -> handleCreateGame(json.getJSONObject("params"));
+				case "password" -> checkPassword(json.getString("name"), json.getString("password"));
+				case "register" -> register(json);
+				case "username" -> checkUsername(json.getString("username"));
 				case "lookup" -> {
 					WordTree tree = new WordTree(json.getString("query"), server.getDictionary(json.getString("lexicon")));
 					tree.generateJSON(tree.rootWord, tree.rootNode, 1);
@@ -239,33 +394,40 @@ class ServerWorker implements Runnable {
 
 				//game-related commands
 				default -> {
-					Game game = server.getGame(json.getString("gameID"));
-					if(game == null) break;
+					String gameID = json.optString("gameID");
+					if(gameID.isEmpty()) {
+						System.out.println("Error: command not recognized " + line);
+						break;
+					}
+					Game game = server.getGame(json.optString("gameID"));
 
-					switch(cmd) {
-						case "makeword" -> {
-							if (server.getDictionary(game.lexicon).contains(json.getString("word")))
-								game.doMakeWord(json.getString("player"), json.getString("word"));
-						}
-						case "steal" -> {
-							if (server.getDictionary(game.lexicon).contains(json.getString("longWord"))) {
-								game.doSteal(json.getString("shortPlayer"), json.getString("shortWord"), json.getString("longPlayer"), json.getString("longWord"));
+					if(game != null) {
+						switch (cmd) {
+							case "findplays" -> send(game.findPlays(json.getInt("position")));
+							case "gamechat" -> game.notifyRoom(json);
+							case "joingame" -> game.addPlayer(new Player(game, username, prefs));
+							case "makeword" -> {
+								if (server.getDictionary(game.lexicon).contains(json.getString("word")))
+									game.doMakeWord(json.getString("player"), json.getString("word"));
 							}
+							case "steal" -> {
+								if (server.getDictionary(game.lexicon).contains(json.getString("longWord"))) {
+									game.doSteal(json.getString("shortPlayer"), json.getString("shortWord"), json.getString("longPlayer"), json.getString("longWord"));
+								}
+							}
+							case "stopplaying" -> game.removePlayer(username);
+							case "stopwatching" -> game.removeWatcher(username);
+							case "watchgame" -> game.addWatcher(this);
 						}
-						case "gamechat" -> game.notifyRoom(json);
-						case "joingame" -> game.addPlayer(new Player(game, username, prefs));
-						case "watchgame" -> game.addWatcher(this);
-						case "stopplaying" -> game.removePlayer(username);
-						case "stopwatching" -> game.removeWatcher(username);
-						case "findplays" -> send(game.findPlays(json.getInt("position")));
-						default -> System.out.println("Error: Command not recognized: " + line);
 					}
 				}
 			}
 		}
 	}
 
-	/**
+    /**
+	 *
+	 * //deprecated
 	* Inform the player about events happening on the server
 	*
 	* @param json The message to be sent.
@@ -295,5 +457,12 @@ class ServerWorker implements Runnable {
 	 */
 	synchronized void send(String cmd, JSONObject json) {
 		send(json.put("cmd", cmd));
+	}
+
+	/**
+	 *
+	 */
+	synchronized void send(String cmd) {
+		send(cmd, new JSONObject());
 	}
 }
