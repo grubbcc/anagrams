@@ -28,4 +28,5 @@ repositories {
 dependencies {
     implementation 'org.json:json:20230227'
     implementation 'log4j:log4j:1.2.17'
+    implementation 'javax.mail:mail:1.4.7'
 }

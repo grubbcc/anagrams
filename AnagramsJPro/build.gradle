@@ -44,7 +44,6 @@ jpro {
 
 /** ******************* Dependencies *********************/
 dependencies {
-    implementation 'javax.mail:mail:1.4.7'
     implementation "com.sandec:mdfx:0.2.7"
     implementation "one.jpro:one.jpro.sound:0.1.0"
     implementation 'org.json:json:20230227'
