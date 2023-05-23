@@ -1,0 +1,16 @@
+.text-area {
+	-fx-font-family: "Courier New Bold";
+    -fx-font-size: 20px;
+}
+
+.text-area .content {
+    -fx-background-color:
+    	linear-gradient(
+			from 0px 0px to 0px 24px,
+			repeat,
+			gainsboro,
+			gainsboro 6.25%,
+			cornsilk 6.25%,
+			cornsilk
+		);
+}
