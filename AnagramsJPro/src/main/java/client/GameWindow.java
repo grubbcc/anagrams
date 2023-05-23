@@ -72,6 +72,7 @@ class GameWindow extends PopWindow {
     private final ImageView robotImage = new ImageView(blackRobot);
     private final Timeline blinker = new Timeline();
     final WordDisplay wordDisplay;
+    Notepad notepad;
 
     private final boolean isMobile;
     private final double minPanelWidth;
@@ -127,6 +128,7 @@ class GameWindow extends PopWindow {
 
         wordClip = AudioClip.getAudioClip(wordSound, client.stage);
         wordDisplay = new WordDisplay();
+        notepad = new Notepad(client.anchor);
 
         //title bar
         setTitle(gameName.replaceAll("%", " "));
@@ -350,6 +352,13 @@ class GameWindow extends PopWindow {
         blinker.play();
         wordBuilder.getChildren().add(caret);
 
+
+        ImageView notepadImage = new ImageView("/images/notepad.png");
+        notepadImage.setPreserveRatio(true);
+        notepadImage.setFitHeight(26);
+        notepadImage.setOnMouseClicked(event -> notepad.show(false));
+
+
         if (isMobile) {
             StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
             controlPanel.getChildren().remove(infoPane);
@@ -359,7 +368,7 @@ class GameWindow extends PopWindow {
             textField.setPrefWidth(310);
             textStack.getChildren().addAll(textField, wordBuilder);
             controlPanel.getChildren().remove(infoPane);
-            controlPanel.getChildren().addAll(textStack, infoPane);
+            controlPanel.getChildren().addAll(textStack, infoPane, notepadImage);
         }
 
         textField.requestFocus();
@@ -429,6 +438,7 @@ class GameWindow extends PopWindow {
         super.hide();
         wordDisplay.hide();
         explorer.hide();
+        notepad.hide();
         blinker.stop();
         client.anchor.getChildren().remove(hideButton);
         client.exitGame(gameID, isWatcher);
@@ -623,8 +633,6 @@ class GameWindow extends PopWindow {
                     if (bounds.getMaxX() + (wordPane.getVgap() + newWord.width()) / 2 > paneWidth) {
                         if (!savingSpace.get()) {
                             savingSpace.set(true);
-                            System.out.println("outgrew available space");
-                            System.out.println(words);
                             addWords(words.keySet());
                             return;
                         } else if (column >= 0) {
