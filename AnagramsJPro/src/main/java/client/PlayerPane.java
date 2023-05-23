@@ -270,10 +270,10 @@ class PlayerPane extends PopWindow {
                 infoDialog.setText("Your account has been deleted. You will remain\n" +
                         "logged in as a guest until you close the application.");
                 infoDialog.addOkayButton();
-                Platform.runLater(() -> infoDialog.show(true));
+                infoDialog.show(true);
             });
             confirmDialog.noButton.setOnAction(click -> confirmDialog.hide());
-            Platform.runLater(() -> confirmDialog.show(true));
+            confirmDialog.show(true);
         });
         infoIcon.setOnMouseClicked(e -> {
             codePane.setText(sampleMarkdown);
