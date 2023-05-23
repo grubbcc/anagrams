@@ -137,7 +137,8 @@ class ServerWorker implements Runnable {
 	}
 
 	/**
-	 *
+	 * Check if the user has provided the correct registration code that was sent to their email.
+	 * If so, save username, password, and email to the prefs.xml file and log in.
 	 */
 	private void register(JSONObject json) {
 		if(json.getString("code").equals(code)) {
@@ -154,8 +155,7 @@ class ServerWorker implements Runnable {
 	}
 
 	/**
-	 * Checks whether the provided password matches the stored data
-	 *
+	 * Checks whether the provided password matches the stored data and informs the user.
 	 */
 	private void checkPassword(String username, String password) {
 
@@ -171,7 +171,7 @@ class ServerWorker implements Runnable {
 
 
 	/**
-	 *
+	 * Provides the username/password associated with the given email address, if any.
 	 */
 	void recover(JSONObject json) {
 		Preferences prefs = Preferences.userNodeForPackage(Server.class);
@@ -260,8 +260,7 @@ class ServerWorker implements Runnable {
 			for(Game game : server.getGames()) {
 				send(game.params.put("cmd", "addgame"));
 				for(String playerName : game.players.keySet()) {
-					send(new JSONObject()
-						.put("cmd", "takeseat")
+					send("takeseat", new JSONObject()
 						.put("gameID", game.gameID)
 						.put("name", playerName)
 						.put("rating", game.players.get(playerName).getRating() + ""));
@@ -272,13 +271,13 @@ class ServerWorker implements Runnable {
 				else {
 					for(Player player : game.players.values()) {
 						if(player.abandoned)
-							send("abanodnseat", new JSONObject().put("gameID", game.gameID).put("name", player.name));
+							send("abandonseat", new JSONObject().put("gameID", game.gameID).put("name", player.name));
 					}
 					if(game.paused) {
-						send("note", new JSONObject().put("game", game.gameID).put("msg", "Game paused"));
+						send("note", new JSONObject().put("gameID", game.gameID).put("msg", "Game paused"));
 					}
 					else if(game.timeRemaining > 0) {
-						send("note", new JSONObject().put("game", game.gameID).put("msg", "Time remaining: " + game.timeRemaining));
+						send("note", new JSONObject().put("gameID", game.gameID).put("msg", "Time remaining: " + game.timeRemaining));
 					}
 				}
 			}
