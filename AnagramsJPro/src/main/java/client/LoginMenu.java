@@ -220,7 +220,7 @@ class LoginMenu extends PopWindow {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            disconnect();
         }
     }
 
@@ -287,7 +287,7 @@ class LoginMenu extends PopWindow {
             }
         }
         catch (IOException e) {
-            e.printStackTrace();
+            disconnect();
         }
         return false;
     }
