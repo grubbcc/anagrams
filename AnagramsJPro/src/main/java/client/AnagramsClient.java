@@ -334,7 +334,7 @@ class AnagramsClient extends JProApplication {
 			dialog.addYesNoButtons();
 			dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
 			dialog.noButton.setOnAction(e -> dialog.hide());
-			Platform.runLater(() -> dialog.show(true));
+			dialog.show(true);
 			return false;
 		}
 
@@ -448,7 +448,7 @@ class AnagramsClient extends JProApplication {
 			}
 			dialog.hide();
 		});
-		Platform.runLater(() -> dialog.show(true));
+		dialog.show(true);
 	}
 
 
@@ -578,6 +578,7 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 		private void setNotificationLabel(String note) {
+			System.out.println("note: " + note);
 			notificationLabel.setText(note);
 			if (gameWindows.containsKey(gameID)) {
 				gameWindows.get(gameID).setNotificationArea(note);
@@ -741,12 +742,14 @@ class AnagramsClient extends JProApplication {
 					if (connected) {
 						logOut();
 					}
-					MessageDialog dialog = new MessageDialog(this, "Connection error");
-					dialog.setText("The connection to the server has been lost. Try to reconnect?");
-					dialog.addYesNoButtons();
-					dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
-					dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
-					Platform.runLater(() -> dialog.show(true));
+					Platform.runLater(() -> {
+						MessageDialog dialog = new MessageDialog(this, "Connection error");
+						dialog.setText("The connection to the server has been lost. Try to reconnect?");
+						dialog.addYesNoButtons();
+						dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
+						dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
+						dialog.show(true);
+					});
 				}
 			}
 		}
