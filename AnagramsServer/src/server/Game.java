@@ -159,11 +159,11 @@ class Game {
 			if(countdown > 0) {
 				if(tilesPlayed < minLength) {
 					String message = "Game will begin in " + countdown + " seconds";
-					server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
+					server.broadcast("note", new JSONObject().put("gameID", gameID).put("msg", message));
 				}
 				else if (timeRemaining > 0) {
 					String message = "Game will resume in " + countdown + " seconds";
-					server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
+					server.broadcast("note", new JSONObject().put("gameID", gameID).put("msg", message));
 				}
 				countdown--;
 				return;
@@ -299,16 +299,12 @@ class Game {
 		}
 
 		//inform newPlayer of players and their words
-		server.getWorker(newPlayer.name).ifPresent(p -> p.send(getState()
-				.put("cmd", "gamestate")
-				.put("gameID", gameID)
-		));
+		server.getWorker(newPlayer.name).ifPresent(p -> p.send("gamestate", getState().put("gameID", gameID)));
 
 		//inform newPlayer of inactive players
 		for (Player player : players.values()) {
 			if (player.abandoned)
-				server.getWorker(newPlayer.name).ifPresent(p -> p.send(new JSONObject()
-						.put("cmd", "abandonseat")
+				server.getWorker(newPlayer.name).ifPresent(p -> p.send("abandonseat", new JSONObject()
 						.put("gameID", gameID)
 						.put("name", player.name)
 				));
@@ -375,8 +371,7 @@ class Game {
 			stopped = true;
 			gameTimer.cancel();
 			if(timeRemaining > 0) {
-				server.broadcast(new JSONObject()
-						.put("cmd", "note")
+				server.broadcast("note", new JSONObject()
 						.put("gameID", gameID)
 						.put("msg", "Time remaining: " + timeRemaining));
 			}
@@ -403,17 +398,12 @@ class Game {
 
 		if(!gameOver) {
 			//inform newWatcher of players and their words
-			newWatcher.send(getState()
-					.put("cmd", "gamestate")
-					.put("gameID", gameID)
+			newWatcher.send("gamestate", getState().put("gameID", gameID)
 			);
 			//inform newWatcher of inactive players
 			for(Player player : players.values()) {
 				if(player.abandoned) {
-					newWatcher.send(new JSONObject()
-						.put("cmd", "abandonseat")
-						.put("gameID", gameID)
-						.put("name", player.name));
+					newWatcher.send("abandonseat", new JSONObject().put("gameID", gameID).put("name", player.name));
 				}
 			}
 		}
