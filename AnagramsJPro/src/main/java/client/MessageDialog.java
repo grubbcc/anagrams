@@ -91,6 +91,7 @@ class MessageDialog extends PopWindow {
 
     void addYesNoButtons() {
         buttonPane.getChildren().addAll(yesButton, noButton);
+        Platform.runLater(yesButton::requestFocus);
     }
 
     /**
