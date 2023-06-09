@@ -27,11 +27,11 @@ class WordTree {
 	/**
 	 * Generates a tree from an existing trie
 	 */
-	WordTree(String rootWord, AlphagramTrie trie) {
-		this.rootWord = rootWord.toUpperCase();
+	WordTree(String root, AlphagramTrie trie) {
+		rootWord = root.toUpperCase();
 		Word trieNode = trie.getWord(rootWord);
 		rootNode = new TreeNode(Objects.requireNonNullElseGet(trieNode,
-				() -> new Word(rootWord.toUpperCase(), "", "")), "");
+				() -> new Word(rootWord, "", "")), "");
 		rootNode.setShortSteal("");
 		rootNode.setProb(1);
 		this.trie = trie;
@@ -47,8 +47,8 @@ class WordTree {
 
 		sort(rootNode);
 
-		if(trie.getWord(rootWord) == null) {
-			this.rootWord = rootWord.toLowerCase();
+		if(trieNode == null) {
+			rootWord = root.toLowerCase();
 		}
 	}
 
@@ -141,13 +141,13 @@ class WordTree {
 	 */
 	void generateJSON(String prefix, TreeNode node, double prob) {
 
-		JSONObject jsonObject = new JSONObject()
+		jsonArray.put(new JSONObject()
 			.put("id", prefix)
 			.put("shortsteal", node.getShortSteal())
 			.put("longsteal", node.getLongSteal())
 			.put("prob", ProbCalc.round(100 * prob, 1))
-			.put("def", node.getWord().definition);
-		jsonArray.put(jsonObject);
+			.put("def", node.getWord().definition)
+		);
 
 		double norm = 0;
 		for (TreeNode child : node.getChildren()) {
