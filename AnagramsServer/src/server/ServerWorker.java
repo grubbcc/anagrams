@@ -355,6 +355,7 @@ class ServerWorker implements Runnable {
 
 		String line;
 		while((line = reader.readLine()) != null) {
+			System.out.println("command received: " + line);
 			JSONObject json;
 			String cmd;
 			try {
@@ -382,7 +383,7 @@ class ServerWorker implements Runnable {
 				case "username" -> checkUsername(json.getString("username"));
 				case "lookup" -> {
 					WordTree tree = new WordTree(json.getString("query"), server.getDictionary(json.getString("lexicon")));
-					tree.generateJSON(tree.rootWord, tree.rootNode, 1);
+					tree.generateJSON(tree.rootWord + tree.rootNode.getWord().suffix, tree.rootNode, 1);
 					send("tree", new JSONObject().put("data", tree.jsonArray));
 				}
 				case "updateprefs" -> prefs.update(json);
@@ -402,9 +403,14 @@ class ServerWorker implements Runnable {
 
 					if(game != null) {
 						switch (cmd) {
-							case "findplays" -> send(game.findPlays(json.getInt("position")));
+							case "findplays" -> send("plays", game.findPlays(json.getInt("position")));
 							case "gamechat" -> game.notifyRoom(json);
-							case "joingame" -> game.addPlayer(new Player(game, username, prefs));
+							case "joingame" -> {
+								if (game.gameOver)
+									game.addWatcher(this);
+								else
+									game.addPlayer(new Player(game, username, prefs));
+							}
 							case "makeword" -> {
 								if (server.getDictionary(game.lexicon).contains(json.getString("word")))
 									game.doMakeWord(json.getString("player"), json.getString("word"));
