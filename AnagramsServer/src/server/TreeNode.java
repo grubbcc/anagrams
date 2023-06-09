@@ -8,7 +8,6 @@ import java.util.LinkedList;
 class TreeNode {
 
     private final Word word;
-//    private final String word;
     private String suffix;
     private final String longSteal;
     private String shortSteal;
@@ -46,6 +45,12 @@ class TreeNode {
         return word.letters;
     }
 
+    /**
+     *
+     */
+    public String getSuffix() {
+        return suffix;
+    }
     /**
      *
      */

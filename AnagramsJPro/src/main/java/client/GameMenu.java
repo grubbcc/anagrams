@@ -1,12 +1,15 @@
 package client;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import org.controlsfx.control.CheckComboBox;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -33,6 +36,7 @@ class GameMenu extends PopWindow {
     private final ChoiceBox<Integer> blankChooser = new ChoiceBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
     private final ChoiceBox<String> lexiconChooser = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
     private final ChoiceBox<String> speedChooser = new ChoiceBox<>(FXCollections.observableArrayList(speedChoices));
+  //  private final MenuButton waitChooser = new MenuButton("10 seconds");
     private final ChoiceBox<String> skillChooser = new ChoiceBox<>(FXCollections.observableArrayList(skillLevelChoices));
 
     private final CheckBox chatBox = new CheckBox("Allow chatting");
@@ -98,6 +102,26 @@ class GameMenu extends PopWindow {
         wordListLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
         final Label speedLabel = new Label("Speed");
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
+        final Label waitLabel = new Label("Wait for");
+        waitLabel.setTooltip(new Tooltip("Game will begin when wait time expires\nor opponents join"));
+
+//        Spinner<Integer> timeChooser = new Spinner<>(10,99, 10, 5);
+//        HBox timeBox = new HBox(timeChooser, new Label(" seconds"));
+//        CustomMenuItem timeOption = new CustomMenuItem(timeBox, false);
+//
+//        Spinner<Integer> opponentsChooser = new Spinner<>(0,5, 1, 1);
+//        HBox opponentsBox = new HBox(opponentsChooser, new Label(" opponents"));
+//        CustomMenuItem opponentsOption = new CustomMenuItem(opponentsBox, false);
+//
+//        ObservableList<String> opponents = FXCollections.observableArrayList(client.playersList.keySet());
+//        opponents.remove(client.username);
+//        CheckComboBox<String> opponentChooser = new CheckComboBox<>(opponents);
+//        HBox opponentBox = new HBox(opponentChooser);
+//        CustomMenuItem opponentOption = new CustomMenuItem(opponentBox, false);
+//
+//        waitChooser.getItems().addAll(timeOption, opponentsOption, opponentOption);
+//
+//        waitChooser.setOn
 
         //choosers
         playersChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("max_players")));
@@ -129,13 +153,15 @@ class GameMenu extends PopWindow {
         grid.add(lexiconChooser, 1, 5);
         grid.add(speedLabel, 0, 6);
         grid.add(speedChooser, 1, 6);
+  //      grid.add(waitLabel, 0, 7);
+    //    grid.add(waitChooser, 1, 7);
         grid.add(chatBox, 0, 7);
         grid.add(watchersBox, 1, 7);
         grid.add(robotBox, 0, 8);
         grid.add(skillChooser, 1, 8);
         grid.add(ratedBox,0, 9);
         grid.add(defaultBox, 1,9);
-        grid.add(startButton, 0, 10);
+        grid.add(startButton, 0, 11);
 
         setTitle("Game Options");
         setContents(grid);
