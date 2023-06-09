@@ -55,8 +55,8 @@ class AlphagramTrie {
 		catch (FileNotFoundException exception) {
 			System.out.println("Word list not found.");
 		}
-		catch (IOException ioexception) {
-			System.out.println(ioexception.getMessage());
+		catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
 		}
 	}
 
@@ -165,6 +165,14 @@ class AlphagramTrie {
 		Word word = getWord(searchKey);
 		if(word == null) return null;
 		return searchKey + word.suffix;
+	}
+
+	/**
+	 *
+	 */
+	String getSuffix(String searchKey) {
+		Word word = getWord(searchKey);
+		return word == null ? "" : word.suffix;
 	}
 
 	/**
