@@ -173,7 +173,7 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     * Instructs the server to retrieve data on a new word
+     * Instructs the server to retrieve data for a new word
      *
      * @param query The contents of the textField (stripped of any non-alphabetic characters)
      */
@@ -183,7 +183,7 @@ class WordExplorer extends PopWindow {
         messagePane.clear();
         client.send("lookup", new JSONObject()
                 .put("lexicon", lexicon)
-                .put("query", query.replaceAll("[^a-zA-z]","").toUpperCase())
+                .put("query", query.replaceAll("[^a-zA-z]",""))
         );
 
     }
