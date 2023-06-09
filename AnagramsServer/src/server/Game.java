@@ -52,7 +52,7 @@ class Game {
 	int timeRemaining;
 	private Robot robotPlayer;
 
-	final HashMap<Integer, JSONObject> plays = new HashMap<>();
+	final HashMap<Integer, String> plays = new HashMap<>();		//for some reason HashMap<Integer,JSONObject> fails
 
 	final ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, ServerWorker> watchers = new ConcurrentHashMap<>();
@@ -93,9 +93,9 @@ class Game {
 		for (int i = 0; i < minLength - 1; i++)
 			drawTile();
 
-		saveState();
-
 		timeRemaining = delay*tileBag.length + 31;
+
+		saveState();
 
 		if(hasRobot) {
 			addRobot(new Robot(this, skillLevel, dictionary, minLength, blankPenalty));
@@ -158,7 +158,7 @@ class Game {
 			//countdown to start or resume game
 			if(countdown > 0) {
 				if(tilesPlayed < minLength) {
-					String message = "Game will begin in " + countdown + " seconds";
+					String message = "Game will begin in " + countdown + " second" + (countdown == 1 ? "" : "s");
 					server.broadcast("note", new JSONObject().put("gameID", gameID).put("msg", message));
 				}
 				else if (timeRemaining > 0) {
@@ -232,6 +232,8 @@ class Game {
 		gameTimer.cancel();
 		gameOver = true;
 
+		saveState();
+
 		if(rated) {
 			JSONArray ratings = new JSONArray();
 			StringJoiner ratingsSummary = new StringJoiner(", ", "New ratings: ", "");
@@ -250,15 +252,11 @@ class Game {
 					.put("msg", ratingsSummary.toString()));
 			}
 
-			server.broadcast(new JSONObject()
-				.put("cmd", "ratings")
+			server.broadcast("ratings", new JSONObject()
 				.put("ratings", ratings));
 		}
 
-		saveState();
-
-		server.broadcast(new JSONObject()
-			.put("cmd", "endgame")
+		server.broadcast("endgame", new JSONObject()
 			.put("gameID", gameID)
 			.put("gamelog", gameLog));
 
@@ -283,10 +281,14 @@ class Game {
 	 */
 	synchronized void addPlayer(Player newPlayer) {
 
-		if(players.size() >= maxPlayers) return;
-
-		newPlayer = players.getOrDefault(newPlayer.name, newPlayer);
-		newPlayer.abandoned = false;
+		if(players.keySet().contains(newPlayer.name)) {
+			newPlayer = players.get(newPlayer.name);
+			newPlayer.abandoned = false;
+		}
+		else if(players.size() >= maxPlayers) {
+			System.out.println("could not add " + newPlayer.name + " b/c table was full");
+			return;
+		}
 
 		deleteTimer.cancel();
 
@@ -316,8 +318,7 @@ class Game {
 		saveState();
 
 		//inform everyone of the newPlayer
-		server.broadcast(new JSONObject()
-				.put("cmd", "takeseat")
+		server.broadcast("takeseat", new JSONObject()
 				.put("gameID", gameID)
 				.put("name", newPlayer.name)
 				.put("rating", String.valueOf(newPlayer.getRating())));
@@ -352,10 +353,12 @@ class Game {
 		Player playerToRemove = players.get(playerName);
 		if(playerToRemove == null) return;
 
-		if(playerToRemove.words.isEmpty()) {
+		if(gameOver) {
 			players.remove(playerName);
-			server.broadcast(new JSONObject()
-					.put("cmd", "removeplayer")
+		}
+		else if(playerToRemove.words.isEmpty()) {
+			players.remove(playerName);
+			server.broadcast("removeplayer", new JSONObject()
 					.put("gameID", gameID)
 					.put("name", playerName));
 		}
@@ -370,7 +373,7 @@ class Game {
 		if(players.values().stream().allMatch(player -> player instanceof Robot || player.abandoned)) {
 			stopped = true;
 			gameTimer.cancel();
-			if(timeRemaining > 0) {
+			if(!gameOver) {
 				server.broadcast("note", new JSONObject()
 						.put("gameID", gameID)
 						.put("msg", "Time remaining: " + timeRemaining));
@@ -398,8 +401,8 @@ class Game {
 
 		if(!gameOver) {
 			//inform newWatcher of players and their words
-			newWatcher.send("gamestate", getState().put("gameID", gameID)
-			);
+			newWatcher.send("gamestate", getState().put("gameID", gameID));
+
 			//inform newWatcher of inactive players
 			for(Player player : players.values()) {
 				if(player.abandoned) {
@@ -493,11 +496,10 @@ class Game {
 
 		//if the shortPlayer has abandoned the game and has no words, make room for another player to join
 		Player player = players.get(shortPlayer);
-		if(player.abandoned) {
+		if(player != null && player.abandoned) {
 			if(player.words.isEmpty()) {
 				players.remove(shortPlayer);
-				server.broadcast(new JSONObject()
-						.put("cmd", "removeplayer")
+				server.broadcast("removeplayer", new JSONObject()
 						.put("gameID", gameID)
 						.put("name", player.name));
 			}
@@ -596,12 +598,15 @@ class Game {
 	 */
 	JSONObject findPlays(int position) {
 		synchronized(plays) {
-			return new JSONObject()
-					.put("cmd", "plays")
-					.put("gameID", gameID)
-					.put("data", plays.computeIfAbsent(position, k ->
-							wordFinder.findWords(gameLog.getJSONObject(position))
-					));
+			JSONObject data = new JSONObject().put("gameID", gameID);
+			if(plays.containsKey(position)) {
+				return data.put("data", new JSONObject(this.plays.get(position)));
+			}
+			else {
+				JSONObject plays = wordFinder.findWords(gameLog.getJSONObject(position));
+				this.plays.put(position, plays.toString());
+				return data.put("data", plays);
+			}
 		}
 	}
 
@@ -613,7 +618,6 @@ class Game {
 	synchronized JSONArray getFormattedWordList() {
 		JSONArray json = new JSONArray();
 		for(Player player : players.values()) {
-
 			json.put(new JSONObject()
 				.put("name", player.name)
 				.put("rating", String.valueOf(player.getRating()))
