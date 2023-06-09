@@ -18,11 +18,17 @@
 
 <script>
 
+var jpro = document.getElementById('jpro');
+
+window.addEventListener('beforeunload', function (e) {
+    jpro.logOff();
+});
+
 var isMobile = Math.min(screen.width, screen.height) < 560;
 if(isMobile) console.log("mobile device detected");
 
 if(isMobile) {
-    var jpro = document.getElementById('jpro');
+
 
     window.onload = function() {
         jpro.setAttribute('fxwidth', 'false');
