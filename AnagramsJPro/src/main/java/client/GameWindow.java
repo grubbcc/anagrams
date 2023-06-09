@@ -50,6 +50,8 @@ class GameWindow extends PopWindow {
 
     private final TextArea chatBox = new TextArea();
     private final TextField chatField = new TextField();
+    private final Button cancelButton = new Button("Cancel");
+    private final Button exitGameButton = new Button("Exit Game");
     private final Button backToStartButton = new Button("|<");
     private final Button backTenButton = new Button("<<");
     private final Button backButton = new Button("<");
@@ -67,12 +69,13 @@ class GameWindow extends PopWindow {
     private final TilePanel tilePanel = new TilePanel();
     private final String wordSound = getClass().getResource("/sounds/steal sound.mp3").toExternalForm();
     private final AudioClip wordClip;
-    private final Image blackRobot = new Image(getClass().getResourceAsStream("/images/black robot.png"));
-    private final Image whiteRobot = new Image(getClass().getResourceAsStream("/images/white robot.png"));
-    private final ImageView robotImage = new ImageView(blackRobot);
+    private final Image blackRobot = new Image("/images/black robot.png");
+    private final Image whiteRobot = new Image("/images/white robot.png");
+    private final ImageView robotImage = new ImageView();
     private final Timeline blinker = new Timeline();
-    final WordDisplay wordDisplay;
-    Notepad notepad;
+    private final WordDisplay wordDisplay;
+    private final Notepad notepad;
+    private final ImageView notepadImage = new ImageView("/images/notepad.png");
 
     private final boolean isMobile;
     private final double minPanelWidth;
@@ -101,7 +104,7 @@ class GameWindow extends PopWindow {
     /**
      *
      */
-      GameWindow(AnagramsClient client, JSONObject params, String username, boolean isWatcher, JSONArray gameLog) {
+    GameWindow(AnagramsClient client, JSONObject params, String username, boolean isWatcher, JSONArray gameLog) {
 
         super(client.anchor);
 
@@ -140,7 +143,6 @@ class GameWindow extends PopWindow {
         controlPanel.setSpacing(isMobile ? 5 : 20);
 
         infoPane.setText(lexicon + (isMobile ? "" : "      Min length = " + minLength));
-        controlPanel.getChildren().addAll(notificationArea, infoPane);
 
         //game panels
         gameGrid.setPadding(new Insets(3));
@@ -269,6 +271,15 @@ class GameWindow extends PopWindow {
             tilePanel.widthProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
             tilePanel.heightProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
 
+            notepadImage.setPreserveRatio(true);
+            notepadImage.setFitHeight(26);
+            notepadImage.setOnMouseClicked(event -> {
+                if(notepad.visibleProperty().get())
+                    notepad.hide();
+                else
+                    notepad.show(false);
+            });
+
             maximizeButton.setOnAction(click -> {
                 for (int i = 0; i < 3; i++) {
                     gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
@@ -302,7 +313,9 @@ class GameWindow extends PopWindow {
 
         if(gameLog != null)
             endGame(gameLog);
-        else if (!isWatcher)
+        else if(isWatcher)
+            watchGame();
+        else
             startGame();
 
         show(false);
@@ -310,9 +323,22 @@ class GameWindow extends PopWindow {
     }
 
     /**
+     *
+     */
+    private void watchGame() {
+        if (isMobile) {
+            StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
+            controlPanel.getChildren().addAll(notificationArea, infoPane);
+        } else {
+            textStack.getChildren().addAll(textField, wordBuilder);
+            controlPanel.getChildren().addAll(notificationArea, infoPane, notepadImage);
+        }
+    }
+
+    /**
      * Add the tools needed for entering words
      */
-    void startGame() {
+    private void startGame() {
         textField.setOnAction(e -> {
             makePlay(textField.getText().toUpperCase());
             textField.clear();
@@ -352,23 +378,13 @@ class GameWindow extends PopWindow {
         blinker.play();
         wordBuilder.getChildren().add(caret);
 
-
-        ImageView notepadImage = new ImageView("/images/notepad.png");
-        notepadImage.setPreserveRatio(true);
-        notepadImage.setFitHeight(26);
-        notepadImage.setOnMouseClicked(event -> notepad.show(false));
-
-
         if (isMobile) {
             StackPane.setAlignment(wordBuilder, Pos.BOTTOM_CENTER);
-            controlPanel.getChildren().remove(infoPane);
-            controlPanel.getChildren().addAll(textField, infoPane);
+            controlPanel.getChildren().addAll(notificationArea, textStack, infoPane);
             client.stack.getChildren().add(wordBuilder);
         } else {
-            textField.setPrefWidth(310);
             textStack.getChildren().addAll(textField, wordBuilder);
-            controlPanel.getChildren().remove(infoPane);
-            controlPanel.getChildren().addAll(textStack, infoPane, notepadImage);
+            controlPanel.getChildren().addAll(notificationArea, textStack, infoPane, notepadImage);
         }
 
         textField.requestFocus();
@@ -586,7 +602,7 @@ class GameWindow extends PopWindow {
         }
 
         /**
-         * Removes the occupant, as well as any words they may have, from this pane.
+         * Removes the occupant from this pane, as well as any words they may have.
          * Makes the GamePanel available for another player to occupy.
          */
         private void reset() {
@@ -951,16 +967,34 @@ class GameWindow extends PopWindow {
         maxPosition = gameLog.length() - 1;
         position = maxPosition;
 
-        controlPanel.getChildren().clear();
-        controlPanel.getChildren().addAll(notificationArea, backToStartButton, backTenButton, backButton, showPlaysButton, forwardButton, forwardTenButton, forwardToEndButton, infoPane);
+        //Download button
+        MenuItem textOption = new MenuItem("Save as Text");
+        textOption.setOnAction(click -> saveAsText());
+        MenuItem gifOption = new MenuItem("Save as GIF");
+        gifOption.setOnAction(click -> saveAsGif());
 
+        saveButton.getItems().addAll(textOption, gifOption);
+        saveButton.setTooltip(new Tooltip("Save record of game"));
+        saveButton.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
+
+        controlPanel.getChildren().clear();
+        controlPanel.getChildren().addAll(notificationArea, backToStartButton, backTenButton,
+                backButton, showPlaysButton, forwardButton, forwardTenButton, forwardToEndButton, infoPane, saveButton);
+        if(!isMobile) {
+            controlPanel.getChildren().add(notepadImage);
+        }
+
+        exitGameButton.setOnAction(e -> hide());
         backToStartButton.setPrefWidth(29);
         backTenButton.setPrefWidth(29);
         backButton.setPrefWidth(29);
         forwardButton.setPrefWidth(29);
         forwardTenButton.setPrefWidth(29);
         forwardToEndButton.setPrefWidth(29);
-        showPlaysButton.textProperty().bind(Bindings.createStringBinding(() -> wordDisplay.visibleProperty().get() ? "Hide plays" : "Show plays", wordDisplay.visibleProperty()));
+        showPlaysButton.textProperty().bind(Bindings.createStringBinding(
+                () -> wordDisplay.visibleProperty().get() ? "Hide plays" : "Show plays",
+                wordDisplay.visibleProperty())
+        );
         showPlaysButton.setOnAction(e -> {
             if (wordDisplay.isVisible()) {
                 wordDisplay.hide();
@@ -1012,17 +1046,6 @@ class GameWindow extends PopWindow {
                     }
                 }
             });
-
-            //Download button
-            MenuItem textOption = new MenuItem("Save as Text");
-            textOption.setOnAction(click -> saveAsText());
-            MenuItem gifOption = new MenuItem("Save as GIF");
-            gifOption.setOnAction(click -> saveAsGif());
-
-            saveButton.getItems().addAll(textOption, gifOption);
-            saveButton.setTooltip(new Tooltip("Save record of game"));
-            saveButton.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
-            controlPanel.getChildren().add(saveButton);
         }
 
         showPosition(gameLog.getJSONObject(maxPosition));
@@ -1141,6 +1164,7 @@ class GameWindow extends PopWindow {
         /**
          *
          */
+        @SuppressWarnings("unchecked")
         private void setWords(JSONArray wordsInPool, JSONArray possibleSteals) {
 
             poolPanel.wordPane.getChildren().clear();
@@ -1266,7 +1290,8 @@ class GameWindow extends PopWindow {
      */
     private void saveAsGif() {
 
-        SnapshotPane snapshotPane = new SnapshotPane(client, gameID, username, minLength + "", blankPenalty, numSets + "", speed, lexicon, gameLog);
+        SnapshotPane snapshotPane = new SnapshotPane(client, gameID, username, minLength + "",
+                blankPenalty, numSets + "", speed, lexicon, gameLog);
 
         ProgressBar progressBar = new ProgressBar();
         progressBar.progressProperty().bind(snapshotPane.progress);
@@ -1331,10 +1356,12 @@ class GameWindow extends PopWindow {
             int unstolen = charsToSteal.replace("#", "").length();
 
             if (shortWord.isEmpty())
-                return longWord.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
+                return longWord.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1)
+                        - 2*missingFromPool - 2*unstolen;
 
             else
-                return longWord.length() - shortWord.length() - blanksToChange*blankPenalty - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
+                return longWord.length() - shortWord.length() - blanksToChange*blankPenalty
+                        - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
         }
 
         /**
