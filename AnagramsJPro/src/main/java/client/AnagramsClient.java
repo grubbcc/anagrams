@@ -261,14 +261,16 @@ class AnagramsClient extends JProApplication {
 		//main stage
 		stage.setTitle("Anagrams");
 
+		getWebAPI().registerJavaFunction("logOff", event -> logOut());
+
 		if(getWebAPI().isMobile()) {
 			gamesPanel.getTransforms().add(new Scale(1.25, 1.25));
-			getWebAPI().registerJavaFunction("setWidth", newWidth -> {
-				stage.setWidth(Double.parseDouble(newWidth));
-			});
-			getWebAPI().registerJavaFunction("setHeight", newHeight -> {
-				stage.setHeight(Double.parseDouble(newHeight));
-			});
+			getWebAPI().registerJavaFunction("setWidth", newWidth ->
+				stage.setWidth(Double.parseDouble(newWidth))
+			);
+			getWebAPI().registerJavaFunction("setHeight", newHeight ->
+				stage.setHeight(Double.parseDouble(newHeight))
+			);
 		}
 
 		stage.setScene(scene);
@@ -578,7 +580,6 @@ class AnagramsClient extends JProApplication {
 		 *
 		 */
 		private void setNotificationLabel(String note) {
-			System.out.println("note: " + note);
 			notificationLabel.setText(note);
 			if (gameWindows.containsKey(gameID)) {
 				gameWindows.get(gameID).setNotificationArea(note);
@@ -738,10 +739,11 @@ class AnagramsClient extends JProApplication {
 				}
 			}
 			catch (IOException | InterruptedException ex) {
+				if (connected) {
+					logOut();
+				}
 				if (stage.isShowing()) {
-					if (connected) {
-						logOut();
-					}
+
 					Platform.runLater(() -> {
 						MessageDialog dialog = new MessageDialog(this, "Connection error");
 						dialog.setText("The connection to the server has been lost. Try to reconnect?");
@@ -822,7 +824,7 @@ class AnagramsClient extends JProApplication {
 							}
 						}
 					}
-					blocked.set(false);
+					blocked.set(false); 		//is this working?
 				});
 			} catch(InterruptedException e) {
 				e.printStackTrace();
@@ -855,8 +857,9 @@ class AnagramsClient extends JProApplication {
 			for(GameWindow gameWindow : gameWindows.values())
 				exitGame(gameWindow.gameID, gameWindow.isWatcher);
 			send("logoff");
+			disconnect();
+			getWebAPI().closeInstance();
 		}
-		disconnect();
 	}
 
 
