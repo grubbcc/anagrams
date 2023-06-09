@@ -34,26 +34,23 @@ class WordFinder {
      * Given a gameState, generates a list of all possible (up to 70) valid plays, e.g.
      */
     synchronized JSONObject findWords(JSONObject gameState) {
+
         wordsInPool.clear();
         possibleSteals.clear();
-        blanksAvailable = 0;
 
         String tiles = gameState.getString("tiles").replace("#", "");
         tilePool = tiles.length() <= 20 ? tiles : tiles.substring(0, 20);
+        blanksAvailable = tiles.length() - tiles.replaceAll("\\?","").length();
 
-        JSONObject foundWords = new JSONObject();
-        if(tilePool.length() >= minLength) {
-            blanksAvailable = tiles.length() - tiles.replaceAll("\\?","").length();
+        if(tilePool.length() >= minLength)
             findInPool(dictionary.rootNode, "", Utils.alphabetize(tiles.replaceAll("\\?","")), 0);
-        }
-        foundWords.put("pool", new JSONArray(wordsInPool));
 
-        JSONArray steals = new JSONArray();
+        JSONObject foundWords = new JSONObject().put("pool", new JSONArray(wordsInPool));
+
         JSONArray players = gameState.getJSONArray("players");
         players.forEach(player -> searchForSteals(((JSONObject)player).getJSONArray("words")));
 
-        foundWords.put("steals", possibleSteals);
-        return foundWords;
+        return foundWords.put("steals", possibleSteals);
     }
 
 
@@ -125,7 +122,6 @@ class WordFinder {
      * Finds all (up to 30) possible first-order steals (i.e. steals that are not steals of steals).
      *
      * @param   words   All the words currently on the board
-     * @return          a comma-separated list of up to 30 steals of the form BLEWARTS + FO -> BATFOWLERS)
      */
     private synchronized void searchForSteals(JSONArray words) {
 
@@ -135,6 +131,7 @@ class WordFinder {
 
             trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z]", ""), dictionary));
             ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
+
             while(!wordQueue.isEmpty()) {
                 TreeNode child = wordQueue.pollFirst();
                 String entry = child.getWord().letters;
