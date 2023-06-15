@@ -1,5 +1,11 @@
 ## Update Log
 
+#### Version 1.0.2 - June 6, 2023
+    • Implemented ratings system.
+    • Added notepad widget.
+    • Redesigned server-only user profile storage system.
+    • Fixed a bug that caused Server to miscalcuate number of players in games.
+
 #### Version 1.0.1 - August 20, 2022
     • Added option to highlighting of CSW/NWL only words.
     • Added option to download .gif game recaps.
