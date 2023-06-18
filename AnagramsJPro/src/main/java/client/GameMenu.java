@@ -9,7 +9,6 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import org.controlsfx.control.CheckComboBox;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -104,24 +103,6 @@ class GameMenu extends PopWindow {
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
         final Label waitLabel = new Label("Wait for");
         waitLabel.setTooltip(new Tooltip("Game will begin when wait time expires\nor opponents join"));
-
-//        Spinner<Integer> timeChooser = new Spinner<>(10,99, 10, 5);
-//        HBox timeBox = new HBox(timeChooser, new Label(" seconds"));
-//        CustomMenuItem timeOption = new CustomMenuItem(timeBox, false);
-//
-//        Spinner<Integer> opponentsChooser = new Spinner<>(0,5, 1, 1);
-//        HBox opponentsBox = new HBox(opponentsChooser, new Label(" opponents"));
-//        CustomMenuItem opponentsOption = new CustomMenuItem(opponentsBox, false);
-//
-//        ObservableList<String> opponents = FXCollections.observableArrayList(client.playersList.keySet());
-//        opponents.remove(client.username);
-//        CheckComboBox<String> opponentChooser = new CheckComboBox<>(opponents);
-//        HBox opponentBox = new HBox(opponentChooser);
-//        CustomMenuItem opponentOption = new CustomMenuItem(opponentBox, false);
-//
-//        waitChooser.getItems().addAll(timeOption, opponentsOption, opponentOption);
-//
-//        waitChooser.setOn
 
         //choosers
         playersChooser.getSelectionModel().select(Integer.valueOf(client.prefs.getInt("max_players")));
