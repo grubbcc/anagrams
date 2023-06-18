@@ -2,13 +2,16 @@ package server;
 
 import com.sun.net.httpserver.*;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
@@ -26,7 +29,7 @@ public class Server extends Thread {
 	private final ConcurrentHashMap<String, ServerWorker> workerList = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Game> gameList = new ConcurrentHashMap<>();
 	final ArrayDeque<String> announcements = new ArrayDeque<>();
-	final ConcurrentLinkedQueue<String> chatLog = new ConcurrentLinkedQueue<>();
+	final ConcurrentLinkedDeque<String> chatLog = new ConcurrentLinkedDeque<>();
 	private final ServerSocket serverSocket = new ServerSocket(GAME_PORT);
 	private final HttpServer httpServer = HttpServer.create(new InetSocketAddress(LOOKUP_PORT), 0);
 
@@ -231,7 +234,7 @@ public class Server extends Thread {
 				System.out.println("Accepted connection from " + clientSocket);
 				new Thread(new ServerWorker(this, clientSocket)).start();
 			} catch(IOException e) {
-				e.printStackTrace();
+				System.out.println("server socket closed");
 			}
         }
 	}
@@ -261,6 +264,35 @@ public class Server extends Thread {
 		exchange.close();
 	}
 
+	/**
+	 *
+	 */
+	void shutdown() {
+		for(String username : getUsernames()) {
+			getWorker(username).ifPresent(player -> player.send("logoffplayer", new JSONObject().put("name", username)));
+		}
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter("chat.log"));
+			for(String line : chatLog) {
+				writer.write(line + "\n");
+			}
+			System.out.println("chat file saved");
+			writer.close();
+			interrupt();
+			serverSocket.close();
+			httpServer.stop(1);
+
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		finally {
+			System.out.println("Program exiting");
+			System.exit(0);
+		}
+	}
+
+
 
 	/**
 	 *
@@ -272,26 +304,6 @@ public class Server extends Thread {
 
 		AdminServer adminServer = new AdminServer(gameServer);
 		adminServer.start();
-
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			for(String username : gameServer.getUsernames()) {
-				gameServer.getWorker(username).ifPresent(player -> player.send("logoffplayer", new JSONObject().put("name", username)));
-			}
-			try {
-				BufferedWriter writer = new BufferedWriter(new FileWriter("chat.log"));
-				for(String line : gameServer.chatLog) {
-					writer.write(line + "\n");
-				}
-				System.out.println("chat file saved");
-				writer.close();
-				gameServer.serverSocket.close();
-				gameServer.httpServer.stop(3);
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			System.out.println("Program exiting");
-		}));
 
 	}
 

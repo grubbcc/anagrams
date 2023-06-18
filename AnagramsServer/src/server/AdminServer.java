@@ -37,11 +37,15 @@ public class AdminServer extends Thread {
             while ((cmd = in.readLine()) != null) {
                 switch (cmd) {
                     case "shutdown" -> {
-                        if (clientSocket.getInetAddress().isLoopbackAddress())
-                            System.exit(0);
+                        if (clientSocket.getInetAddress().isLoopbackAddress()) {
+                            System.out.println("Shutdown command received");
+                            gameServer.shutdown();
+                        }
                     }
+
                     case "games" -> out.println("There are currently " + gameServer.getGames().size() + " active games");
                     case "users" -> out.println("Users: " + gameServer.getUsernames());
+
                     default -> out.println("Command not recognized");
                 }
             }
