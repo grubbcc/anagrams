@@ -5,51 +5,54 @@
 * add admin tools for creating and scheduling tournaments
 * show list of top players for players who have played at least, say, 10 rated games
 * allow players to choose scoring method?
-* Keep track of the who creates (is the "host" of games. Prevent users from creating and abandoning too many games. Send pop up warning accordingly.
+* Keep track of who creates (is the "host" of games). Prevent users from creating and abandoning too many games. Send pop up warning accordingly.
 * make it so you can see the words that can be stolen to produce a given word, i.e. make the wordExplorer bidrectional
 * remove redundancy in play validation?
 * make sure blanks are properly accounted for when checking for rearrangement
 
 ## FRONT END
+* make center of notepad draggable
 * test whether wordbuilder accurately categorizes entries as playable or not
 * update highlights immediately when highlight_words is enabled
-* make sure save menu items aren't being duplicated
 * try not to randomize the board panels upon endgame
-* fix the padding on the tooltips
 * refactor so that addWord and addWords methods take Word objects as parameters
 * long words (more than about 12 or 13 letters long) should trigger small tiles on small screens... 
 * improve calculation of tile sizes
-* click on tilepool to randomize?
+* improve control panel layout (especially in postgame)
+* click on tilepool to randomize? (if done only in postgame, this would be easy)
 * make sure that sound only plays once when logging in
 * make it so clicking on a window brings it to the front
-* show quick pop-up notification in bottom of game panel (e.g. "that word has already been played in this game")?
+* show quick pop-up notification in bottom of game panel (e.g. "that word is already on the board")?
 * show watchers
-* put user's own name at top of the list (and emphasize it somehow)
+* put user's own name at top of the list (and emphasize it somehow?)
 * make links in the markdown guide clickable and make it into an editable sandbox?
 * add maximize button to player profiles... maybe not necessarily to fullscreen, but at least larger?
 * dropdown menu to sort players list alphabetically or by rating
 * pop up messages saying you are already involved in this game, or you already have a game screen active, etc
 * make it so tile size also adjusts in response to resizing wordDisplay
-* change so game panels don't disappear when on the home screen (like on ISC)
 * enable multiple game windows?
 * add minimize button?
 
 ## BACK END
 * does the prob calc take into account letters already in the word? e.g. PLEDGEE -> PEGLEGGED
-* add profanity filter
+* add profanity filter?
 * keep track of no-longer-being-used robot trees to save for postgame analysis so we don't have to waste server time by recreate them
-* improve administrator tools on server side
+* add features to administrator tools
 * automate scheduled server restarts
 * backup server
 * ping every few seconds to ensure verify connections?
 * wouldn't it be better for the Player's words list be a list of <Word>?
 * prune in-game search tree depth?
-* make sure chat.log is getting updated
 * consider adding a ServerWorker attribute to Player so it knows to whom to communicate game updates
 * check for concurrency issues
 * use Java Beans conventions to convert WordTree directly into JSONObject (using GSON?)
 * convert Play directly into a JSONObject (using GSON?)
 * study memory (over)usage with visualvm
+
+## BUGS
+* fix the padding on the tooltips
+* WordFinder doesn't find VEGETAtIONS + RR -> TERGIVERSAtION
+
 
 ## MOBILE
 * when waking phone from sleep, full screen size often goes wrong?... maybe just add runlater...
