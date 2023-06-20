@@ -35,14 +35,14 @@ In order to reward longer words, your score is equal to the square of the word's
 ##### How to develop locally
 
 1. Download/clone repository, e.g. `gh repo clone grubbcc/anagrams -- -b main`.
-2. Navigate to `anagrams\AnagramsServer` and execute `.\gradlew run`. (On Linux systems first do `chmod +x gradlew`.)
-3. In another terminal navigate to `anagrams\AnagramsJPro` and execute `.\gradlew jproRestart`. (For a full list of JPro commands, see [here](https://www.jpro.one/docs/current/2.1/JPRO_COMMANDS).)
-4. In a browser tab open `localhost:8079` to see the app.
+2. Navigate to `anagrams\AnagramsServer` and execute `gradlew run`. (On Linux systems first do `chmod +x gradlew`.)
+3. In another terminal navigate to `anagrams\AnagramsJPro` and execute `gradlew jproRun`. (For a full list of JPro commands, see [here](https://www.jpro.one/docs/current/2.1/JPRO_COMMANDS).)
+4. In a browser tab open `localhost:8079` to see the application.
 5. To register an account, you will need to enable the email verification service. Edit the `from` and `password` fields in `LoginMenu.java` to match an email account you control.
 
 ##### Setting up the webserver
-1. In `anagrams\AnagramsServer` run `.\gradlew distZip`.
-2. In `anagrams\AnagramsJPro` run `.\gradlew jproRelease`.
+1. In `anagrams\AnagramsServer` run `gradlew distZip`.
+2. In `anagrams\AnagramsJPro` run `gradlew jproRelease`.
 3. Extract the generated archives (under `\build\distributions`) into `anagrams\Webserver`.
 4. From `Webserver`, run `docker -t anagrams build`.
 5. Run `docker-compose up`.
