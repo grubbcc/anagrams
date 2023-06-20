@@ -258,7 +258,7 @@ class ServerWorker implements Runnable {
 		//notify new player of games
 		synchronized (server.getGames()) {
 			for(Game game : server.getGames()) {
-				send(game.params.put("cmd", "addgame"));
+				send("addgame", game.params);
 				for(String playerName : game.players.keySet()) {
 					send("takeseat", new JSONObject()
 						.put("gameID", game.gameID)
@@ -337,7 +337,7 @@ class ServerWorker implements Runnable {
 	* Creates the game and informs all players
 	*/
 	private void handleCreateGame(JSONObject params) {
-		server.broadcast(params.put("cmd", "addgame"));
+		server.broadcast("addgame", params);
 		Game newGame = new Game(server, params);
 		newGame.addPlayer(new Player(newGame, username, prefs));
 		server.addGame(newGame.gameID, newGame);
@@ -370,7 +370,7 @@ class ServerWorker implements Runnable {
 			switch (cmd) {
 				case "chat" -> {
 					server.logChat(json.getString("msg"));
-					server.broadcast(json);
+					server.broadcast("chat", json);
 				}
 				case "delete" -> deleteAccount();
 				case "email" -> checkEmail(json.getString("email"));
@@ -404,7 +404,7 @@ class ServerWorker implements Runnable {
 					if(game != null) {
 						switch (cmd) {
 							case "findplays" -> send("plays", game.findPlays(json.getInt("position")));
-							case "gamechat" -> game.notifyRoom(json);
+							case "gamechat" -> game.notifyRoom("gamechat", json);
 							case "joingame" -> {
 								if (game.gameOver)
 									game.addWatcher(this);
@@ -437,10 +437,10 @@ class ServerWorker implements Runnable {
 	*
 	* @param json The message to be sent.
 	*/
-	synchronized void send(JSONObject json) {
+	synchronized void send(String cmd, JSONObject json) {
 
 		try {
-			outputStream.write((json + "\n").getBytes());
+			outputStream.write((json.put("cmd", cmd) + "\n").getBytes());
 			outputStream.flush();
 		}
 		catch (IOException e) {
@@ -455,19 +455,5 @@ class ServerWorker implements Runnable {
 				e2.printStackTrace();
 			}
 		}
-	}
-
-	/**
-	 *
-	 */
-	synchronized void send(String cmd, JSONObject json) {
-		send(json.put("cmd", cmd));
-	}
-
-	/**
-	 *
-	 */
-	synchronized void send(String cmd) {
-		send(cmd, new JSONObject());
 	}
 }
