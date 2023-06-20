@@ -8,8 +8,6 @@ import java.util.prefs.Preferences;
 */
 class Robot extends Player {
 
-	int thinkTime = 2;	//when thinkTime reaches 0, Robot will attempt a play
-
 	final int skillLevel;
 	final private Game game;
 
@@ -32,7 +30,7 @@ class Robot extends Player {
 	*/
 	Robot(Game game, int skillLevel, AlphagramTrie dictionary, int minLength, int blankPenalty) {
 		super(game, NAMES[skillLevel]);
-		this.name = NAMES[skillLevel];
+
 		prefs = Preferences.userNodeForPackage(getClass()).node(name);
 		this.rating = prefs.getInt("rating", 1500);
 		this.game = game;
@@ -68,9 +66,7 @@ class Robot extends Player {
 			if (tilesInPool >= 29) {
 				return true;
 			}
-			if (rgen.nextInt(100) <= 1 + 4*(skillLevel - 1) + game.delay + 6*(tilesInPool/minLength - 1)) {
-				return true;
-			}
+			return rgen.nextInt(100) <= 1 + 4 * skillLevel + game.delay + 6 * (tilesInPool / minLength - 1);
 		}
 		return false;
 	}
@@ -87,7 +83,7 @@ class Robot extends Player {
 		if (tilePool.length() >= 2 * minLength || rgen.nextInt(2) == 0 && tilePool.length() >= minLength + 1) {
 
 			//decide whether to search among all words or among common subset
-			Node rootNode = rgen.nextInt(3) + 1 >= skillLevel ? dictionary.common.rootNode : dictionary.rootNode;
+			Node rootNode = skillLevel > rgen.nextInt(3) ? dictionary.rootNode : dictionary.common.rootNode;
 			wordFound = false;
 			searchInPool(rootNode, "", Utils.alphabetize(tilePool.replace("?", "")), 0);
 		}
@@ -163,7 +159,6 @@ class Robot extends Player {
 	/**
 	 * Attempts to find a steal
 	 *
-	 * @param words All the words on the board grouped by player
 	 */
 	private void searchForSteal() {
 
@@ -173,7 +168,7 @@ class Robot extends Player {
 			for(String shortWord : player.words) {
 
 				//decide whether to search among all words or among common subset
-				HashMap<String, WordTree> treeSet = rgen.nextInt(3) + 1 >= skillLevel ? commonTrees : trees;
+				HashMap<String, WordTree> treeSet = skillLevel > rgen.nextInt(3) ? trees : commonTrees;
 
 				if(treeSet.containsKey(shortWord)) {
 					for(TreeNode child : treeSet.get(shortWord).rootNode.getChildren()) {
