@@ -178,7 +178,7 @@ class Game {
 
 			//update timer and check for game over
 			String message = "Time remaining: " + --timeRemaining;
-			server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
+			server.broadcast("note", new JSONObject().put("gameID", gameID).put("msg", message));
 
 			if(timeRemaining <= 0) {
 				endGame();
@@ -204,7 +204,7 @@ class Game {
 					endGame();
 				}
 				else if (hasRobot && thinkTime < 0) {
-					thinkTime = 15 + rgen.nextInt(50 / robotPlayer.skillLevel);
+					thinkTime = 15 + rgen.nextInt(50 / (robotPlayer.skillLevel + 1));
 				}
 			}
 
@@ -220,7 +220,7 @@ class Game {
 	private void pauseGame() {
 		paused = true;
 		String message = "Game paused";
-		server.broadcast(new JSONObject().put("cmd","note").put("gameID", gameID).put("msg", message));
+		server.broadcast("note", new JSONObject().put("gameID", gameID).put("msg", message));
 	}
 
 
@@ -246,8 +246,7 @@ class Game {
 				ratingsSummary.add(player.name + " → " + newRating);
 			}
 			if(allowChat) {
-				notifyRoom(new JSONObject()
-					.put("cmd", "gamechat")
+				notifyRoom("gamechat", new JSONObject()
 					.put("gameID", gameID)
 					.put("msg", ratingsSummary.toString()));
 			}
@@ -364,8 +363,7 @@ class Game {
 		}
 		else {
 			playerToRemove.abandoned = true;
-			notifyRoom(new JSONObject()
-					.put("cmd", "abandonseat")
+			notifyRoom("abandonseat", new JSONObject()
 					.put("gameID", gameID)
 					.put("name", playerName));
 		}
@@ -440,7 +438,7 @@ class Game {
 		if(tilesPlayed < tileBag.length) {
 			tilePool += tileBag[tilesPlayed];
 			tilesPlayed++;
-			notifyRoom(new JSONObject().put("cmd", "nexttiles").put("gameID", gameID).put("tiles", tilePool));
+			notifyRoom("nexttiles", new JSONObject().put("gameID", gameID).put("tiles", tilePool));
 		}
 	}
 
@@ -485,8 +483,7 @@ class Game {
 		if(tilesPlayed >= tileBag.length)
 			timeRemaining += 15;
 
-		notifyRoom(new JSONObject()
-				.put("cmd", "steal")
+		notifyRoom("steal", new JSONObject()
 				.put("gameID",gameID)
 				.put("shortPlayer", shortPlayer)
 				.put("shortWord", dictionary.annotate(shortWord))
@@ -542,8 +539,7 @@ class Game {
 		if(tilesPlayed >= tileBag.length) timeRemaining += 15;
 
 		//inform players that a new word has been made
-		notifyRoom(new JSONObject()
-				.put("cmd", "makeword")
+		notifyRoom("makeword", new JSONObject()
 				.put("gameID", gameID)
 				.put("player", newWordPlayer)
 				.put("word", dictionary.annotate(nextWord))
@@ -629,17 +625,17 @@ class Game {
 	/**
 	 * Informs players and watchers of events happening in the room.
 	 *
-	 * @param msg The message containing the information to be shared
+	 * @param json The message containing the information to be shared
 	 */
-	void notifyRoom(JSONObject msg) {
+	void notifyRoom(String cmd, JSONObject json) {
 		synchronized(players) {
 			for(Player player : players.values()) {
-				server.getWorker(player.name).ifPresent(worker -> worker.send(msg));
+				server.getWorker(player.name).ifPresent(worker -> worker.send(cmd, json));
 			}
 		}
 		synchronized(watchers) {
 			for(ServerWorker watcher : watchers.values()) {
-				watcher.send(msg);
+				watcher.send(cmd, json);
 			}
 		}
 	}

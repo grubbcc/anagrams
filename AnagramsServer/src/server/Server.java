@@ -2,7 +2,6 @@ package server;
 
 import com.sun.net.httpserver.*;
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -10,13 +9,11 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
  */
-public class Server extends Thread {
+class Server extends Thread {
 	
 	private static final int GAME_PORT = 8118;
 	private static final int ADMIN_PORT = 8117;
@@ -36,7 +33,7 @@ public class Server extends Thread {
 	/**
 	*
 	*/
-	public Server() throws IOException {
+	Server() throws IOException {
 
 		System.setOut(new PrintStream(System.out) {
 			public void print(final String string) {
@@ -91,7 +88,7 @@ public class Server extends Thread {
 	*/
 	void removeGame(String gameID) {
 		gameList.remove(gameID);
-		broadcast(new JSONObject().put("cmd", "removegame").put("gameID", gameID));
+		broadcast("removegame", new JSONObject().put("gameID", gameID));
 	}
 	
 	/**
@@ -196,20 +193,6 @@ public class Server extends Thread {
 			chatLog.remove();
 		}
 	}
-	
-	/**
-	 * //deprecated
-	* Send a message or command to every client
-	*
-	* @param msg the message to be sent
-	*/
-	void broadcast(JSONObject json) {
-		synchronized(workerList) {
-			for(ServerWorker worker : getWorkers()) {
-				worker.send(json);
-			}
-		}
-	}
 
 	/**
 	 * Helper method for broadcast(JSONObject json)
@@ -217,7 +200,7 @@ public class Server extends Thread {
 	void broadcast(String cmd, JSONObject json) {
 		synchronized(workerList) {
 			for(ServerWorker worker : getWorkers()) {
-				worker.send(json.put("cmd", cmd));
+				worker.send(cmd, json);
 			}
 		}
 	}
