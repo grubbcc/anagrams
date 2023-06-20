@@ -50,8 +50,6 @@ class GameWindow extends PopWindow {
 
     private final TextArea chatBox = new TextArea();
     private final TextField chatField = new TextField();
-    private final Button cancelButton = new Button("Cancel");
-    private final Button exitGameButton = new Button("Exit Game");
     private final Button backToStartButton = new Button("|<");
     private final Button backTenButton = new Button("<<");
     private final Button backButton = new Button("<");
@@ -67,7 +65,7 @@ class GameWindow extends PopWindow {
     private final GamePanel homePanel = new GamePanel();
     private final WordExplorer explorer;
     private final TilePanel tilePanel = new TilePanel();
-    private final String wordSound = getClass().getResource("/sounds/steal sound.mp3").toExternalForm();
+
     private final AudioClip wordClip;
     private final Image blackRobot = new Image("/images/black robot.png");
     private final Image whiteRobot = new Image("/images/white robot.png");
@@ -120,6 +118,9 @@ class GameWindow extends PopWindow {
         this.isWatcher = isWatcher;
         this.gameLog = gameLog;
 
+        Play.minLength = minLength;
+        Play.blankPenalty = blankPenalty;
+
         this.client = client;
         client.gameWindows.put(gameID, this);
         explorer = client.explorer;
@@ -129,12 +130,13 @@ class GameWindow extends PopWindow {
         minPanelWidth = isMobile ? 75 : 175;
         minPanelHeight = isMobile ? 100 : 175;
 
+        String wordSound = Objects.requireNonNull(getClass().getResource("/sounds/steal sound.mp3")).toExternalForm();
         wordClip = AudioClip.getAudioClip(wordSound, client.stage);
         wordDisplay = new WordDisplay();
         notepad = new Notepad(client.anchor);
 
         //title bar
-        setTitle(gameName.replaceAll("%", " "));
+        setTitle(gameName + (params.getBoolean("rated") ? " (rated)" : ""));
         makeMaximizable();
 
         //control panel
@@ -240,7 +242,7 @@ class GameWindow extends PopWindow {
             }
         }
 
-        getStylesheets().add("css/game-window.css");
+        getStylesheets().addAll("css/anagrams.css", "css/game-window.css");
         setDark(AnagramsClient.getTextColor(client.colors.get(AnagramsClient.Colors.GAME_FOREGROUND)).equals("white"));
 
         setContents(splitPane);
@@ -411,13 +413,15 @@ class GameWindow extends PopWindow {
         //Find the best play
         Play bestPlay = new Play("", entry, tilePool);
         int bestScore = bestPlay.getScore();
-        for(GamePanel panel : players.values()) {
+        outer: for (GamePanel panel : players.values()) {
             for (GamePanel.Word word : panel.words.values()) {
                 Play play = new Play(word.letters, entry, tilePool);
                 int score = play.getScore();
                 if (score > bestScore) {
                     bestPlay = play;
                     bestScore = score;
+                    if(score >= 0)
+                        break outer;
                 }
             }
 
@@ -438,9 +442,13 @@ class GameWindow extends PopWindow {
         }
 
         //set the wordBuilder's border color
-        Color borderColor = Color.BLACK;
-        if(entry.length() >= minLength)
-            borderColor = bestPlay.isValid() ? Color.CHARTREUSE : Color.RED;
+        Color borderColor;
+        if(entry.length() >= minLength) {
+            borderColor = bestPlay.isValid() /*bestScore >= 0*/ ? Color.CHARTREUSE : Color.RED;
+        }
+        else {
+            borderColor = Color.BLACK;
+        }
         wordBuilder.setBorder(new Border(new BorderStroke(borderColor, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(3))));
 
     }
@@ -618,7 +626,7 @@ class GameWindow extends PopWindow {
         }
 
         /**
-         *
+         * //to implement later
          */
         private void addWord(Word wordToAdd) {
 
@@ -984,7 +992,6 @@ class GameWindow extends PopWindow {
             controlPanel.getChildren().add(notepadImage);
         }
 
-        exitGameButton.setOnAction(e -> hide());
         backToStartButton.setPrefWidth(29);
         backTenButton.setPrefWidth(29);
         backButton.setPrefWidth(29);
@@ -1307,181 +1314,5 @@ class GameWindow extends PopWindow {
         });
     }
 
-    /**
-     * An attempt to form a word, either by building from the pool or by stealing an existing word
-     */
-    private class Play {
 
-        final String shortWord;
-        final String longWord;
-        final String tiles;
-
-        private Play(String shortWord, String longWord, String tiles) {
-            this.shortWord = shortWord;
-            this.longWord = longWord;
-            this.tiles = tiles;
-        }
-
-        /**
-         *
-         * @return a measure of how "playable" this play is. All valid plays will have a score >= 0.
-         */
-        private int getScore() {
-
-            String charsToSteal = shortWord;
-            String tiles = tilePool;
-            int blanksToChange = 0;
-            int blanksToTakeFromPool = 0;
-            int missingFromPool = 0;
-
-            for(String s : longWord.split("")) {
-                if(charsToSteal.toUpperCase().contains(s)) {
-                    charsToSteal = charsToSteal.replaceFirst(s, "");
-                }
-                else if(tiles.contains(s)) {
-                    tiles = tiles.replaceFirst(s, "");
-                }
-                else if(charsToSteal.matches("[a-z]+")) {
-                    charsToSteal = charsToSteal.replaceFirst("[a-z]", "");
-                    blanksToChange++;
-                }
-                else if(tiles.contains("?")) {
-                    tiles = tiles.replaceFirst("\\?", "");
-                    blanksToTakeFromPool++;
-                }
-                else {
-                    missingFromPool++;
-                }
-            }
-            int unstolen = charsToSteal.replace("#", "").length();
-
-            if (shortWord.isEmpty())
-                return longWord.length() - minLength  - blanksToTakeFromPool*(blankPenalty + 1)
-                        - 2*missingFromPool - 2*unstolen;
-
-            else
-                return longWord.length() - shortWord.length() - blanksToChange*blankPenalty
-                        - blanksToTakeFromPool*(blankPenalty + 1) - 2*missingFromPool - 2*unstolen;
-        }
-
-        /**
-         * Designate letters as blanks or as normal tiles
-         */
-        private char[] buildWord() {
-            String tiles = this.tiles + shortWord.toUpperCase();
-            String newWord = "";
-
-            for (String s : longWord.split("")) {
-                if (tiles.contains(s)) {
-                    tiles = tiles.replaceFirst(s, "");
-                    newWord = newWord.concat(s);
-                }
-                else {
-                    newWord = newWord.concat(s.toLowerCase());
-                }
-            }
-            return newWord.toCharArray();
-        }
-
-        /**
-         *
-         */
-        private boolean isValid() {
-
-            String entry = longWord;
-            String blanksToKeep = "";
-            String tiles = this.tiles;
-            int blanksToChange = 0;
-
-            //Search for characters in the word to be stolen
-            for (String s : shortWord.split("")) {
-                if (entry.contains(s)) {
-                    //Transfer a tile from the shortWord to the longWord
-                    entry = entry.replaceFirst(s, "");
-                }
-                else if (Character.isLowerCase(s.charAt(0))) {
-                    if (entry.contains(s.toUpperCase())) {
-                        //Transfer the blank without re-designating
-                        blanksToKeep += s.toUpperCase();
-                        entry = entry.replaceFirst(s.toUpperCase(), "");
-                    }
-                    else {
-                        //Mark a blank for re-designation
-                        blanksToChange++;
-                    }
-                }
-                else {
-                    //The shortWord contains a letter not found in the longWord
-                    return false;
-                }
-            }
-
-            //Search pool for missing tiles
-            for (String s : entry.split("")) {
-                if(entry.length() > blanksToChange) {
-                    if (tiles.contains(s)) {
-                        //Add a regular tile to the word
-                        tiles = tiles.replaceFirst(s, "");
-                        entry = entry.replaceFirst(s, "");
-                    }
-                    else if(!blanksToKeep.isEmpty()) {
-                        for (String t : blanksToKeep.split("")) {
-                            //Mark a retained blank for re-designation
-                            if (tiles.contains(t)) {
-                                blanksToKeep = blanksToKeep.replaceFirst(t, "");
-                                tiles = tiles.replaceFirst(t, "");
-                                blanksToChange++;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            //Designate blanks to missing letters
-            int penalty = 0;
-
-            for (int i = 0; i < entry.length(); i++) {
-                if (blanksToChange-- > 0) {
-                    //Re-designate a blank
-                    penalty += blankPenalty;
-                } else if (tiles.contains("?")) {
-                    //Take a blank from the pool and designate it
-                    tiles = tiles.replaceFirst("\\?", "");
-                    penalty += blankPenalty + 1;
-                } else {
-                    //Not enough blanks available
-                    return false;
-                }
-            }
-
-            if(shortWord.isEmpty()) {
-                return longWord.length() - minLength >= penalty;
-            }
-            else if(longWord.length() - shortWord.length() >= Math.max(penalty, 1))  {
-                return isRearrangement(shortWord.toUpperCase(), longWord);
-            }
-            return false;
-        }
-
-
-        /**
-         * Given two words, the shorter of which is a subset of the other, determines whether a rearrangement/permutation
-         * of letters is necessary to form the longer.
-         *
-         * @param shortWord     a short word (case must match longWord)
-         * @param longWord      a longer word (case must match that of shortWord)
-         */
-        private static boolean isRearrangement(String shortWord, String longWord) {
-
-            while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
-                if (shortWord.charAt(0) == longWord.charAt(0)) {
-                    shortWord = shortWord.substring(1);
-                }
-                longWord = longWord.substring(1);
-            }
-
-            return shortWord.length() > longWord.length();
-        }
-    }
 }
