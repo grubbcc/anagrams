@@ -1,18 +1,18 @@
 ## NEW FEATURES
 * private messages
+* add words up to 21 letters long
 * add interactive puzzle mode to anagrams.site/tree
 * make game setup screen for choosing players
 * add admin tools for creating and scheduling tournaments
 * show list of top players for players who have played at least, say, 10 rated games
 * allow players to choose scoring method?
 * Keep track of who creates (is the "host" of games). Prevent users from creating and abandoning too many games. Send pop up warning accordingly.
-* make it so you can see the words that can be stolen to produce a given word, i.e. make the wordExplorer bidrectional
+* make it so you can see the words that can be stolen to produce a given word, i.e. make the wordExplorer bidirectional
 * remove redundancy in play validation?
+* store gamechat in ArrayList
 * make sure blanks are properly accounted for when checking for rearrangement
 
 ## FRONT END
-* make center of notepad draggable
-* test whether wordbuilder accurately categorizes entries as playable or not
 * update highlights immediately when highlight_words is enabled
 * try not to randomize the board panels upon endgame
 * refactor so that addWord and addWords methods take Word objects as parameters
@@ -24,11 +24,12 @@
 * make it so clicking on a window brings it to the front
 * show quick pop-up notification in bottom of game panel (e.g. "that word is already on the board")?
 * show watchers
+* automatically recognize and linkify weblinks
 * put user's own name at top of the list (and emphasize it somehow?)
 * make links in the markdown guide clickable and make it into an editable sandbox?
 * add maximize button to player profiles... maybe not necessarily to fullscreen, but at least larger?
 * dropdown menu to sort players list alphabetically or by rating
-* pop up messages saying you are already involved in this game, or you already have a game screen active, etc
+* pop up messages saying you are already involved in this/a game, you already have a game screen active, etc
 * make it so tile size also adjusts in response to resizing wordDisplay
 * enable multiple game windows?
 * add minimize button?
@@ -40,7 +41,7 @@
 * add features to administrator tools
 * automate scheduled server restarts
 * backup server
-* ping every few seconds to ensure verify connections?
+* ping every few seconds to verify connections?
 * wouldn't it be better for the Player's words list be a list of <Word>?
 * prune in-game search tree depth?
 * consider adding a ServerWorker attribute to Player so it knows to whom to communicate game updates
@@ -52,7 +53,6 @@
 ## BUGS
 * fix the padding on the tooltips
 * WordFinder doesn't find VEGETAtIONS + RR -> TERGIVERSAtION
-
 
 ## MOBILE
 * when waking phone from sleep, full screen size often goes wrong?... maybe just add runlater...
