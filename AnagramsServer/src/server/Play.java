@@ -36,7 +36,7 @@ class Play {
      *
      * @return whether the play is valid according to the rules of Anagrams
      */
-     boolean isValid() {
+    boolean isValid() {
         if(!shortWord.isEmpty()) {
             if (!Utils.isRearrangement(shortWord.toUpperCase(), longWord))
                 return false;

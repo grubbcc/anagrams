@@ -30,12 +30,12 @@ class PopWindow extends BorderPane {
     final HBox titleBar = new HBox();
     final Label title = new Label();
     final MaximizeButton maximizeButton = new MaximizeButton();
-    boolean isMaximized;
+    boolean isMaximized = false;
     final Button closeButton = new Button();
 
     final static Stack<PopWindow> popWindows = new Stack<>();
+
     /**
-     *
      * @param container The Pane in which this window resides.
      */
     PopWindow(Pane container) {
@@ -66,60 +66,65 @@ class PopWindow extends BorderPane {
      */
     class MaximizeButton extends Button {
 
-        Polyline maximizeIcon = new Polyline(2, 2, 14, 2, 14, 14, 2, 14, 2, 2);
-        Polyline unmaximizeIcon = new Polyline(10, 9, 12, 9, 12, 1, 4, 1, 4, 4, 10, 4, 10, 12, 2, 12, 2, 4, 4, 4);
+        private final static Polyline maximizeIcon = new Polyline(2, 2, 14, 2, 14, 14, 2, 14, 2, 2);
+        private final static Polyline unmaximizeIcon = new Polyline(10, 9, 12, 9, 12, 1, 4, 1, 4, 4, 10, 4, 10, 12, 2, 12, 2, 4, 4, 4);
 
-        Point2D savedCoords;
-        Point2D savedSize;
+        PopWindow window;
+        private Point2D savedCoords;
+        private Point2D savedSize;
 
         /**
          *
          */
         MaximizeButton() {
             setGraphic(maximizeIcon);
-//          setOnAction(maximizeAction);
+            window = PopWindow.this;
+            setOnAction(maximizeAction);
         }
 
-        /**
-         * Alternate PopWindow between maximized and unmaximized and update MaximizeButton accordingly
-         */
-        void toggle() {
-            if(isMaximized) {
-                maximizeButton.setGraphic(maximizeButton.maximizeIcon);
-                isMaximized = false;
-            }
-            else {
-                maximizeButton.setGraphic(maximizeButton.unmaximizeIcon);
-                isMaximized = true;
-            }
-        }
 
         /**
          *
          */
+        void setMaximized(boolean maximized) {
+            isMaximized = maximized;
+            if(maximized)
+                maximizeButton.setGraphic(unmaximizeIcon);
+            else
+                maximizeButton.setGraphic(maximizeIcon);
+        }
+
+        /**
+         * Alternate PopWindow between maximized and un-maximized and update MaximizeButton accordingly
+         */
+        void toggle() {
+            setMaximized(!isMaximized);
+        }
+
+        /**
+         * Fill up the whole screen with this window. Or if the screen is already filled, return
+         * the window to its previously saved dimensions.
+         */
         EventHandler<ActionEvent> maximizeAction = event -> {
             if (isMaximized) {
-                PopWindow.this.setMinWidth(savedSize.getX());
-                PopWindow.this.setMinHeight(savedSize.getY());
-                PopWindow.this.setTranslateX(savedCoords.getX());
-                PopWindow.this.setTranslateY(savedCoords.getY());
-
-                isMaximized = false;
-                setGraphic(maximizeIcon);
+                setMaximized(false);
+                window.setMinWidth(savedSize.getX());
+                window.setMinHeight(savedSize.getY());
+                window.setTranslateX(savedCoords.getX());
+                window.setTranslateY(savedCoords.getY());
             }
             else {
-                isMaximized = true;
-                savedCoords = new Point2D(PopWindow.this.getTranslateX(), PopWindow.this.getTranslateY());
-                savedSize = new Point2D(PopWindow.this.getWidth(), PopWindow.this.getHeight());
-                PopWindow.this.setTranslateX(0);
-                PopWindow.this.setTranslateY(0);
-                if (getScene().getWidth() > PopWindow.this.getMinWidth()) {
-                    PopWindow.this.setMinWidth(getScene().getWidth());
+                setMaximized(true);
+                savedCoords = new Point2D(window.getTranslateX(), window.getTranslateY());
+                savedSize = new Point2D(window.getWidth(), window.getHeight());
+                window.setTranslateX(0);
+                window.setTranslateY(0);
+                if (getScene().getWidth() > window.getMinWidth()) {
+                    window.setMinWidth(getScene().getWidth());
                 }
-                if (getScene().getHeight() > PopWindow.this.getMinHeight()) {
-                    PopWindow.this.setMinHeight(getScene().getHeight());
+                if (getScene().getHeight() > window.getMinHeight()) {
+                    window.setMinHeight(getScene().getHeight());
                 }
-                setGraphic(unmaximizeIcon);
             }
         };
 

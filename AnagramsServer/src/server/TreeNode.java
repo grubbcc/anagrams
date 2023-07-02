@@ -34,21 +34,21 @@ class TreeNode {
     /**
      *
      */
-    public Word getWord() {
+    Word getWord() {
         return word;
     }
 
     /**
      *
      */
-    public String getLetters() {
+    String getLetters() {
         return word.letters;
     }
 
     /**
      *
      */
-    public String getSuffix() {
+    String getSuffix() {
         return suffix;
     }
     /**

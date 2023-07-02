@@ -20,15 +20,6 @@
     -fx-text-fill: -chat-area-text;
 }
 
-.tooltip {
-    -fx-padding: 2;
-    -fx-background-radius: 1;
-    -fx-background-color: #EFEFEF;
-    -fx-text-fill: black;
-    -fx-font-weight: normal;
-    -fx-show-delay: 500ms;
-}
-
 
 #games-panel {
     -fx-padding: 10;

@@ -15,7 +15,6 @@ class TilePanel extends Pane {
     protected TilePanel() {
         getStyleClass().add("tile-panel");
         setMinWidth(GameWindowBase.MIN_PANEL_WIDTH);
-
     }
 
     /**
@@ -35,7 +34,7 @@ class TilePanel extends Pane {
             rect.setFill(Color.YELLOW);
 
             char c = tilePool.charAt(i - 1);
-            Text text = new Text(x, c == 'Q' ? y - 3 : y - 2, c + "");
+            Text text = new Text(x, c == 'Q' ? y - 3 : y - 2, String.valueOf(c));
             text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
 
             getChildren().addAll(rect, text);

@@ -42,8 +42,6 @@ class AnagramsClient extends JProApplication {
 
 	Stage stage;
 
-
-	//	private SettingsMenu settingsMenu;
 	WordExplorer explorer;
 
 	private final FlowPane gamesPanel = new FlowPane();
@@ -475,14 +473,15 @@ class AnagramsClient extends JProApplication {
 		 */
 		private GamePane(JSONObject gameParams) {
 			gameID = gameParams.getString("gameID");
-			String gameName = gameParams.getString("game_name");
+			final String gameName = gameParams.getString("game_name");
 			allowWatchers = gameParams.getBoolean("allow_watchers");
 			maxPlayers = gameParams.getInt("max_players");
-			int blankPenalty = gameParams.getInt("blank_penalty");
-			String speed = gameParams.getString("speed");
-			String lexicon = gameParams.getString("lexicon");
-			int minLength = gameParams.getInt("min_length");
-			int numSets = gameParams.getInt("num_sets");
+			final int blankPenalty = gameParams.getInt("blank_penalty");
+			final String speed = gameParams.getString("speed");
+			final String lexicon = gameParams.getString("lexicon");
+			final int minLength = gameParams.getInt("min_length");
+			final int numSets = gameParams.getInt("num_sets");
+			final boolean rated = gameParams.getBoolean("rated");
 
 			gamePanes.put(gameID, this);
 
@@ -512,7 +511,7 @@ class AnagramsClient extends JProApplication {
 			playersLabel.setText("Players: 0/" + maxPlayers);
 
 			//join button
-			Button joinButton = new Button("Join game");
+			Button joinButton = new Button("Join " + (rated && !gameOver ? "(rated)" : "game"));
 			joinButton.setTooltip(new Tooltip(gameName));
 			joinButton.setOnMouseClicked(e -> {
 				if(gameWindows.isEmpty()) {

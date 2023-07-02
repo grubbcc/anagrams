@@ -21,7 +21,6 @@ class Play {
     }
 
     /**
-     *
      * @return a measure of how "playable" this play is. All valid plays will have a score >= 0.
      */
     int getScore() {

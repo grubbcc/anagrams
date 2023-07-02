@@ -4,7 +4,7 @@
     • Implemented ratings system.
     • Added notepad widget.
     • Redesigned server-only user profile storage system.
-    • Fixed a bug that caused Server to miscalcuate number of players in games.
+    • Fixed a bug that caused Server to miscalculate number of players in games.
 
 #### Version 1.0.1 - August 20, 2022
     • Added option to highlighting of CSW/NWL only words.

@@ -244,7 +244,6 @@ class PlayerPane extends PopWindow {
             String newProfile = editorPane.getText();
             client.send("updateprofile", new JSONObject().put("profile", newProfile));
             textColor = "BLACK"; linkColor = "BLUE"; backgroundColor = "#DDD";
-        //    mdfx.setMdString("");
             mdfx.setMdString(newProfile);
             setColors();
             bioScrollPane.setContent(mdfx);

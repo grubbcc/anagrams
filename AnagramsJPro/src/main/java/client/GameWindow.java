@@ -4,11 +4,13 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.css.PseudoClass;
 import javafx.css.Styleable;
 import javafx.event.Event;
 import javafx.geometry.*;
 import javafx.geometry.Insets;
+import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -99,6 +101,7 @@ class GameWindow extends PopWindow {
     private int position;
     private int maxPosition;
 
+
     /**
      *
      */
@@ -151,19 +154,19 @@ class GameWindow extends PopWindow {
         gameGrid.setHgap(3);
         gameGrid.setVgap(3);
 
+        ColumnConstraints col0 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col1 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col2 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
-        ColumnConstraints col3 = new ColumnConstraints(minPanelWidth, 326, Double.MAX_VALUE, Priority.ALWAYS, HPos.CENTER, true);
 
+        RowConstraints row0 = new RowConstraints();
+        row0.setPercentHeight(36);
         RowConstraints row1 = new RowConstraints();
         row1.setPercentHeight(36);
         RowConstraints row2 = new RowConstraints();
-        row2.setPercentHeight(36);
-        RowConstraints row3 = new RowConstraints();
-        row3.setPercentHeight(28);
+        row2.setPercentHeight(28);
 
-        gameGrid.getColumnConstraints().addAll(col1, col2, col3);
-        gameGrid.getRowConstraints().addAll(row1, row2, row3);
+        gameGrid.getColumnConstraints().addAll(col0, col1, col2);
+        gameGrid.getRowConstraints().addAll(row0, row1, row2);
 
         gameGrid.add(tilePanel, 1, 1);
         gameGrid.add(new GamePanel(0), 0, 0);
@@ -282,29 +285,8 @@ class GameWindow extends PopWindow {
                     notepad.show(false);
             });
 
-            maximizeButton.setOnAction(click -> {
-                for (int i = 0; i < 3; i++) {
-                    gameGrid.getColumnConstraints().get(i).setMinWidth(minPanelWidth);
-                    gameGrid.getColumnConstraints().get(i).setPrefWidth(326);
-                }
-                maximizeButton.maximizeAction.handle(click);
-                gameGrid.layout();
-
-                Platform.runLater(() -> {
-                    if (gameOver) {
-                        showPosition(gameLog.getJSONObject(position));
-                        return;
-                    }
-                    for (GamePanel panel : players.values()) {
-                        panel.wordPane.getChildren().clear();
-                        if (!panel.words.isEmpty()) {
-                            panel.savingSpace.set(false);
-                            panel.addWords(panel.words.keySet());
-                        }
-                    }
-                });
-            });
         }
+
 
         setAsMaximizeZone(titleBar, controlPanel, gameGrid);
 
@@ -321,7 +303,6 @@ class GameWindow extends PopWindow {
             startGame();
 
         show(false);
-
     }
 
     /**
@@ -457,6 +438,7 @@ class GameWindow extends PopWindow {
     /**
      *
      */
+    @Override
     void hide() {
 
         super.hide();
@@ -481,7 +463,7 @@ class GameWindow extends PopWindow {
     }
 
     /**
-     *
+     * Updates the preferred width of the window and each column
      */
     private void allocateSpace() {
 
@@ -501,7 +483,7 @@ class GameWindow extends PopWindow {
             }
         }
         else {
-            setPrefWidth(Math.max(1000, usedSpace + 10));
+            setPrefWidth(Math.max(1000, usedSpace + 20));
             for (int i = 0; i < 3; i++) {
                 ColumnConstraints currentColumn = gameGrid.getColumnConstraints().get(i);
                 currentColumn.setPrefWidth(currentColumn.getMinWidth() + availableSpace / 3);
@@ -522,6 +504,9 @@ class GameWindow extends PopWindow {
         private final Label playerRatingLabel = new Label();
         private final Label playerScoreLabel = new Label();
 
+        private final SimpleIntegerProperty tileWidth = new SimpleIntegerProperty();
+        private final SimpleIntegerProperty tileHeight = new SimpleIntegerProperty();
+        private final SimpleIntegerProperty tileFontSize = new SimpleIntegerProperty();
         private final SimpleBooleanProperty savingSpace = new SimpleBooleanProperty(false);
 
         int column = -1;
@@ -546,17 +531,50 @@ class GameWindow extends PopWindow {
             scrollPane.setFitToWidth(true);
             scrollPane.setFitToHeight(true);
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.prefViewportWidthProperty().bind(widthProperty());
             scrollPane.prefViewportHeightProperty().bind(heightProperty());
 
             wordPane.setAlignment(Pos.TOP_CENTER);
+
+            GridPane.setHgrow(this, Priority.ALWAYS);
+            GridPane.setVgrow(this, Priority.ALWAYS);
+
             wordPane.hgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 6 : 12, savingSpace));
             wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 6, savingSpace));
+
+            wordPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+                if(words.isEmpty()) return;
+
+                if (newValue.intValue() > oldValue.intValue()) {
+                    if (savingSpace.get()) {
+                        if (!willOverflow(newValue.doubleValue() - 4, false)) {
+                            savingSpace.set(false);
+                            for (Word word : words.values()) {
+                                word.draw();
+                            }
+                        }
+                    }
+                }
+
+                else if(!savingSpace.get()) {
+                    if(willOverflow(newValue.doubleValue() - 4, false)) {
+                        savingSpace.set(true);
+                        for(Word word : words.values()) {
+                            word.draw();
+                        }
+                    }
+                }
+            });
+
+            tileWidth.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 12 : 16, savingSpace));
+            tileHeight.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 16 : 20, savingSpace));
+            tileFontSize.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 18 : 24, savingSpace));
 
             setTop(infoPane);
             setCenter(scrollPane);
             if(!isMobile) setAsDragZone(infoPane, wordPane);
-            savingSpace.set(false);
+
         }
 
         /**
@@ -565,11 +583,9 @@ class GameWindow extends PopWindow {
         private GamePanel(int column) {
             this();
             this.column = column;
-            if (column >= 0) {
-                gamePanels.add(this);
-                scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            }
+            gamePanels.add(this);
         }
+
 
         /**
          * Puts the given player's name on this panel and displays their score.
@@ -577,6 +593,7 @@ class GameWindow extends PopWindow {
          * @param newPlayerName The name of the player to be added.
          */
         private GamePanel takeSeat(String newPlayerName, String newPlayerRating) {
+
             pseudoClassStateChanged(PseudoClass.getPseudoClass("abandoned"), false);
             this.playerName = newPlayerName;
 
@@ -625,12 +642,6 @@ class GameWindow extends PopWindow {
             savingSpace.set(false);
         }
 
-        /**
-         * //to implement later
-         */
-        private void addWord(Word wordToAdd) {
-
-        }
 
         /**
          * Add a new word to the player's collection and recalculate their score.
@@ -639,35 +650,29 @@ class GameWindow extends PopWindow {
          */
         private void addWord(String wordToAdd) {
 
-            Word newWord = new Word(wordToAdd, savingSpace.get());
-            words.put(wordToAdd, newWord);
+            Word newWord = new Word(wordToAdd);
 
             double paneWidth = getWidth();
-            double paneHeight = getHeight() - infoPane.getHeight();
 
             if (isMobile && newWord.width() > paneWidth) {
                 savingSpace.set(true);
                 gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.width());
             }
-
-            if(!wordPane.getChildren().isEmpty()) {
-                Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
-
-                if (bounds.getMaxY() + wordPane.getHgap() + newWord.height() > paneHeight) {
-                    if (bounds.getMaxX() + (wordPane.getVgap() + newWord.width()) / 2 > paneWidth) {
-                        if (!savingSpace.get()) {
-                            savingSpace.set(true);
-                            addWords(words.keySet());
-                            return;
-                        } else if (column >= 0) {
-                            gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
-                            allocateSpace();
-                        }
-                    }
+            if(willOverflow(newWord)) {
+                if (!savingSpace.get()) {
+                    savingSpace.set(true);
+                    for(Word word : words.values())
+                        word.draw();
+                }
+                else {
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
+                    allocateSpace();
                 }
             }
 
+            words.put(wordToAdd, newWord);
             newWord.setOpacity(0);
+            newWord.draw();
             wordPane.getChildren().add(newWord);
             FadeTransition ft = new FadeTransition(Duration.seconds(0.9), newWord);
             ft.setToValue(1.0);
@@ -679,54 +684,95 @@ class GameWindow extends PopWindow {
 
 
         /**
-         * Adds a bunch of words all at once. Used during postgame analysis, when resizing the window,
-         * and when joining a game.
+         * Used during gameplay
          */
-        private void addWords(Collection<String> wordsToAdd) {
+        private boolean willOverflow(Word newWord) {
+            double paneWidth = wordPane.getWidth();
+            double paneHeight = getHeight() - infoPane.getHeight() - 2;
 
-            wordPane.getChildren().clear();
+            if (!wordPane.getChildren().isEmpty()) {
+                Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
+
+                if (bounds.getMaxY() + wordPane.getHgap() + newWord.height() > paneHeight) {
+                    return bounds.getMaxX() + (wordPane.getVgap() + newWord.width()) / 2 > paneWidth;
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Adds a bunch of Words all at once. Used during postgame analysis.
+         */
+        private void addWords(Collection<Word> wordsToAdd) {
 
             if(wordsToAdd.isEmpty())
                 return;
 
-            for (String word : wordsToAdd) {
-                Word newWord = new Word(word, savingSpace.get());
-                words.put(word, newWord);
-                wordPane.getChildren().add(newWord);
-            }
-
-            layout();
-
-            double paneWidth = getWidth();
-            double paneHeight = getHeight() - infoPane.getHeight();
-            double maxY = wordPane.getChildren().get(wordsToAdd.size() - 1).getBoundsInParent().getMaxY();
+            double width = GameWindow.this.getWidth()/3 - 12;
+            double height = scrollPane.getHeight();
 
             //make sure layout is complete
-            if(maxY <= 0 || paneHeight <= 0) {
+            if(width <= 0 || height <= 0) {
+                layout();
                 Platform.runLater(() -> addWords(wordsToAdd));
                 return;
             }
-            //check if we need to save space by switching to small tiles
-            double minWidth = Math.max(minPanelWidth, paneWidth * maxY / paneHeight);
 
-            if(maxY > paneHeight) {
-                if (!savingSpace.get()) {
-                    if(column >= 0)
-                        gameGrid.getColumnConstraints().get(column).setMinWidth(324);
+            setScore();
+
+            boolean widthChanged = false;
+
+            if(!savingSpace.get()) {
+                if (willOverflow(width, false)) {
                     savingSpace.set(true);
-                    addWords(wordsToAdd);
-                    return;
                 }
-                //resize column
-                else if (column >= 0) {
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
+            }
+
+            if(savingSpace.get() && column >= 0) {
+                while (willOverflow(width, true)) {
+                    widthChanged = true;
+                    width *= 1.15;
+                }
+                if(widthChanged) {
+                    gameGrid.getColumnConstraints().get(column).setMinWidth(width);
                     allocateSpace();
                 }
             }
-            else if(column >= 0) {
-                gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
+
+            for(Word word : words.values())
+                word.draw();
+
+            wordPane.getChildren().addAll(words.values());
+        }
+
+        /**
+         * Check if this panel of given width can fit the words of the given size without resizing.
+         * <b>
+         * Used during postgame in conjunction with the addWords method.
+         * @param paneWidth How wide this pane should be. This is
+         */
+        private boolean willOverflow(double paneWidth, boolean small) {
+            double HGAP = small ? 6 : 12;
+            double VGAP = small ? 7 : 14;
+            double TILE_WIDTH = small ? 12 : 16;
+            double TILE_HEIGHT = small ? 16 : 20;
+
+            double paneHeight = scrollPane.getHeight() - 2;
+
+            double x = -HGAP;
+            double y = small ? 4.4 + TILE_HEIGHT : 7.2 + TILE_HEIGHT;
+
+            for(Word word : words.values()) {
+                x += HGAP + word.length()*TILE_WIDTH + (word.length()-1)*Word.TILE_GAP;
+                if(x > paneWidth) {
+                    x = -HGAP + word.length()*(TILE_WIDTH) + (word.length()-1)*Word.TILE_GAP + 2*Word.PADDING;
+                    y += VGAP + TILE_HEIGHT;
+                }
             }
-            setScore();
+
+            return y > paneHeight;
+
         }
 
 
@@ -748,6 +794,12 @@ class GameWindow extends PopWindow {
 
             score -= word.length() * word.length();
             playerScoreLabel.setText(score + "");
+
+            if(savingSpace.get()) {
+                if (!willOverflow(wordPane.getWidth(), false)) {
+                    savingSpace.set(false);
+                }
+            }
         }
 
         /**
@@ -764,21 +816,18 @@ class GameWindow extends PopWindow {
         /**
          *
          */
-        private class Word extends Region {
+        private class Word extends Group {
 
             private final static double TILE_GAP = 2;
             private static final int PADDING = 4;
             private final String letters;
             private boolean highlight = false;
 
-            final int tileWidth;
-            final int tileHeight;
-            final int tileFontSize;
 
             /**
              *
              */
-            private Word(String symbols, boolean savingSpace) {
+            private Word(String symbols) {
                 if(symbols.endsWith("#") || symbols.endsWith("$")) {
                     letters = symbols.substring(0, symbols.length() - 1);
                     highlight = client.prefs.getBoolean("highlight_words");
@@ -786,10 +835,6 @@ class GameWindow extends PopWindow {
                 else {
                     letters = symbols;
                 }
-
-                tileWidth = savingSpace ? 12 : 16;
-                tileHeight = savingSpace ? 16 : 20;
-                tileFontSize = savingSpace ? 18 : 24;
 
                 if (gameOver || isWatcher) {
                     setOnMouseClicked(event -> {
@@ -799,8 +844,6 @@ class GameWindow extends PopWindow {
                         explorer.lookUp(letters);
                     });
                 }
-
-                draw();
             }
 
             /**
@@ -814,14 +857,14 @@ class GameWindow extends PopWindow {
              * Calculates the size of this Word in pixels
              */
             private double width() {
-                return length()*tileWidth + (length() - 1)*TILE_GAP + 1 + 2*PADDING;
+                return length()*tileWidth.get() + (length() - 1)*TILE_GAP + 1 + 2*PADDING;
             }
 
             /**
              *
              */
             private double height() {
-                return tileHeight + PADDING;
+                return tileHeight.get() + PADDING;
             }
 
             /**
@@ -834,17 +877,17 @@ class GameWindow extends PopWindow {
 
                 for (Character tile : letters.toCharArray()) {
 
-                    Rectangle rect = new Rectangle(x, 0, tileWidth, tileHeight);
+                    Rectangle rect = new Rectangle(x, 0, tileWidth.get(), tileHeight.get());
                     rect.setArcWidth(2);
                     rect.setArcHeight(2);
                     rect.setFill(highlight ? Color.GOLD : Color.YELLOW);
 
-                    Text text = new Text(x + 1, tileHeight - 2, String.valueOf(Character.toUpperCase(tile)));
-                    text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize));
+                    Text text = new Text(x + 1, tileHeight.get() - 2, String.valueOf(Character.toUpperCase(tile)));
+                    text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize.get()));
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
                     getChildren().addAll(rect, text);
-                    x += tileWidth + TILE_GAP;
+                    x += tileWidth.get() + TILE_GAP;
                 }
             }
         }
@@ -998,14 +1041,17 @@ class GameWindow extends PopWindow {
         forwardButton.setPrefWidth(29);
         forwardTenButton.setPrefWidth(29);
         forwardToEndButton.setPrefWidth(29);
+
         showPlaysButton.textProperty().bind(Bindings.createStringBinding(
                 () -> wordDisplay.visibleProperty().get() ? "Hide plays" : "Show plays",
                 wordDisplay.visibleProperty())
         );
+
         showPlaysButton.setOnAction(e -> {
             if (wordDisplay.isVisible()) {
                 wordDisplay.hide();
             } else {
+                wordDisplay.reset();
                 wordDisplay.show(false);
                 client.send("findplays", new JSONObject().put("gameID", gameID).put("position", position));
             }
@@ -1067,19 +1113,18 @@ class GameWindow extends PopWindow {
      *               consisting of the remaining time, the tile pools, a list of players (even indices)
      *               and their words (odd indices)
      */
-    @SuppressWarnings("unchecked")
     void showPosition(JSONObject gameState) {
 
-        for (GamePanel panel : players.values())
+        for (GamePanel panel : gamePanels) {
             panel.reset();
+        }
 
         players.clear();
 
         for (int c = 0; c < 3; c++) {
             gameGrid.getColumnConstraints().get(c).setMinWidth(minPanelWidth);
-            gameGrid.getColumnConstraints().get(c).setPrefWidth(326);
+            gameGrid.getColumnConstraints().get(c).setPrefWidth(getMinWidth()/3 - 20);
         }
-        gameGrid.layout();
 
         notificationArea.setText("Time remaining " + gameState.getInt("time"));
 
@@ -1089,10 +1134,18 @@ class GameWindow extends PopWindow {
         for(int p = 0; p < players.length(); p++) {
             JSONObject player = players.getJSONObject(p);
             GamePanel panel = addPlayer(player.getString("name"), player.getString("rating"));
-            panel.addWords((List<String>)(List<?>)player.getJSONArray("words").toList());
+            for(int s = 0; s < player.getJSONArray("words").length(); s++) {
+                String symbols = player.getJSONArray("words").getString(s);
+                GamePanel.Word newWord = panel.new Word(symbols);
+                panel.words.put(symbols, newWord);
+            }
+            panel.addWords(panel.words.values());
+
         }
 
+
         if (wordDisplay.isVisible()) {
+            wordDisplay.reset();
             client.send("findplays", new JSONObject()
                     .put("gameID", gameID)
                     .put("position", position)
@@ -1128,9 +1181,10 @@ class GameWindow extends PopWindow {
             AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
 
+            poolPanel.playerNameLabel.setText("Pool");
+            stealsPanel.playerNameLabel.setText("Steals");
             poolPanel.infoPane.getChildren().remove(poolPanel.playerScoreLabel);
             stealsPanel.infoPane.getChildren().remove(stealsPanel.playerScoreLabel);
-
             poolPanel.scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             stealsPanel.scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
@@ -1171,36 +1225,41 @@ class GameWindow extends PopWindow {
         /**
          *
          */
-        @SuppressWarnings("unchecked")
         private void setWords(JSONArray wordsInPool, JSONArray possibleSteals) {
 
-            poolPanel.wordPane.getChildren().clear();
-            stealsPanel.wordPane.getChildren().clear();
-            poolPanel.playerNameLabel.setText("Pool");
-            stealsPanel.playerNameLabel.setText("Steals");
+            for(int p = 0; p < wordsInPool.length(); p++) {
+                String symbols = wordsInPool.getString(p);
+                GamePanel.Word newWord = poolPanel.new Word(symbols);
+                poolPanel.words.put(symbols, newWord);
+            }
+            poolPanel.addWords(poolPanel.words.values());
 
-            //pool
-            poolPanel.addWords((List<String>)(List<?>)wordsInPool.toList());
-
-            //steals
-
-            ArrayList<String> steals = new ArrayList<>(possibleSteals.length());
 
             for(int s = 0; s < possibleSteals.length(); s++) {
-                steals.add(possibleSteals.getJSONObject(s).getString("longWord"));
+                JSONObject json = possibleSteals.getJSONObject(s);
+                String shortWord = json.getString("shortWord");
+                String steal = json.getString("steal");
+                String longWord = json.getString("longWord");
+                GamePanel.Word newSteal = stealsPanel.new Word(longWord);
+                stealsPanel.words.put(longWord, newSteal);
+                Tooltip.install(stealsPanel.words.get(longWord), new Tooltip(shortWord + " + " + steal + " ⟶ " + longWord));
             }
-            stealsPanel.addWords(steals);
+            stealsPanel.addWords(stealsPanel.words.values());
 
-            Platform.runLater(() -> {
-                for(int s = 0; s < possibleSteals.length(); s++) {
-                    JSONObject json = possibleSteals.getJSONObject(s);
-                    String shortWord = json.getString("shortWord");
-                    String steal = json.getString("steal");
-                    String longWord = json.getString("longWord");
-                    Tooltip.install(stealsPanel.words.get(longWord), new Tooltip(shortWord + " + " + steal + " ⟶ " + longWord));
-                }
-            });
+
          }
+
+        /**
+         *
+         */
+        private void reset() {
+            poolPanel.words.clear();
+            poolPanel.wordPane.getChildren().clear();
+            poolPanel.savingSpace.set(false);
+            stealsPanel.words.clear();
+            stealsPanel.wordPane.getChildren().clear();
+            stealsPanel.savingSpace.set(false);
+        }
     }
 
 
@@ -1212,6 +1271,7 @@ class GameWindow extends PopWindow {
      * @param input Letters entered by the player into the textField
      */
     private void makePlay(String input) {
+
         if (input.length() >= minLength) {
             for (Map.Entry<String, GamePanel> player : players.entrySet()) {
                 String playerName = player.getKey();

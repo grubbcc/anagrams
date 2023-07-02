@@ -43,7 +43,7 @@ class WordFinder {
         blanksAvailable = tiles.length() - tiles.replaceAll("\\?","").length();
 
         if(tilePool.length() >= minLength)
-            findInPool(dictionary.rootNode, "", Utils.alphabetize(tiles.replaceAll("\\?","")), 0);
+            findInPool(dictionary.rootNode, "", Utils.alphabetize(tilePool.replaceAll("\\?","")), 0);
 
         JSONObject foundWords = new JSONObject().put("pool", new JSONArray(wordsInPool));
 

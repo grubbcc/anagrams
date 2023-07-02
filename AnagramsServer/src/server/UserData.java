@@ -8,7 +8,7 @@ import java.util.prefs.Preferences;
 /**
  *
  */
-public class UserData {
+class UserData {
 
     private JSONObject prefs;
     private Preferences backingStore;

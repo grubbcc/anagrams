@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 class Player {
 
-    boolean abandoned;
+    boolean abandoned = false;
 
     static final int D = 400;
     static final int K = 100;
