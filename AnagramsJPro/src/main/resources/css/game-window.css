@@ -81,3 +81,7 @@
 #word-display {
     -fx-background-color: -game-background;
 }
+
+#word-display .tooltip {
+	-fx-font-family: sans-serif;
+}

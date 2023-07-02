@@ -1,0 +1,8 @@
+.menu-button,
+.menu-button {
+	-fx-pref-width: 112px;
+}
+
+.menu-button .spinner {
+	-fx-pref-width: 45px;
+}

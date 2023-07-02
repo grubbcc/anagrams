@@ -8,7 +8,7 @@ import java.net.Socket;
  * Tools to interact with and get data from the program.
  * Can be used to send alert messages to all users.
  */
-public class AdminServer extends Thread {
+class AdminServer extends Thread {
 
     private static final int ADMIN_PORT = 8117;
     private final Server gameServer;

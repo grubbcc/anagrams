@@ -1,6 +1,6 @@
 package server;
 
-public class Word {
+class Word {
     final String letters;
     final String suffix;
     final String definition;

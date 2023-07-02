@@ -35,7 +35,6 @@ class GameMenu extends PopWindow {
     private final ChoiceBox<Integer> blankChooser = new ChoiceBox<>(FXCollections.observableArrayList(blankPenaltyChoices));
     private final ChoiceBox<String> lexiconChooser = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
     private final ChoiceBox<String> speedChooser = new ChoiceBox<>(FXCollections.observableArrayList(speedChoices));
-  //  private final MenuButton waitChooser = new MenuButton("10 seconds");
     private final ChoiceBox<String> skillChooser = new ChoiceBox<>(FXCollections.observableArrayList(skillLevelChoices));
 
     private final CheckBox chatBox = new CheckBox("Allow chatting");
