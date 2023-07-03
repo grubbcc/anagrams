@@ -3,10 +3,14 @@ package server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tools to interact with and get data from the program.
- * Can be used to send alert messages to all users.
+ * Can be used (once implemented) to send alert messages to all users.
  */
 class AdminServer extends Thread {
 
@@ -43,7 +47,20 @@ class AdminServer extends Thread {
                         }
                     }
 
-                    case "games" -> out.println("There are currently " + gameServer.getGames().size() + " active games");
+                    case "games" -> {
+                        List<Game> games = gameServer.getGames().stream().toList();
+                        for(int g = 0; g < games.size(); g++) {
+                            out.println("Game " + (g + 1) + ": ");
+                            ConcurrentHashMap<String, Player> players = games.get(g).players;
+                            StringJoiner joiner = new StringJoiner(", ", "[", "]");
+                            for(Map.Entry<String, Player> player : players.entrySet()) {
+                                joiner.add(player.getKey() + (player.getValue().abandoned ? " (abandoned)" : ""));
+                            }
+                            out.println("\tPlayers: " + joiner);
+                            out.println("\tWatchers: " + games.get(g).watchers.keySet());
+                        }
+                        out.println("There are currently " + gameServer.getGames().size() + " active games");
+                    }
                     case "users" -> out.println("Users: " + gameServer.getUsernames());
 
                     default -> out.println("Command not recognized");
