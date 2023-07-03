@@ -55,7 +55,7 @@ class Game {
 	final HashMap<Integer, String> plays = new HashMap<>();		//for some reason HashMap<Integer,JSONObject> fails
 
 	final ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, ServerWorker> watchers = new ConcurrentHashMap<>();
+	final ConcurrentHashMap<String, ServerWorker> watchers = new ConcurrentHashMap<>();
 
 	private WordFinder wordFinder;
 
@@ -353,19 +353,20 @@ class Game {
 		if(playerToRemove == null) return;
 
 		if(gameOver) {
-			players.remove(playerName);
-		}
-		else if(playerToRemove.words.isEmpty()) {
-			players.remove(playerName);
-			server.broadcast("removeplayer", new JSONObject()
-					.put("gameID", gameID)
-					.put("name", playerName));
+			playerToRemove.abandoned = true;
 		}
 		else {
-			playerToRemove.abandoned = true;
-			notifyRoom("abandonseat", new JSONObject()
-					.put("gameID", gameID)
-					.put("name", playerName));
+			if (playerToRemove.words.isEmpty()) {
+				players.remove(playerName);
+				server.broadcast("removeplayer", new JSONObject()
+						.put("gameID", gameID)
+						.put("name", playerName));
+			} else {
+				playerToRemove.abandoned = true;
+				notifyRoom("abandonseat", new JSONObject()
+						.put("gameID", gameID)
+						.put("name", playerName));
+			}
 		}
 
 		if(players.values().stream().allMatch(player -> player instanceof Robot || player.abandoned)) {
@@ -423,7 +424,7 @@ class Game {
 	synchronized void removeWatcher(String watcherToRemove) {
 		watchers.remove(watcherToRemove);
 
-		if(watchers.isEmpty() && players.values().stream().allMatch(player -> player instanceof Robot)) {
+		if(watchers.isEmpty() && players.values().stream().allMatch(player -> player instanceof Robot || player.abandoned)) {
 			deleteTimer.cancel();
 			deleteTimer = new Timer();
 			deleteTimer.schedule(new DeleteTask(), 180000);
