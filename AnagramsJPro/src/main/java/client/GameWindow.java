@@ -175,6 +175,7 @@ class GameWindow extends PopWindow {
         gameGrid.add(new GamePanel(0), 0, 1);
         gameGrid.add(new GamePanel(2), 2, 1);
         gameGrid.add(homePanel, 0, 2, 3, 1);
+        gamePanels.add(homePanel);
 
         //main layout
         borderPane.setTop(controlPanel);
@@ -655,8 +656,10 @@ class GameWindow extends PopWindow {
             double paneWidth = getWidth();
 
             if (isMobile && newWord.width() > paneWidth) {
-                savingSpace.set(true);
                 gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.width());
+                savingSpace.set(true);
+                for(Word word : words.values())
+                    word.draw();
             }
             if(willOverflow(newWord)) {
                 if (!savingSpace.get()) {
@@ -709,7 +712,8 @@ class GameWindow extends PopWindow {
             if(wordsToAdd.isEmpty())
                 return;
 
-            double width = GameWindow.this.getWidth()/3 - 12;
+            double width = column >= 0 ? GameWindow.this.getWidth()/3 - 12 : GameWindow.this.getWidth() - 8;
+
             double height = scrollPane.getHeight();
 
             //make sure layout is complete
@@ -784,20 +788,23 @@ class GameWindow extends PopWindow {
          * @param wordToRemove The word to be removed.
          */
         private void removeWord(String wordToRemove) {
-            Word word = words.remove(wordToRemove);
-            if(word == null) return;
+            Word removedWord = words.remove(wordToRemove);
+            if(removedWord == null) return;
 
-            FadeTransition ft = new FadeTransition(Duration.seconds(1), word);
+            FadeTransition ft = new FadeTransition(Duration.seconds(1), removedWord);
             ft.setToValue(0);
-            ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(word));
+            ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(removedWord));
             ft.play();
 
-            score -= word.length() * word.length();
+            score -= removedWord.length() * removedWord.length();
             playerScoreLabel.setText(score + "");
 
             if(savingSpace.get()) {
                 if (!willOverflow(wordPane.getWidth(), false)) {
                     savingSpace.set(false);
+                    for(Word word : words.values()) {
+                        word.draw();
+                    }
                 }
             }
         }
@@ -836,6 +843,7 @@ class GameWindow extends PopWindow {
                     letters = symbols;
                 }
 
+                setPickOnBounds(true);
                 if (gameOver || isWatcher) {
                     setOnMouseClicked(event -> {
                         if (!explorer.isVisible()) {
