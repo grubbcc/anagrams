@@ -14,7 +14,7 @@ class Utils {
      * @param shortWord a shorter word
      * @param longWord a longer word
      */
-    private static boolean isSubset(String shortWord, String longWord) {
+    static boolean isSubset(String shortWord, String longWord) {
 
         if(shortWord.length() >= longWord.length()) {
             return false;
@@ -50,9 +50,6 @@ class Utils {
      * @param longWord a longer word
      */
     static boolean isRearrangement(String shortWord, String longWord) {
-
-        if(!isSubset(shortWord, longWord))
-            return false;
 
         while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
 

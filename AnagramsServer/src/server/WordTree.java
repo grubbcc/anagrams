@@ -98,8 +98,7 @@ class WordTree {
 
 		for (TreeNode nextNode : treeNodeList) {
 			String nextWord = nextNode.getWord().letters;
-
-			if (Utils.isRearrangement(nextWord, currentWord)) {
+			if (Utils.isSubset(nextWord, currentWord) && Utils.isRearrangement(nextWord, currentWord)) {
 				nextNode.addChild(currentNode);
 				return;
 			}
