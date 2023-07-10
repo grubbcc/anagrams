@@ -197,14 +197,14 @@ class Play {
             return longWord.length() - minLength >= penalty;
         }
         else if(longWord.length() - shortWord.length() >= Math.max(penalty, 1))  {
-            return isRearrangement(shortWord.toUpperCase(), longWord);
+            return isRearrangement(shortWord.replaceAll("[a-z]", ""), longWord);
         }
         return false;
     }
 
 
     /**
-     * Given two words, the shorter of which is a subset of the other, determines whether a rearrangement/permutation
+     * Given two words, determines whether a rearrangement/permutation
      * of letters is necessary to form the longer.
      *
      * @param shortWord     a short word (case must match longWord)
