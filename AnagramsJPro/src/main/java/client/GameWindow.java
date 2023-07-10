@@ -536,11 +536,9 @@ class GameWindow extends PopWindow {
             scrollPane.prefViewportWidthProperty().bind(widthProperty());
             scrollPane.prefViewportHeightProperty().bind(heightProperty());
 
-            wordPane.setAlignment(Pos.TOP_CENTER);
-
             GridPane.setHgrow(this, Priority.ALWAYS);
             GridPane.setVgrow(this, Priority.ALWAYS);
-
+            wordPane.setAlignment(Pos.TOP_CENTER);
             wordPane.hgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 6 : 12, savingSpace));
             wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 6, savingSpace));
 
@@ -653,14 +651,6 @@ class GameWindow extends PopWindow {
 
             Word newWord = new Word(wordToAdd);
 
-            double paneWidth = getWidth();
-
-            if (isMobile && newWord.width() > paneWidth) {
-                gameGrid.getColumnConstraints().get(column).setPrefWidth(newWord.width());
-                savingSpace.set(true);
-                for(Word word : words.values())
-                    word.draw();
-            }
             if(willOverflow(newWord)) {
                 if (!savingSpace.get()) {
                     savingSpace.set(true);
@@ -668,7 +658,8 @@ class GameWindow extends PopWindow {
                         word.draw();
                 }
                 else {
-                    gameGrid.getColumnConstraints().get(column).setMinWidth(paneWidth * 1.15);
+                    ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
+                    constraints.setMinWidth(Math.max(newWord.width(), constraints.getMinWidth() * 1.15));
                     allocateSpace();
                 }
             }
@@ -685,20 +676,62 @@ class GameWindow extends PopWindow {
             playerScoreLabel.setText(score + "");
         }
 
+        /**
+         *
+         */
+        private void replaceWord(String shortWord, String longWord) {
+            Word newWord = new Word(longWord);
+
+            if(willOverflow(newWord)) {
+                if (!savingSpace.get()) {
+                    savingSpace.set(true);
+                    for(Word word : words.values())
+                        word.draw();
+                }
+                else {
+                    ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
+                    constraints.setMinWidth(Math.max(newWord.width(), constraints.getMinWidth() * 1.15));
+                    allocateSpace();
+                }
+            }
+
+
+            Word removedWord = words.remove(shortWord);
+            if(removedWord != null) {
+                FadeTransition ft = new FadeTransition(Duration.seconds(1), removedWord);
+                ft.setToValue(0);
+                ft.setOnFinished(actionEvent -> wordPane.getChildren().remove(removedWord));
+                ft.play();
+                score -= removedWord.length() * removedWord.length();
+            }
+
+            words.put(longWord, newWord);
+            newWord.setOpacity(0);
+            newWord.draw();
+            wordPane.getChildren().add(newWord);
+            FadeTransition ft = new FadeTransition(Duration.seconds(0.9), newWord);
+            ft.setToValue(1.0);
+            ft.play();
+
+            score += newWord.length() * newWord.length() ;
+            playerScoreLabel.setText(score + "");
+
+        }
 
         /**
          * Used during gameplay
          */
         private boolean willOverflow(Word newWord) {
             double paneWidth = wordPane.getWidth();
-            double paneHeight = getHeight() - infoPane.getHeight() - 2;
+            double paneHeight = scrollPane.getHeight() - 2;
 
-            if (!wordPane.getChildren().isEmpty()) {
-                Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
+            if(newWord.width() > paneWidth) return true;
+            if(words.isEmpty()) return false;
 
-                if (bounds.getMaxY() + wordPane.getHgap() + newWord.height() > paneHeight) {
-                    return bounds.getMaxX() + (wordPane.getVgap() + newWord.width()) / 2 > paneWidth;
-                }
+            Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
+
+            if (bounds.getMaxY() + wordPane.getHgap() + newWord.height() > paneHeight) {
+                return bounds.getMaxX() + (wordPane.getVgap() + newWord.width()) / 2 > paneWidth;
             }
 
             return false;
@@ -919,9 +952,7 @@ class GameWindow extends PopWindow {
      * @param nextTiles The letters that the TilePanel should display.
      */
     void setTiles(String nextTiles) {
-        if (nextTiles.equals("#"))
-            nextTiles = "";
-        tilePool = nextTiles;
+        tilePool = nextTiles.equals("#") ? "" : nextTiles;
         tilePanel.showTiles(tilePool);
         if(!gameOver)
             updateWordBuilder(textField.getText().toUpperCase());
@@ -997,9 +1028,19 @@ class GameWindow extends PopWindow {
      *
      */
     void doSteal(String shortPlayer, String shortWord, String longPlayer, String longWord, String nextTiles) {
-        removeWord(shortPlayer, shortWord);
-        makeWord(longPlayer, longWord, nextTiles);
+        if(shortPlayer.equals(longPlayer)) {
+            if(players.containsKey(shortPlayer))
+                players.get(shortPlayer).replaceWord(shortWord, longWord);
+            setTiles(nextTiles);
+            if (client.prefs.getBoolean("play_sounds"))
+                wordClip.play();
+        }
+        else {
+            removeWord(shortPlayer, shortWord);
+            makeWord(longPlayer, longWord, nextTiles);
+        }
     }
+
 
 
     /**
@@ -1250,7 +1291,7 @@ class GameWindow extends PopWindow {
                 String longWord = json.getString("longWord");
                 GamePanel.Word newSteal = stealsPanel.new Word(longWord);
                 stealsPanel.words.put(longWord, newSteal);
-                Tooltip.install(stealsPanel.words.get(longWord), new Tooltip(shortWord + " + " + steal + " ⟶ " + longWord));
+                Tooltip.install(stealsPanel.words.get(longWord), new Tooltip(shortWord + " + " + steal + " -> " + longWord));
             }
             stealsPanel.addWords(stealsPanel.words.values());
 
