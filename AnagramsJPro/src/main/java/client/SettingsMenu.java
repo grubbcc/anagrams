@@ -24,6 +24,7 @@ import java.util.HashMap;
 class SettingsMenu extends PopWindow {
 
     private final AnagramsClient client;
+    private final Button OKButton;
     private final CheckBox soundChooser = new CheckBox("Play sounds");
     private final CheckBox highlightChooser = new CheckBox("");
     private final ChoiceBox<String> lexiconChooser = new ChoiceBox<>(FXCollections.observableArrayList(AnagramsClient.lexicons));
@@ -52,33 +53,37 @@ class SettingsMenu extends PopWindow {
         lexiconChooser.pseudoClassStateChanged(PseudoClass.getPseudoClass("mobile"), client.getWebAPI().isMobile());
         soundChooser.setSelected(client.prefs.getBoolean("play_sounds"));
         GridPane.setHalignment(soundChooser, HPos.RIGHT);
-        soundChooser.setPadding(new Insets(0,10,0,0));
+
         highlightChooser.setSelected(client.prefs.getBoolean("highlight_words"));
+
         Label goldLabel = new Label("Highlight");
         goldLabel.setAlignment(Pos.TOP_CENTER);
         goldLabel.setBackground(new Background(new BackgroundFill(Color.GOLD, new CornerRadii(1), new Insets(1,0,-1,1))));
         Label clearLabel = new Label("CSW/NWL-only words");
 
-        HBox higlightBox = new HBox(highlightChooser, goldLabel, clearLabel);
+        HBox highlightBox = new HBox(highlightChooser, goldLabel, clearLabel);
+        highlightChooser.setPadding(new Insets(3, 2, 0, 0));
+        highlightBox.setPadding(new Insets(9,0,0,0));
 
         //buttons
-        Button OKButton = new Button("Okay");
+        OKButton = new Button("Okay");
         Button CancelButton = new Button("Cancel");
         Button ApplyButton = new Button("Apply");
 
         grid.add(lexiconLabel, 0, 0, 1, 1);
         grid.add(lexiconChooser, 1, 0, 1, 1);
         grid.add(soundChooser, 2, 0, 1, 1);
-        grid.add(higlightBox, 0, 1, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.MAIN_SCREEN), 0, 2, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.PLAYERS_LIST), 0, 3, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_FOREGROUND), 0, 4, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_BACKGROUND), 0, 5, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.CHAT_AREA), 0, 6, 3, 1);
-        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_CHAT), 0, 7, 3, 1);
-        grid.add(OKButton, 0, 8);
-        grid.add(CancelButton, 1, 8);
-        grid.add(ApplyButton, 2, 8);
+        grid.add(highlightBox, 0, 1, 3, 1);
+        grid.add(new ColorChooser(), 0, 2, 3,1 );
+        grid.add(new ColorChooser(AnagramsClient.Colors.MAIN_SCREEN), 0, 3, 3, 1);
+        grid.add(new ColorChooser(AnagramsClient.Colors.PLAYERS_LIST), 0, 4, 3, 1);
+        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_FOREGROUND), 0, 5, 3, 1);
+        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_BACKGROUND), 0, 6, 3, 1);
+        grid.add(new ColorChooser(AnagramsClient.Colors.CHAT_AREA), 0, 7, 3, 1);
+        grid.add(new ColorChooser(AnagramsClient.Colors.GAME_CHAT), 0, 8, 3, 1);
+        grid.add(OKButton, 0, 9);
+        grid.add(CancelButton, 1, 9);
+        grid.add(ApplyButton, 2, 9);
 
         OKButton.setOnAction(e -> { applyChanges(); savePreferences(); hide(); });
         CancelButton.setOnAction(e -> {revertChanges(); hide();});
@@ -86,14 +91,20 @@ class SettingsMenu extends PopWindow {
         closeButton.setOnAction(e -> {revertChanges(); hide();});
 
         setContents(grid);
-        setMaxSize(340,380);
         setTitle("Settings");
 
         setId("settings-menu");
         getStylesheets().add("css/settings-menu.css");
         setAsDragZone(grid);
-        show(false);
 
+    }
+
+    /**
+     *
+     */
+    @Override
+    void show(boolean modal) {
+        super.show(false);
         client.stage.requestFocus(); //Prevents IllegalStateException in touchscreen mode
         OKButton.requestFocus();
     }
@@ -155,17 +166,47 @@ class SettingsMenu extends PopWindow {
         String colorCode;
 
         /**
+         * Just an empty header row
          */
-        ColorChooser(AnagramsClient.Colors color) {
+        private ColorChooser() {
+            getStyleClass().add("color-chooser");
+
+            getColumnConstraints().add(new ColumnConstraints(115));
+            getColumnConstraints().add(new ColumnConstraints(105));
+
+            Label labelR = new Label("R");
+            Label labelB = new Label("B");
+            Label labelG = new Label("G");
+
+            GridPane headers = new GridPane();
+
+            GridPane.setHalignment(labelR, HPos.CENTER);
+            GridPane.setHalignment(labelG, HPos.CENTER);
+            GridPane.setHalignment(labelB, HPos.CENTER);
+            GridPane.setHgrow(labelR, Priority.ALWAYS);
+            GridPane.setHgrow(labelG, Priority.ALWAYS);
+            GridPane.setHgrow(labelB, Priority.ALWAYS);
+
+            headers.add(labelR, 0, 0);
+            headers.add(labelG, 1, 0);
+            headers.add(labelB, 2, 0);
+
+            add(headers, 1, 0);
+        }
+
+        /**
+         */
+        private ColorChooser(AnagramsClient.Colors color) {
             this.color = color;
+            getStyleClass().add("color-chooser");
             setColor(client.colors.get(color));
             colorChoosers.put(color, this);
 
-            getColumnConstraints().add(new ColumnConstraints(130));
-            getColumnConstraints().add(new ColumnConstraints(120));
-            getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
-
             setColor(colorCode);
+
+            getColumnConstraints().add(new ColumnConstraints(120));
+            getColumnConstraints().add(new ColumnConstraints(105));
+            getColumnConstraints().add(new ColumnConstraints(USE_COMPUTED_SIZE));
 
             add(new Label(color.display), 0, 0);
             add(new ColorPane(), 1, 0);
@@ -201,12 +242,11 @@ class SettingsMenu extends PopWindow {
              */
             ColorPane() {
                 getStyleClass().add("color-pane");
+
                 add(textFieldR, 0, 0);
                 add(textFieldG, 1, 0);
                 add(textFieldB, 2, 0);
-                add(new Label("R"), 0, 1);
-                add(new Label("G"), 1, 1);
-                add(new Label("B"), 2, 1);
+
                 textFieldR.textProperty().addListener(textListener);
                 textFieldG.textProperty().addListener(textListener);
                 textFieldB.textProperty().addListener(textListener);
@@ -214,7 +254,7 @@ class SettingsMenu extends PopWindow {
 
             /**
              */
-            private ChangeListener<String> textListener = new ChangeListener<>() {
+            private final ChangeListener<String> textListener = new ChangeListener<>() {
 
                 @Override
                 public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {

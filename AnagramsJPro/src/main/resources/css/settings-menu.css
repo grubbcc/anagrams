@@ -1,6 +1,11 @@
 #settings-menu {
-    -fx-max-width: 340;
-    -fx-max-height: 380;
+    -fx-max-width: 305;
+    -fx-max-height: 350;
+}
+
+.text-field {
+    -fx-padding: 1, 0, 1, 0;
+    -fx-alignment: center;
 }
 
 #settings-menu:mobile {
@@ -10,32 +15,30 @@
 
 #settings-grid {
     -fx-padding: 3;
-    -fx-hgap: 3;
-    -fx-vgap: 3;
+    -fx-vgap: 9;
 }
 
+.color-chooser {
+	-fx-hgap: 6;
+}
 
 .color-pane {
-    -fx-pref-width: 80;
-    -fx-pref-height: 40;
+    -fx-pref-width: 110;
     -fx-hgap: 9;
-    -fx-vgap: 0;
 }
+
+/*
 
 .color-pane .text-field {
     -fx-padding: 0;
     -fx-alignment: center;
-}
+}*/
 
-.color-pane .label {
-    -fx-alignment: center;
-    -fx-max-width: Infinity;
-}
 
 .color-combo-box {
     -fx-pref-height: 18;
     -fx-pref-width: 70;
-    -fx-padding: 1, 1, 5, 1;
+    -fx-padding: 0;
 }
 
 .color-combo-box .arrow,
