@@ -57,6 +57,8 @@ class AnagramsClient extends JProApplication {
 	final AnchorPane anchor = new AnchorPane(splitPane);
 	final StackPane stack = new StackPane(anchor);
 
+	private final Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
+	private SettingsMenu settingsMenu;
 	private final TextField chatField = new TextField();
 	private final TextArea chatBox = new TextArea();
 	private final BorderPane chatPanel = new BorderPane();
@@ -154,10 +156,8 @@ class AnagramsClient extends JProApplication {
 		createGameButton.setPrefHeight(39);
 		createGameButton.setOnAction(e -> {if(gameWindows.isEmpty()) new GameMenu(this);});
 
-		Button settingsButton = new Button("Settings", new ImageView("/images/settings.png"));
 		settingsButton.setStyle("-fx-font-size: 18");
 		settingsButton.setPrefSize(162, 33);
-		settingsButton.setOnAction(e -> new SettingsMenu(this));
 
 		HBox controlPanel = new HBox();
 		controlPanel.setFillHeight(true);
@@ -250,7 +250,7 @@ class AnagramsClient extends JProApplication {
 		scene.getStylesheets().setAll("css/anagrams.css", "css/main.css");
 
 		stage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-			if(username != null && e.getCode().equals(KeyCode.ESCAPE)) {
+			if(connected && e.getCode().equals(KeyCode.ESCAPE)) {
 				if (!PopWindow.popWindows.isEmpty())
 					PopWindow.popWindows.pop().hide();
 			}
@@ -349,13 +349,14 @@ class AnagramsClient extends JProApplication {
 		this.prefs = prefs;
 
 		explorer = new WordExplorer(prefs.getString("lexicon"), this);
+		settingsMenu = new SettingsMenu(this);
+		settingsButton.setOnAction(e -> {if(!settingsMenu.isVisible()) settingsMenu.show(false);});
 
 		//set user colors
 		for (Colors color : Colors.values())
 			colors.put(color, prefs.getString(color.key));
 		setColors();
 
-		//	settingsMenu = new SettingsMenu(this);
 		new Thread(this::readMessageLoop).start();
 		new Thread(this::executeCommandLoop).start();
 
@@ -741,17 +742,6 @@ class AnagramsClient extends JProApplication {
 				if (connected) {
 					logOut();
 				}
-				if (stage.isShowing()) {
-
-					Platform.runLater(() -> {
-						MessageDialog dialog = new MessageDialog(this, "Connection error");
-						dialog.setText("The connection to the server has been lost. Try to reconnect?");
-						dialog.addYesNoButtons();
-						dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
-						dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
-						dialog.show(true);
-					});
-				}
 			}
 		}
 	}
@@ -842,6 +832,18 @@ class AnagramsClient extends JProApplication {
 			serverIn.close();
 
 			System.out.println(username + " has disconnected.");
+			if (stage.isShowing()) {
+
+				Platform.runLater(() -> {
+					MessageDialog dialog = new MessageDialog(this, "Connection error");
+					dialog.setText("The connection to the server has been lost. Try to reconnect?");
+					dialog.addYesNoButtons();
+					dialog.yesButton.setOnAction(e -> getWebAPI().executeScript("window.location.reload(false)"));
+					dialog.noButton.setOnAction(e -> getWebAPI().openURL("https://www.anagrams.site"));
+					dialog.show(true);
+				});
+			}
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -857,7 +859,7 @@ class AnagramsClient extends JProApplication {
 				exitGame(gameWindow.gameID, gameWindow.isWatcher);
 			send("logoff");
 			disconnect();
-			getWebAPI().closeInstance();
+			Platform.runLater(() -> getWebAPI().closeInstance());
 		}
 	}
 
