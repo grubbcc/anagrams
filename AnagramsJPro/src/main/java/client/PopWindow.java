@@ -84,9 +84,9 @@ class PopWindow extends BorderPane {
 
 
         /**
-         *
+         * Sets the MaximizeButton's icon
          */
-        void setMaximized(boolean maximized) {
+        private void setMaximized(boolean maximized) {
             isMaximized = maximized;
             if(maximized)
                 maximizeButton.setGraphic(unmaximizeIcon);
@@ -95,7 +95,7 @@ class PopWindow extends BorderPane {
         }
 
         /**
-         * Alternate PopWindow between maximized and un-maximized and update MaximizeButton accordingly
+         * Alternate MaximizeButton icon between maximized and un-maximized
          */
         void toggle() {
             setMaximized(!isMaximized);
