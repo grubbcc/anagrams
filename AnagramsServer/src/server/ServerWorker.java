@@ -321,11 +321,7 @@ class ServerWorker implements Runnable {
 	 *
 	 */
 	private void disconnect() throws IOException {
-		outputStream.flush();
 		reader.close();
-
-		inputStream.close();
-		outputStream.close();
 		clientSocket.close();
 
 		System.out.println(username + " has disconnected");
@@ -431,9 +427,7 @@ class ServerWorker implements Runnable {
 	}
 
     /**
-	 *
-	 * //deprecated
-	* Inform the player about events happening on the server
+	* Inform the user about events happening on the server
 	*
 	* @param json The message to be sent.
 	*/
