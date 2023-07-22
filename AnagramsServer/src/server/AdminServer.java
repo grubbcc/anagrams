@@ -42,7 +42,7 @@ class AdminServer extends Thread {
                 switch (cmd) {
                     case "shutdown" -> {
                         if (clientSocket.getInetAddress().isLoopbackAddress()) {
-                            System.out.println("Shutdown command received");
+                            out.println("Shutdown command received");
                             gameServer.shutdown();
                         }
                     }
