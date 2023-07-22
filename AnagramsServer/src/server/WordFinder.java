@@ -127,15 +127,16 @@ class WordFinder {
 
         Iterator<Object> it = words.iterator();
         while(it.hasNext() && possibleSteals.length() < 30) {
-            String shortWord = (String)it.next();
+            String shortWord = ((String)it.next()).replaceAll("[#$]","");
+            String nonBlanks = shortWord.replaceAll("[a-z]", "");
 
-            WordTree tree = trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z#$]", ""), dictionary));
+            WordTree tree = trees.computeIfAbsent(nonBlanks, word -> new WordTree(nonBlanks, dictionary));
             ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(tree.rootNode.getChildren());
 
             while(!wordQueue.isEmpty()) {
                 TreeNode child = wordQueue.pollFirst();
                 String entry = child.getWord().letters;
-                if (entry.length() <= shortWord.length()) {
+                if (entry.length() <= nonBlanks.length()) {
                     wordQueue.addAll(child.getChildren());
                     continue;
                 }
