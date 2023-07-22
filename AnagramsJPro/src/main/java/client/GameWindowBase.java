@@ -1,13 +1,16 @@
 package client;
 
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -19,9 +22,7 @@ import javafx.scene.text.Text;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 
 abstract class GameWindowBase extends BorderPane {
@@ -71,19 +72,19 @@ abstract class GameWindowBase extends BorderPane {
         gameGrid.setHgap(3);
         gameGrid.setVgap(3);
 
+        ColumnConstraints col0 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col1 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
         ColumnConstraints col2 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
-        ColumnConstraints col3 = new ColumnConstraints(175, 342, 735, Priority.ALWAYS, HPos.CENTER, true);
 
+        RowConstraints row0 = new RowConstraints();
+        row0.setPercentHeight(36);
         RowConstraints row1 = new RowConstraints();
         row1.setPercentHeight(36);
         RowConstraints row2 = new RowConstraints();
-        row2.setPercentHeight(36);
-        RowConstraints row3 = new RowConstraints();
-        row3.setPercentHeight(28);
+        row2.setPercentHeight(28);
 
-        gameGrid.getColumnConstraints().addAll(col1, col2, col3);
-        gameGrid.getRowConstraints().addAll(row1, row2, row3);
+        gameGrid.getColumnConstraints().addAll(col0, col1, col2);
+        gameGrid.getRowConstraints().addAll(row0, row1, row2);
 
         gameGrid.add(tilePanel, 1, 1);
         gameGrid.add(new GameWindowBase.GamePanel(0), 0, 0);
@@ -112,49 +113,11 @@ abstract class GameWindowBase extends BorderPane {
             robotImage.setImage(whiteRobot);
         else
             robotImage.setImage(blackRobot);
+
+        tilePanel.widthProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
     }
 
 
-    /**
-     * A panel for displaying the tilePool
-     */
-    protected class TilePanel extends Pane {
-
-        protected TilePanel() {
-            getStyleClass().add("tile-panel");
-            setMinWidth(MIN_PANEL_WIDTH);
-
-            widthProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
-            heightProperty().addListener((obs, oldVal, newVal) -> setTiles(tilePool));
-        }
-
-        /**
-         * Draws the tiles in a spiral pattern
-         */
-        protected void showTiles() {
-
-            getChildren().clear();
-
-            for (int i = 1; i <= tilePool.length(); i++) {
-                double x = getWidth() / 2 + 16 * Math.sqrt(i) * Math.cos(Math.sqrt(i) * Math.PI * 4 / 3);
-                double y = 3 + getHeight() / 2 + 16 * Math.sqrt(i) * Math.sin(Math.sqrt(i) * Math.PI * 4 / 3);
-
-                Rectangle rect = new Rectangle(x - 1, y - 21, 20, 21);
-                rect.setArcWidth(2);
-                rect.setArcHeight(2);
-                rect.setFill(Color.YELLOW);
-
-                Text text = new Text(x, y - 2, String.valueOf(tilePool.charAt(i - 1)));
-                text.setFont(Font.font("Courier New", FontWeight.BOLD, 28));
-
-                getChildren().addAll(rect, text);
-            }
-            if (!getChildren().isEmpty()) {
-                getChildren().get(0).setTranslateY(10);
-                getChildren().get(1).setTranslateY(10);
-            }
-        }
-    }
 
     /**
      * A panel for displaying the name, score, and words possessed by a player.
@@ -162,22 +125,24 @@ abstract class GameWindowBase extends BorderPane {
     protected class GamePanel extends BorderPane {
 
         String playerName = null;
-        protected int score;
         protected final HBox infoPane = new HBox();
         protected final FlowPane wordPane = new FlowPane();
+        protected final ScrollPane scrollPane = new ScrollPane(wordPane);
 
         protected final Label playerNameLabel = new Label();
         protected final Label playerScoreLabel = new Label();
 
-        protected final SimpleBooleanProperty savingSpace = new SimpleBooleanProperty(false);
+        private final SimpleIntegerProperty tileWidth = new SimpleIntegerProperty();
+        private final SimpleIntegerProperty tileHeight = new SimpleIntegerProperty();
+        private final SimpleIntegerProperty tileFontSize = new SimpleIntegerProperty();
+        private final SimpleBooleanProperty savingSpace = new SimpleBooleanProperty(false);
 
-        protected static final int PADDING = 4;
         final int column;
-        protected int tileWidth;
-        protected int tileHeight;
-        protected int tileFontSize;
 
         boolean isAvailable = true;
+        private final LinkedHashMap<String, Word> words = new LinkedHashMap<>();
+        protected int score;
+
 
         /**
          * An empty placeholder gamePanel
@@ -191,14 +156,28 @@ abstract class GameWindowBase extends BorderPane {
             infoPane.getChildren().add(playerNameLabel);
             infoPane.getChildren().add(playerScoreLabel);
 
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.prefViewportWidthProperty().bind(widthProperty().subtract(2));
+            scrollPane.prefViewportHeightProperty().bind(heightProperty().subtract(2));
+
+            wordPane.setMaxHeight(column >= 0 ? 185 : 137);
+
+            GridPane.setHgrow(this, Priority.ALWAYS);
+            GridPane.setVgrow(this, Priority.ALWAYS);
             wordPane.setAlignment(Pos.TOP_CENTER);
             wordPane.hgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 6 : 12, savingSpace));
             wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 6, savingSpace));
 
-            setTop(infoPane);
-            setCenter(wordPane);
+            tileWidth.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 12 : 16, savingSpace));
+            tileHeight.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 16 : 20, savingSpace));
+            tileFontSize.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 18 : 24, savingSpace));
 
-            savingSpace.set(false);
+            setTop(infoPane);
+            setCenter(scrollPane);
+
         }
 
 
@@ -224,11 +203,12 @@ abstract class GameWindowBase extends BorderPane {
          * Used only during endgame analysis.
          */
         protected void reset() {
+            words.clear();
             wordPane.getChildren().clear();
             playerName = null;
             playerNameLabel.setText("");
-            playerNameLabel.setGraphic(null);
             playerScoreLabel.setText("");
+            playerNameLabel.setGraphic(null);
             isAvailable = true;
             savingSpace.set(false);
         }
@@ -238,56 +218,84 @@ abstract class GameWindowBase extends BorderPane {
          * Adds a bunch of words all at once. Used during postgame analysis, when resizing the window,
          * and when joining or starting a game.
          */
-        protected void addWords(List<String> wordsToAdd) {
-
-            wordPane.getChildren().clear();
+        protected void addWords(Collection<Word> wordsToAdd) {
 
             if(wordsToAdd.isEmpty())
                 return;
 
-            for (String word : wordsToAdd) {
-                GamePanel.Word newWord = new GamePanel.Word(word, savingSpace.get());
-                wordPane.getChildren().add(newWord);
+            setScore(wordsToAdd);
+
+            double width = wordPane.getWidth();
+            double height = wordPane.getMaxHeight();
+
+            boolean widthChanged = false;
+
+            if(!savingSpace.get()) {
+                if (willOverflow(width, height - 4, false)) {
+                    savingSpace.set(true);
+                }
             }
 
-            layout();
-
-            double paneWidth = getWidth();
-            double paneHeight = getHeight() - infoPane.getHeight();
-            double maxY = wordPane.getChildren().get(wordsToAdd.size() - 1).getBoundsInParent().getMaxY();
-
-            //check if we need to save space by switching to small tiles
-            double minWidth = Math.max(MIN_PANEL_WIDTH, paneWidth * maxY / paneHeight);
-            if(maxY > paneHeight) {
-                if (!savingSpace.get()) {
-                    if(column >= 0)
-                        gameGrid.getColumnConstraints().get(column).setMinWidth(324);
-                    savingSpace.set(true);
-                    addWords(wordsToAdd);
-                } else if (column >= 0) {
-                    ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
-                    constraints.setMinWidth(Math.max(minWidth, constraints.getMinWidth()));
+            if(savingSpace.get() && column >= 0) {
+                ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
+                double columnWidth = constraints.getPrefWidth();
+                while (willOverflow(width, height - 4, true)) {
+                    widthChanged = true;
+                    width *= 1.15;
+                    columnWidth *= 1.15;
+                }
+                if(widthChanged) {
+                    constraints.setMinWidth(columnWidth);
                     allocateSpace();
                 }
             }
-            else if (column >= 0) {
-                gameGrid.getColumnConstraints().get(column).setMinWidth(minWidth);
-            }
+
+            for(Word word : words.values())
+                word.draw();
+
+            wordPane.getChildren().addAll(words.values());
         }
 
         /**
          *
          */
-        protected void setScore(List<String> words) {
+        protected void setScore(Collection<Word> words) {
             score = 0;
-            for (String word : words) {
-                if(word.endsWith("#"))
-                    score += (word.length() - 1) * (word.length() - 1);
-                else
-                    score += word.length() * word.length();
+            for (Word word : words) {
+
+                score += word.length() * word.length();
+
                 playerScoreLabel.setText(score + "");
             }
         }
+
+        /**
+         * Check if this panel of given width can fit the words of the given size without resizing.
+         * <b>
+         * Used during postgame in conjunction with the addWords method.
+         * @param paneWidth How wide this pane should be.
+         */
+        private boolean willOverflow(double paneWidth, double paneHeight, boolean small) {
+            double HGAP = small ? 6 : 12;
+            double VGAP = small ? 7 : 14;
+            double TILE_WIDTH = small ? 12 : 16;
+            double TILE_HEIGHT = small ? 16 : 20;
+
+            double x = -HGAP;
+            double y = small ? 4.4 + TILE_HEIGHT : 7.2 + TILE_HEIGHT;
+
+            for(Word word : words.values()) {
+                x += HGAP + word.length()*TILE_WIDTH + (word.length()-1)* GamePanel.Word.TILE_GAP;
+                if(x > paneWidth) {
+                    x = -HGAP + word.length()*(TILE_WIDTH) + (word.length()-1)* GamePanel.Word.TILE_GAP + 2* GamePanel.Word.PADDING;
+                    y += VGAP + TILE_HEIGHT;
+                }
+            }
+
+            return y > paneHeight;
+
+        }
+
 
 
         /**
@@ -295,18 +303,16 @@ abstract class GameWindowBase extends BorderPane {
          */
         protected class Word extends Region {
 
+            protected static final int PADDING = 4;
             protected final static double TILE_GAP = 2;
             protected final String letters;
             protected final boolean highlight;
 
-            private final int tileWidth;
-            private final int tileHeight;
-            private final int tileFontSize;
 
             /**
              *
              */
-            protected Word(String symbols, boolean savingSpace) {
+            protected Word(String symbols) {
                 if(symbols.endsWith("#") || symbols.endsWith("$")) {
                     letters = symbols.substring(0, symbols.length() - 1);
                     highlight = true;
@@ -315,10 +321,6 @@ abstract class GameWindowBase extends BorderPane {
                     letters = symbols;
                     highlight = false;
                 }
-
-                tileWidth = savingSpace ? 12 : 16;
-                tileHeight = savingSpace ? 16 : 20;
-                tileFontSize = savingSpace ? 18: 24;
 
                 draw();
             }
@@ -334,7 +336,7 @@ abstract class GameWindowBase extends BorderPane {
              *
              */
             protected double width() {
-                return length()*tileWidth + (length() - 1)*TILE_GAP + 1 + PADDING;
+                return length()*tileWidth.get() + (length() - 1)*TILE_GAP + 1 + PADDING;
             }
 
             /**
@@ -347,17 +349,17 @@ abstract class GameWindowBase extends BorderPane {
 
                 for (Character tile : letters.toCharArray()) {
 
-                    Rectangle rect = new Rectangle(x, 0, tileWidth, tileHeight);
+                    Rectangle rect = new Rectangle(x, 0, tileWidth.get(), tileHeight.get());
                     rect.setArcWidth(2);
                     rect.setArcHeight(2);
                     rect.setFill(highlight ? Color.GOLD : Color.YELLOW);
 
-                    Text text = new Text(x + 1, tileHeight - 2, String.valueOf(Character.toUpperCase(tile)));
-                    text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize));
+                    Text text = new Text(x + 1, tileHeight.get() - 2, String.valueOf(Character.toUpperCase(tile)));
+                    text.setFont(Font.font("Courier New", FontWeight.BOLD, tileFontSize.get()));
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
                     getChildren().addAll(rect, text);
-                    x += tileWidth + TILE_GAP;
+                    x += tileWidth.get() + TILE_GAP;
                 }
             }
         }
@@ -372,10 +374,8 @@ abstract class GameWindowBase extends BorderPane {
      * @param nextTiles The letters that the TilePanel should display.
      */
     void setTiles(String nextTiles) {
-        if (nextTiles.equals("#"))
-            nextTiles = "";
-        tilePool = nextTiles;
-        tilePanel.showTiles();
+        tilePool = nextTiles.equals("#") ? "" : nextTiles;
+        tilePanel.showTiles(tilePool);
     }
 
     /**
@@ -430,28 +430,34 @@ abstract class GameWindowBase extends BorderPane {
      *               consisting of the remaining time, the tile pools, a list of players (even indices)
      *               and their words (odd indices)
      */
-    @SuppressWarnings("unchecked")
     void showPosition(JSONObject gameState) {
 
-        for (GamePanel panel : gamePanels)
+        for (GamePanel panel : gamePanels) {
             panel.reset();
+        }
 
-        for (int i = 0; i < 3; i++) {
-            ColumnConstraints constraints = gameGrid.getColumnConstraints().get(i);
+        for (int c = 0; c < 3; c++) {
+            ColumnConstraints constraints = gameGrid.getColumnConstraints().get(c);
             constraints.setMinWidth(Math.max(constraints.getMinWidth(), MIN_PANEL_WIDTH));
             constraints.setPrefWidth(Math.max(constraints.getPrefWidth(), 326));
         }
 
         notificationArea.setText("Time remaining " + gameState.getInt("time"));
-        setTiles(gameState.getString("tiles"));
 
         JSONArray players = gameState.getJSONArray("players");
         for(int p = 0; p < players.length(); p++) {
             JSONObject player = players.getJSONObject(p);
             GamePanel panel = addPlayer(player.getString("name"));
-            panel.addWords((List<String>)(List<?>)player.getJSONArray("words").toList());
-            panel.setScore((List<String>)(List<?>)player.getJSONArray("words").toList());
+            for(int s = 0; s < player.getJSONArray("words").length(); s++) {
+                String symbols = player.getJSONArray("words").getString(s);
+                GamePanel.Word newWord = panel.new Word(symbols);
+                panel.words.put(symbols, newWord);
+            }
+            panel.addWords(panel.words.values());
+
         }
+
+        setTiles(gameState.getString("tiles"));
 
     }
 
