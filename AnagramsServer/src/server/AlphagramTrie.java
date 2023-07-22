@@ -46,6 +46,8 @@ class AlphagramTrie {
 
 					if (entry.length > 1)
 						currentDefinition = entry[1];
+					else
+						currentDefinition = "";
 
 					insertWord(Utils.alphabetize(currentWord), rootNode);
 				}
