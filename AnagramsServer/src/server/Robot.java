@@ -15,6 +15,7 @@ class Robot extends Player {
 	private final int blankPenalty;
 	private final int minLength;
 	private final int rating;
+	private final int MAX_LENGTH = 15; //The longest word this bot can play
 	final HashMap<String, WordTree> trees = new HashMap<>();
 	private final HashMap<String, WordTree> commonTrees = new HashMap<>();
 	private final AlphagramTrie dictionary;
@@ -103,7 +104,7 @@ class Robot extends Player {
 	 * @param blanksRequired 	Blanks needed to make this word
 	 */
 	private void searchInPool(Node node, String charsFound, String poolRemaining, int blanksRequired) {
-		if(wordFound) return;
+		if(wordFound || charsFound.length() >= MAX_LENGTH) return;
 		if(charsFound.length() >= minLength + blanksRequired*(blankPenalty+1)) {
 			if(!node.words.isEmpty()) {
 				int num = rgen.nextInt(node.words.size());
@@ -173,8 +174,10 @@ class Robot extends Player {
 				if(treeSet.containsKey(shortWord)) {
 					for(TreeNode child : treeSet.get(shortWord).rootNode.getChildren()) {
 						String longWord = child.getWord().letters;
-						if(game.doSteal(player.name, shortWord, name, longWord)) {
-							return;
+						if(longWord.length() <= MAX_LENGTH) {
+							if (game.doSteal(player.name, shortWord, name, longWord)) {
+								return;
+							}
 						}
 					}
 				}
