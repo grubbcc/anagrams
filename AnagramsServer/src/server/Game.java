@@ -428,7 +428,6 @@ class Game {
 			deleteTimer.cancel();
 			deleteTimer = new Timer();
 			deleteTimer.schedule(new DeleteTask(), 180000);
-			System.out.println("Beginning countdown; game will disappear in 3 minutes");
 		}
 	}
 
@@ -459,15 +458,17 @@ class Game {
 
 		if(countdown > 0) return false;
 
+		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
+		if(!play.isValid()) return false;
+
 		//prevent duplicate words
 		for(Player player : players.values()) {
 			if(Utils.containsCaseInsensitive(player.words, longWord)) return false;
 		}
 
-		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
-		if(!play.isValid()) return false;
-
 		String nextWord = play.nextWord();
+		if(!Utils.isRearrangement(shortWord.replaceAll("[a-z]", "?"), nextWord.replaceAll("[a-z]","?"))) return false;
+
 		if(hasRobot) {
 			robotPlayer.removeTree(shortWord);
 			robotPlayer.makeTree(nextWord);
