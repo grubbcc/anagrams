@@ -11,6 +11,8 @@ class Play {
     final String longWord;
     final String tilePool;
 
+    private String blanks = "";
+
     /**
      *
      */
@@ -178,30 +180,43 @@ class Play {
 
         //Designate blanks to missing letters
         int penalty = 0;
-
-        for (int i = 0; i < entry.length(); i++) {
-            if (blanksToChange-- > 0) {
-                //Re-designate a blank
-                penalty += blankPenalty;
-            } else if (tiles.contains("?")) {
-                //Take a blank from the pool and designate it
-                tiles = tiles.replaceFirst("\\?", "");
-                penalty += blankPenalty + 1;
-            } else {
-                //Not enough blanks available
-                return false;
+        if(!entry.isEmpty()) {
+            for (String s : entry.split("")) {
+                blanks += s;
+                if (blanksToChange-- > 0) {
+                    //Re-designate a blank
+                    penalty += blankPenalty;
+                } else if (tiles.contains("?")) {
+                    //Take a blank from the pool and designate it
+                    tiles = tiles.replaceFirst("\\?", "");
+                    penalty += blankPenalty + 1;
+                } else {
+                    //Not enough blanks available
+                    return false;
+                }
             }
         }
+
+        blanks += blanksToKeep;
 
         if(shortWord.isEmpty()) {
             return longWord.length() - minLength >= penalty;
         }
         else if(longWord.length() - shortWord.length() >= Math.max(penalty, 1))  {
-            return isRearrangement(shortWord.replaceAll("[a-z]", ""), longWord);
+            return isRearrangement(shortWord.replaceAll("[a-z]", "?"), nextWord().replaceAll("[a-z]","?"));
         }
         return false;
     }
 
+    /**
+     * @return a formatted word with lowercase letters representing blanks
+     */
+    String nextWord() {
+        String nextWord = longWord;
+        for(String s : blanks.split(""))
+            nextWord = nextWord.replaceFirst(s + "(?!.*?" + s + ")", s.toLowerCase()); //replace last occurrence
+        return nextWord;
+    }
 
     /**
      * Given two words, determines whether a rearrangement/permutation
@@ -210,7 +225,7 @@ class Play {
      * @param shortWord     a short word (case must match longWord)
      * @param longWord      a longer word (case must match that of shortWord)
      */
-    private static boolean isRearrangement(String shortWord, String longWord) {
+    static boolean isRearrangement(String shortWord, String longWord) {
 
         while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
             if (shortWord.charAt(0) == longWord.charAt(0)) {
@@ -221,4 +236,5 @@ class Play {
 
         return shortWord.length() > longWord.length();
     }
+
 }
