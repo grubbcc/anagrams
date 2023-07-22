@@ -129,8 +129,8 @@ class WordFinder {
         while(it.hasNext() && possibleSteals.length() < 30) {
             String shortWord = (String)it.next();
 
-            trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z]", ""), dictionary));
-            ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(trees.get(shortWord).rootNode.getChildren());
+            WordTree tree = trees.computeIfAbsent(shortWord, word -> new WordTree(word.replaceAll("[a-z#$]", ""), dictionary));
+            ArrayDeque<TreeNode> wordQueue = new ArrayDeque<>(tree.rootNode.getChildren());
 
             while(!wordQueue.isEmpty()) {
                 TreeNode child = wordQueue.pollFirst();
@@ -142,10 +142,11 @@ class WordFinder {
                 else if (entry.length() > shortWord.length() + tilePool.length()) {
                     continue;
                 }
+
                 Play play = new Play(shortWord, entry, tilePool, minLength, blankPenalty);
                 if (play.isValid()) {
                     possibleSteals.put(new JSONObject()
-                            .put("shortWord", shortWord)
+                            .put("shortWord", dictionary.annotate(shortWord))
                             .put("steal", child.getLongSteal())
                             .put("longWord", dictionary.annotate(play.nextWord())));
                 }
@@ -153,5 +154,6 @@ class WordFinder {
         }
 
     }
+
 
 }
