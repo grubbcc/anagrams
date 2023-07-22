@@ -18,14 +18,14 @@ class Play {
      *
      * @param shortWord
      * @param longWord
-     * @param tilePool
+     * @param tiles
      * @param minLength
      * @param blankPenalty
      */
-    Play(String shortWord, String longWord, String tilePool, int minLength, int blankPenalty) {
+    Play(String shortWord, String longWord, String tiles, int minLength, int blankPenalty) {
         this.shortWord = shortWord;
         this.longWord = longWord;
-        this.nextTiles = tilePool;
+        this.nextTiles = tiles;
         this.minLength = minLength;
         this.blankPenalty = blankPenalty;
     }
@@ -37,10 +37,6 @@ class Play {
      * @return whether the play is valid according to the rules of Anagrams
      */
     boolean isValid() {
-        if(!shortWord.isEmpty()) {
-            if (!Utils.isRearrangement(shortWord.replaceAll("[a-z]", ""), longWord))
-                return false;
-        }
 
          String entry = longWord;
          String blanksToKeep = "";
