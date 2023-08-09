@@ -8,7 +8,7 @@ Anagrams is a classic word game of thought and thievery. For many players, inclu
   <img src="https://seattlephysicstutor.com/images/anagrams/anagrams%20suspicion.jpg" width="318px" height="240px">
 </p>
 
-It can be played with any set of letter tiles, but until recently there has not been any way to play over the web. Now there at least three different ways to play: Jay Chan's mobile-friendly [Snatch!](https://snatch.cc), Carl Johnson's browser-based [Anagrams Blitz](https://safe-dusk-44647.herokuapp.com/), and the program on this page.
+It can be played with any set of letter tiles, but until recently there has not been any way to play over the web.
 
 ## How to Play
 
