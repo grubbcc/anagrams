@@ -16,8 +16,6 @@
 * update highlights immediately when highlight_words is enabled
 * try not to randomize the board panels upon endgame
 * refactor so that addWord and addWords methods take Word objects as parameters
-* long words (more than about 12 or 13 letters long) should trigger small tiles on small screens... 
-* improve calculation of tile sizes
 * improve control panel layout (especially in postgame)
 * click on tilepool to randomize? (if done only in postgame, this would be easy)
 * make sure that sound only plays once when logging in
@@ -51,8 +49,9 @@
 * study memory (over)usage with visualvm
 
 ## BUGS
-* fix the padding on the tooltips
-* WordFinder doesn't find VEGETAtIONS + RR -> TERGIVERSAtION
+* maximize icon sometimes disappears
+* overflow words in gamepanel sometimes hidden
+* underhanging letters are clipped
 
 ## MOBILE
 * when waking phone from sleep, full screen size often goes wrong?... maybe just add runlater...
