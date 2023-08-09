@@ -23,6 +23,15 @@ class WordTree {
 	String rootWord;
 	private final TreeSet<TreeNode> treeNodeList = new TreeSet<>(new TreeNodeComparator());
 	final JSONArray jsonArray = new JSONArray();
+	private int maxLength = 21; //unused
+
+	/**
+	 *
+	 */
+	WordTree(String root, AlphagramTrie trie, int maxLength) {
+		this(root, trie);
+		this.maxLength = maxLength;
+	}
 
 	/**
 	 * Generates a tree from an existing trie
@@ -37,9 +46,7 @@ class WordTree {
 		this.trie = trie;
 
 		treeNodeList.add(rootNode);
-
-		char[] rootChars = rootWord.toCharArray();
-		Arrays.sort(rootChars);
+		String rootChars = Utils.alphabetize(rootWord);
 		find(trie.rootNode, rootChars, "");
 
 		while(treeNodeList.size() > 1)
@@ -59,13 +66,13 @@ class WordTree {
 	 * @param node a node in the trie
 	 * @param charsToFind characters that a descendant of the given node's path must contain to be considered a steal of the rootWord
 	 */
-	private void find(Node node, char[] charsToFind, String otherCharsFound) {
-
-		if(charsToFind.length > 0) {
-			Character firstChar = charsToFind[0];
+	private void find(Node node, String charsToFind, String otherCharsFound) {
+	//	if(charsToFind.length() + otherCharsFound.length() > maxLength) return;
+		if(charsToFind.length() > 0) {
+			char firstChar = charsToFind.charAt(0);
 			for(Map.Entry<Character,Node> child : node.children.headMap(firstChar, true).entrySet()) {
 				if(child.getKey().equals(firstChar))
-					find(child.getValue(), Arrays.copyOfRange(charsToFind, 1, charsToFind.length), otherCharsFound);
+					find(child.getValue(), charsToFind.substring(1), otherCharsFound);
 				else
 					find(child.getValue(), charsToFind, otherCharsFound + child.getKey());
 			}
@@ -79,7 +86,7 @@ class WordTree {
 				}
 			}
 			for(Map.Entry<Character,Node> child : node.children.entrySet())
-				find(child.getValue(), charsToFind, otherCharsFound + child.getKey());
+				find(child.getValue(), "", otherCharsFound + child.getKey());
 		}
 	}
 
