@@ -14,10 +14,11 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  *
  */
 class Server extends Thread {
-	
-	private static final int GAME_PORT = 8118;
-	private static final int ADMIN_PORT = 8117;
+
 	private static final int LOOKUP_PORT = 8116;
+	private static final int ADMIN_PORT = 8117;
+	private static final int GAME_PORT = 8118;
+
 
 	private static final String[] lexicons = {"NWL20", "CSW21"};
 	private final Logger consoleLogger = Logger.getLogger("console");
@@ -81,6 +82,7 @@ class Server extends Thread {
 
 		httpServer.start();
 		System.out.println("Lookup service started on port 8116");
+
 	}
 
 	/**
@@ -198,11 +200,11 @@ class Server extends Thread {
 	 * Helper method for broadcast(JSONObject json)
 	 */
 	void broadcast(String cmd, JSONObject json) {
-		synchronized(workerList) {
-			for(ServerWorker worker : getWorkers()) {
+	//	synchronized(workerList) {
+			for(ServerWorker worker : workerList.values()) {
 				worker.send(cmd, json);
 			}
-		}
+	//	}
 	}
 
 	/**
@@ -230,7 +232,7 @@ class Server extends Thread {
 		String lexicon = exchange.getRequestURI().getPath().split("/")[1].toUpperCase();
 		String query = exchange.getRequestURI().getPath().split("/")[2]/*.toUpperCase()*/;
 		System.out.println("lexicon: " + lexicon +", query: " + query);
-		WordTree tree = new WordTree(query, getDictionary(lexicon));
+		WordTree tree = new WordTree(query, getDictionary(lexicon), 15);
 		tree.generateJSON(tree.rootNode.getWord().letters, tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
 
