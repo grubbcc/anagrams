@@ -610,8 +610,7 @@ class Game {
 
 	/**
 	 * @return A semantically-ordered String containing all active players and Robots with or without words
-	 * as well as inactive players with words, e.g.
-	 * player1 [HELLO,WORLD] player2 []
+	 * as well as inactive players with words
 	 */
 	synchronized JSONArray getFormattedWordList() {
 		JSONArray json = new JSONArray();
