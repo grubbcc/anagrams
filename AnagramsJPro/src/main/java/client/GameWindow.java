@@ -108,7 +108,7 @@ class GameWindow extends PopWindow {
      */
     GameWindow(AnagramsClient client, JSONObject params, String username, boolean isWatcher, JSONArray gameLog) {
 
-        super(client.anchor);
+        super(client.popWindows, client.anchor);
 
         String gameName = params.getString("game_name");
         this.lexicon = params.getString("lexicon");
@@ -137,7 +137,7 @@ class GameWindow extends PopWindow {
         String wordSound = Objects.requireNonNull(getClass().getResource("/sounds/steal sound.mp3")).toExternalForm();
         wordClip = AudioClip.getAudioClip(wordSound, client.stage);
         wordDisplay = new WordDisplay();
-        notepad = new Notepad(client.anchor);
+        notepad = new Notepad(client.popWindows, client.anchor);
 
         //title bar
         setTitle(gameName + (params.getBoolean("rated") ? " (rated)" : ""));
@@ -1224,7 +1224,7 @@ class GameWindow extends PopWindow {
          *
          */
         private WordDisplay() {
-            super(client.anchor);
+            super(client.popWindows, client.anchor);
             setViewOrder(-1000);
             AnchorPane.setLeftAnchor(this, client.stage.getWidth() - 453);
             AnchorPane.setTopAnchor(this, 80.0);
@@ -1281,8 +1281,7 @@ class GameWindow extends PopWindow {
                 poolPanel.words.put(symbols, newWord);
             }
             poolPanel.addWords(poolPanel.words.values());
-
-
+            
             for(int s = 0; s < possibleSteals.length(); s++) {
                 JSONObject json = possibleSteals.getJSONObject(s);
                 String shortWord = json.getString("shortWord");
