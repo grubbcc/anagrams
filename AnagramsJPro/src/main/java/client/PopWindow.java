@@ -24,6 +24,7 @@ import java.util.Stack;
  */
 class PopWindow extends BorderPane {
 
+    private Stack<PopWindow> popWindows;
     private final ObjectProperty<Point2D> mouseLocation = new SimpleObjectProperty<>();
     private final ObjectProperty<Point2D> newLocation = new SimpleObjectProperty<>();
     private final Pane container;
@@ -33,13 +34,12 @@ class PopWindow extends BorderPane {
     boolean isMaximized = false;
     final Button closeButton = new Button();
 
-    final static Stack<PopWindow> popWindows = new Stack<>();
-
     /**
      * @param container The Pane in which this window resides.
      */
-    PopWindow(Pane container) {
+    PopWindow(Stack<PopWindow> popWindows, Pane container) {
 
+        this.popWindows = popWindows;
         this.container = container;
 
         //close button
@@ -167,14 +167,13 @@ class PopWindow extends BorderPane {
      * are now enabled (in case this PopWindow is modal).
      */
     void hide() {
+        System.out.println("hiding " + this.getClass());
         setVisible(false);
         container.getChildren().remove(this);
         for(Node child : container.getChildren()) {
             child.setDisable(false);
         }
-        if(!popWindows.isEmpty()) {
-            popWindows.remove(this);
-        }
+        popWindows.remove(this);
     }
 
     /**
