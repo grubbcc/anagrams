@@ -43,6 +43,7 @@ class AnagramsClient extends JProApplication {
 	Stage stage;
 
 	WordExplorer explorer;
+	final Stack<PopWindow> popWindows = new Stack<>();
 
 	private final FlowPane gamesPanel = new FlowPane();
 	private final ScrollPane gamesScrollPane = new ScrollPane();
@@ -251,8 +252,10 @@ class AnagramsClient extends JProApplication {
 
 		stage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
 			if(connected && e.getCode().equals(KeyCode.ESCAPE)) {
-				if (!PopWindow.popWindows.isEmpty())
-					PopWindow.popWindows.pop().hide();
+				if (!popWindows.isEmpty()) {
+					if(popWindows.peek() instanceof LoginMenu) return;
+					popWindows.pop().hide();
+				}
 			}
 		});
 
