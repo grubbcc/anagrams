@@ -12,6 +12,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -98,7 +99,7 @@ class PlayerPane extends PopWindow {
      *
      */
     PlayerPane(AnagramsClient client) {
-        super(client.anchor);
+        super(client.popWindows, client.anchor);
 
         this.client = client;
 
@@ -115,7 +116,7 @@ class PlayerPane extends PopWindow {
         makeResizable();
         setCursor(Cursor.DEFAULT);
 
-        infoPane = new PopWindow(client.anchor);
+        infoPane = new PopWindow(client.popWindows, client.anchor);
         infoPane.setTitle("Markdown Guide");
         codePane.setPrefWidth(300);
         ImageView markdownPane = new ImageView("/images/markdown.png");
@@ -257,6 +258,16 @@ class PlayerPane extends PopWindow {
             buttonPanel.getChildren().addAll(editBioButton, deleteAccountButton);
         });
 
+        //prevent textarea from consuming escape key action
+        addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode().equals(KeyCode.ESCAPE)) {
+                if(infoPane.isVisible())
+                    infoPane.hide();
+                else
+                    cancelButton.fire();
+            }
+        });
+
         deleteAccountButton.setOnAction(e -> {
             MessageDialog confirmDialog = new MessageDialog(client, "Delete account");
             confirmDialog.setText("Are you sure you want to delete your account?");
@@ -275,8 +286,10 @@ class PlayerPane extends PopWindow {
             confirmDialog.show(true);
         });
         infoIcon.setOnMouseClicked(e -> {
+
             codePane.setText(sampleMarkdown);
             infoPane.show(false);
+            System.out.println(client.popWindows);
         });
 
         contents.setBottom(buttonPanel);
