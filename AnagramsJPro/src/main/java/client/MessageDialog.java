@@ -12,8 +12,6 @@ import javafx.scene.layout.HBox;
 /**
  * A simple JPro-compatible window with HTML content and a button bar.
  */
-
-
 class MessageDialog extends PopWindow {
 
     private final BorderPane mainPane = new BorderPane();
@@ -29,9 +27,8 @@ class MessageDialog extends PopWindow {
     /**
      *
      */
-
     MessageDialog(AnagramsClient client, String title) {
-        super(client.stack);
+        super(client.popWindows, client.stack);
 
         if(client.getWebAPI().isMobile()) {
             setScaleX(1.2);
@@ -54,7 +51,6 @@ class MessageDialog extends PopWindow {
      *
      * @param text some html for the dialog to display
      */
-
     void setText(String text) {
         htmlView.setContent(text);
     }
@@ -62,7 +58,6 @@ class MessageDialog extends PopWindow {
     /**
      *
      */
-
     void setImage(String url) {
         if(url != null) {
             ImageView img = new ImageView(new Image(url));
@@ -78,7 +73,6 @@ class MessageDialog extends PopWindow {
     /**
      * Adds a button which hides the dialog
      */
-
     void addOkayButton() {
         buttonPane.getChildren().add(okayButton);
         Platform.runLater(okayButton::requestFocus);
@@ -88,7 +82,6 @@ class MessageDialog extends PopWindow {
     /**
      * Adds two buttons, labeled "Yes" and "No", with configurable actions
      */
-
     void addYesNoButtons() {
         buttonPane.getChildren().addAll(yesButton, noButton);
         Platform.runLater(yesButton::requestFocus);
@@ -97,9 +90,9 @@ class MessageDialog extends PopWindow {
     /**
      *
      */
-
     void addBackNextButtons() {
         buttonPane.getChildren().addAll(backButton, nextButton);
     }
+
 }
 

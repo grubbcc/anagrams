@@ -7,6 +7,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 
+import java.util.Stack;
+
 /**
  * A widget for taking notes during a game.
  */
@@ -15,8 +17,8 @@ class Notepad extends PopWindow {
     /**
      * @param container The Pane in which this window resides.
      */
-    Notepad(Pane container) {
-        super(container);
+    Notepad(Stack<PopWindow> popWindows, Pane container) {
+        super(popWindows, container);
 
         setMinWidth(300);
         setMinHeight(400);
