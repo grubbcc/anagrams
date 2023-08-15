@@ -51,7 +51,7 @@ class GameMenu extends PopWindow {
      *
      */
     GameMenu(AnagramsClient client) {
-        super(client.stack);
+        super(client.popWindows, client.stack);
         this.client = client;
 
         getStylesheets().add("css/game-menu.css");
