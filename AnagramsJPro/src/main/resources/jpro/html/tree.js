@@ -21,6 +21,7 @@ let data = null,
     depth = 0,
     angle = 360,
     radius = 160,
+    maxLength = 15,
     zoom = d3.zoom()
         .scaleExtent([0.1, 10])
         .on("zoom", function({transform}) {
@@ -155,7 +156,9 @@ function init(json) {
     if(json === null) return;
 
     data = JSON.parse(json);
-
+    const query = data[0].id;
+    document.title = "Word Tree: " + query;
+    data = data.filter(d => query.length + d.longsteal.length <= maxLength);
     depth = d3.max(data, d => (d.id.match(/\./g) || [] ).length);
 
     display();
@@ -183,7 +186,6 @@ function display() {
         .size([angle, radius*depth])
         .separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth);
     root = tree(stratify(data));
-    document.title = "Word Tree: " + data[0].id;
 
     const link = g.selectAll(".link").data(root.descendants().slice(1)).enter()
         .append("path")
