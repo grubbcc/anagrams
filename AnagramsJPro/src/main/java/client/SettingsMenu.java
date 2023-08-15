@@ -35,7 +35,7 @@ class SettingsMenu extends PopWindow {
      *
      */
     SettingsMenu(AnagramsClient client) {
-        super(client.stack);
+        super(client.popWindows, client.stack);
         this.client = client;
 
         newColors = client.colors.clone();
