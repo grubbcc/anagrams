@@ -407,10 +407,11 @@ class LoginMenu extends PopWindow {
                 hide();
 
                 MessageDialog dialog = new MessageDialog(client, "Registration successful");
-                dialog.setText("<center>Congratulations, you have successfully registered the username\n" +
-                        username + "." +
-                        "\nYou may delete this account at any time by\n" +
-                        "clicking your name in the right panel.</center>");
+                dialog.setText("""
+                        <center>Congratulations, you have successfully registered the username
+                        %s.
+                        You may delete this account at any time by
+                        clicking your name in the list of players.</center>""".formatted(username));
                 dialog.addOkayButton();
 
                 dialog.closeButton.setOnAction(e -> {
