@@ -167,7 +167,6 @@ class PopWindow extends BorderPane {
      * are now enabled (in case this PopWindow is modal).
      */
     void hide() {
-        System.out.println("hiding " + this.getClass());
         setVisible(false);
         container.getChildren().remove(this);
         for(Node child : container.getChildren()) {
