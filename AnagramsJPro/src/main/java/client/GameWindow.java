@@ -1106,33 +1106,38 @@ class GameWindow extends PopWindow {
         });
 
         backToStartButton.setOnAction(e -> {
+            if(position <= 0) return;
             position = 0;
             showPosition(gameLog.getJSONObject(position));
         });
         backTenButton.setOnAction(e -> {
+            if(position <= 0) return;
             position = Math.max(position - 10, 0);
             showPosition(gameLog.getJSONObject(position));
         });
         backButton.setOnAction(e -> {
+            if(position <= 0) return;
             position = Math.max(position - 1, 0);
             showPosition(gameLog.getJSONObject(position));
         });
         forwardButton.setOnAction(e -> {
+            if(position >= maxPosition) return;
             position = Math.min(position + 1, maxPosition);
             showPosition(gameLog.getJSONObject(position));
         });
         forwardTenButton.setOnAction(e -> {
+            if(position >= maxPosition) return;
             position = Math.min(position + 10, maxPosition);
             showPosition(gameLog.getJSONObject(position));
         });
         forwardToEndButton.setOnAction(e -> {
+            if(position >= maxPosition) return;
             position = maxPosition;
             showPosition(gameLog.getJSONObject(position));
         });
 
         if (!isMobile) {
             addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-
                 if (!chatField.isFocused()) {
                     if (event.getCode().isArrowKey()) {
                         event.consume();
@@ -1193,7 +1198,6 @@ class GameWindow extends PopWindow {
 
 
         if (wordDisplay.isVisible()) {
-            wordDisplay.reset();
             client.send("findplays", new JSONObject()
                     .put("gameID", gameID)
                     .put("position", position)
@@ -1275,6 +1279,8 @@ class GameWindow extends PopWindow {
          */
         private void setWords(JSONArray wordsInPool, JSONArray possibleSteals) {
 
+            reset();
+
             for(int p = 0; p < wordsInPool.length(); p++) {
                 String symbols = wordsInPool.getString(p);
                 GamePanel.Word newWord = poolPanel.new Word(symbols);
@@ -1293,11 +1299,10 @@ class GameWindow extends PopWindow {
             }
             stealsPanel.addWords(stealsPanel.words.values());
 
-
          }
 
         /**
-         *
+         * Clear both panels of the WordDisplay and prepare for new words to be added
          */
         private void reset() {
             poolPanel.words.clear();
