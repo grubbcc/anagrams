@@ -352,13 +352,14 @@ class AnagramsClient extends JProApplication {
 		this.prefs = prefs;
 
 		explorer = new WordExplorer(prefs.getString("lexicon"), this);
-		settingsMenu = new SettingsMenu(this);
-		settingsButton.setOnAction(e -> {if(!settingsMenu.isVisible()) settingsMenu.show(false);});
 
 		//set user colors
 		for (Colors color : Colors.values())
 			colors.put(color, prefs.getString(color.key));
 		setColors();
+
+		settingsMenu = new SettingsMenu(this);
+		settingsButton.setOnAction(e -> {if(!settingsMenu.isVisible()) settingsMenu.show(false);});
 
 		new Thread(this::readMessageLoop).start();
 		new Thread(this::executeCommandLoop).start();
@@ -762,8 +763,8 @@ class AnagramsClient extends JProApplication {
 				final JSONObject json = commandQueue.take();
 				final String cmd = json.getString("cmd");
 
-//				if (!cmd.equals("note") && !cmd.equals("nexttiles") && !cmd.equals("chat"))
-//					System.out.println("command received: " + json);
+				if (!cmd.equals("note") && !cmd.equals("nexttiles") && !cmd.equals("chat"))
+					System.out.println("command received: " + json);
 
 				Platform.runLater(() -> {
 					switch (cmd) {
