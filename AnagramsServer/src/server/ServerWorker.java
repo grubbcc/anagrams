@@ -109,7 +109,7 @@ class ServerWorker implements Runnable {
 			bse.printStackTrace();
 		}
 		send("availability", new JSONObject().put("available", true));
-		try {
+		try(ExecutorService emailExecutor = Executors.newSingleThreadExecutor()) {
 			Random rand = new Random();
 			code = String.format("%06d", rand.nextInt(1000000));
 
@@ -119,7 +119,6 @@ class ServerWorker implements Runnable {
 			message.setSubject("Anagrams registration");
 			message.setText("Your registration code for Anagrams is: " + code);
 
-			ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
 			emailExecutor.execute(() -> {
 				try {
 					Transport.send(message);
@@ -181,7 +180,7 @@ class ServerWorker implements Runnable {
 			for (String user : prefs.childrenNames()) {
 				if (prefs.node(user).get("email", "").equals(email)) {
 					MimeMessage message = new MimeMessage(session);
-					try {
+					try(ExecutorService emailExecutor = Executors.newSingleThreadExecutor()) {
 						message.setFrom(new InternetAddress(from));
 						message.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
 						if(type.equals("password")) {
@@ -194,9 +193,7 @@ class ServerWorker implements Runnable {
 						}
 						send(type + "-recovery", new JSONObject().put("success", true));
 
-						ExecutorService emailExecutor = Executors.newSingleThreadExecutor();
 						emailExecutor.execute(() -> {
-
 							try {
 								Transport.send(message);
 							} catch (MessagingException e) {
