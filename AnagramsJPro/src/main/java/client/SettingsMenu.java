@@ -42,7 +42,6 @@ class SettingsMenu extends PopWindow {
 
         GridPane grid = new GridPane();
         grid.setId("settings-grid");
-        client.getWebAPI().registerValue("settings-menu", this);
 
         //labels
         Label lexiconLabel = new Label("Word list");
