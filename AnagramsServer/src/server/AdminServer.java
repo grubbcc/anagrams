@@ -29,14 +29,14 @@ class AdminServer extends Thread {
      */
     @Override
     public void start() {
-        try {
-            ServerSocket serverSocket = new ServerSocket(ADMIN_PORT);
+        try (ServerSocket serverSocket = new ServerSocket(ADMIN_PORT)) {
 
             Socket clientSocket = serverSocket.accept();
 
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
+            out.println("Connected to admin server");
             String cmd;
             while ((cmd = in.readLine()) != null) {
                 switch (cmd) {
