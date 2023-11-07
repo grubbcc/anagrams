@@ -243,7 +243,7 @@ class Game {
 				ratings.put(new JSONObject()
 						.put("name", player.name)
 						.put("rating", String.valueOf(newRating)));
-				ratingsSummary.add(player.name + " → " + newRating);
+				ratingsSummary.add(player.name + " ⟶ " + newRating);
 			}
 			if(allowChat) {
 				notifyRoom("gamechat", new JSONObject()
@@ -345,7 +345,7 @@ class Game {
 	 * If there are no more players or watchers left, sends a signal to the server
 	 * to end the game.
 	 *
-	 * @param playerToRemove The name of the player to be removed
+	 * @param playerName The name of the player to be removed
 	 */
 	synchronized void removePlayer(String playerName) {
 
