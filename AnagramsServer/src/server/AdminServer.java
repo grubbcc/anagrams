@@ -1,12 +1,14 @@
 package server;
 
+import org.json.JSONObject;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 /**
  * Tools to interact with and get data from the program.
@@ -40,6 +42,8 @@ class AdminServer extends Thread {
             String cmd;
             while ((cmd = in.readLine()) != null) {
                 switch (cmd) {
+                    case "help" -> out.println("Commands: game, top, users, shutdown");
+
                     case "shutdown" -> {
                         if (clientSocket.getInetAddress().isLoopbackAddress()) {
                             out.println("Shutdown command received");
@@ -59,8 +63,33 @@ class AdminServer extends Thread {
                             out.println("\tPlayers: " + joiner);
                             out.println("\tWatchers: " + games.get(g).watchers.keySet());
                         }
-                        out.println("There are currently " + gameServer.getGames().size() + " active games");
+//                        out.println("There " + (numGames == 1 ? "is" : "are") + " currently " + numGames + " active game" + (numGames == 1 ? "." : "s.");
+                        out.println("There %s currently %d active games %s."
+                                .formatted(games.size() == 1 ? "is" : "are", games.size(), games.size() == 1 ? "" : "s"));
                     }
+
+                    case "top" -> {
+                        Preferences prefs = Preferences.userNodeForPackage(Server.class);
+                        try {
+                            HashMap<String, Integer> ratings = new HashMap<>();
+                            for (String user : prefs.childrenNames()) {
+                                ratings.put(user, prefs.node(user).getInt("rating", 0));
+                            }
+                            ratings.entrySet()
+                                    .stream()
+                                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                                    .forEach(entry -> {
+                                        if(entry.getValue() > 0)
+                                            out.println(entry.getKey() + ": " + entry.getValue());
+                                    });
+
+                        }
+                        catch(BackingStoreException bse) {
+                            bse.printStackTrace();
+                        }
+
+                    }
+
                     case "users" -> out.println("Users: " + gameServer.getUsernames());
 
                     default -> out.println("Command not recognized");

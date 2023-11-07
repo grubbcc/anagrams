@@ -631,7 +631,9 @@ class Game {
 	void notifyRoom(String cmd, JSONObject json) {
 		synchronized(players) {
 			for(Player player : players.values()) {
-				server.getWorker(player.name).ifPresent(worker -> worker.send(cmd, json));
+				if(!player.abandoned) {
+					server.getWorker(player.name).ifPresent(worker -> worker.send(cmd, json));
+				}
 			}
 		}
 		synchronized(watchers) {
