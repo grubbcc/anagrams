@@ -1,2 +1,3 @@
-ANNOUNCEMENT: Woogles Anagrams Club meets Monday evenings at 8pm Eastern time (GMT -4).
-ANNOUNCEMENT: New feature: You can now save a game in GIF format! Just click the download button after a game.
+🗓️ ANNOUNCEMENT: Woogles Anagrams Club meets Monday evenings at 8pm Eastern time (GMT -4).
+♾️ ANNOUNCEMENT: Please check out the Facebook group for Anagrams lovers at facebook.com/groups/anagrams.game
+📢 ANNOUNCEMENT: The new and improved lexicons for 16+ letter words has been implemented. See github.com/grubbcc/longlist for details.
