@@ -243,7 +243,7 @@ class Game {
 				ratings.put(new JSONObject()
 						.put("name", player.name)
 						.put("rating", String.valueOf(newRating)));
-				ratingsSummary.add(player.name + " ⟶ " + newRating);
+				ratingsSummary.add(player.name + " → " + newRating);
 			}
 			if(allowChat) {
 				notifyRoom("gamechat", new JSONObject()
