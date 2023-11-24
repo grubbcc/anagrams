@@ -21,7 +21,7 @@ let data = null,
     depth = 0,
     angle = 360,
     radius = 160,
-    maxLength = 15,
+    maxLength = 21,
     zoom = d3.zoom()
         .scaleExtent([0.1, 10])
         .on("zoom", function({transform}) {
@@ -29,11 +29,11 @@ let data = null,
     });
 
 d3.select("#zoom_in").on("click", function() {
-   zoom.scaleBy(svg.transition().duration(600), 1.15);
+   zoom.scaleBy(svg.transition().duration(400), 1.25);
 });
 
 d3.select("#zoom_out").on("click", function() {
-   zoom.scaleBy(svg.transition().duration(600), 0.85);
+   zoom.scaleBy(svg.transition().duration(400), 0.8);
 });
 
 document.getElementById('words').onclick = function () {
