@@ -20,7 +20,7 @@ class Server extends Thread {
 	private static final int GAME_PORT = 8118;
 
 
-	private static final String[] lexicons = {"NWL20", "CSW21"};
+	private static final String[] lexicons = {"NWL23", "CSW21"};
 	private final Logger consoleLogger = Logger.getLogger("console");
 	private final Logger chatLogger = Logger.getLogger("chat"); // currently unused
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
@@ -78,7 +78,7 @@ class Server extends Thread {
 		}
 
 		httpServer.createContext("/CSW21/", this::handleRequest);
-		httpServer.createContext("/NWL20/", this::handleRequest);
+		httpServer.createContext("/NWL23/", this::handleRequest);
 
 		httpServer.start();
 		System.out.println("Lookup service started on port 8116");
@@ -232,7 +232,7 @@ class Server extends Thread {
 		String lexicon = exchange.getRequestURI().getPath().split("/")[1].toUpperCase();
 		String query = exchange.getRequestURI().getPath().split("/")[2]/*.toUpperCase()*/;
 		System.out.println("lexicon: " + lexicon +", query: " + query);
-		WordTree tree = new WordTree(query, getDictionary(lexicon), 15);
+		WordTree tree = new WordTree(query, getDictionary(lexicon));
 		tree.generateJSON(tree.rootNode.getWord().letters, tree.rootNode, 1);
 		final String json = tree.jsonArray.toString();
 
