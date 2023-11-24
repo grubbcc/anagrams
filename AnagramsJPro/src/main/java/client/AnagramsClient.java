@@ -74,7 +74,7 @@ class AnagramsClient extends JProApplication {
 	boolean guest = true;
 	JSONObject prefs;
 
-	static final String[] lexicons = {"CSW21", "NWL20"}; //change to enum
+	static final String[] lexicons = {"CSW21", "NWL23"}; //change to enum
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
 	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.mp3").toExternalForm();
 	private final String newGameSound = getClass().getResource("/sounds/new game sound.mp3").toExternalForm();
@@ -499,8 +499,8 @@ class AnagramsClient extends JProApplication {
 			Label lexiconLabel = new Label("Lexicon: " + lexicon);
 			if(lexicon.equals("CSW21"))
 				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words © 2021"));
-			else if(lexicon.equals("NWL20"))
-				lexiconLabel.setTooltip(new Tooltip("NASPA Word List © 2020"));
+			else if(lexicon.equals("NWL23"))
+				lexiconLabel.setTooltip(new Tooltip("NASPA Word List © 2023"));
 			Label minLengthLabel = new Label("Minimum word length: " + minLength);
 			Label numSetsLabel = new Label("Number of sets: " + numSets);
 			numSetsLabel.setTooltip(new Tooltip(100*numSets + " total tiles"));

@@ -97,7 +97,7 @@ class GameMenu extends PopWindow {
         final Label blankPenaltyLabel = new Label("Blank penalty");
         blankPenaltyLabel.setTooltip(new Tooltip("To use a blank, you must take\n this many additional tiles"));
         final Label wordListLabel = new Label("Word list");
-        wordListLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
+        wordListLabel.setTooltip(new Tooltip("NWL23 = North American\nCSW21 = International"));
         final Label speedLabel = new Label("Speed");
         speedLabel.setTooltip(new Tooltip("Slow: 9 seconds per tile\nMedium: 6 seconds per tile\nFast: 3 seconds per tile"));
         final Label waitLabel = new Label("Wait for");

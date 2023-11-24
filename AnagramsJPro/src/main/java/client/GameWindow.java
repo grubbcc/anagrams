@@ -453,6 +453,7 @@ class GameWindow extends PopWindow {
 
     /**
      * Sets the robot icon to be visible against the background.
+     * (This could be replaced by an ImageProperty bound to an Observable)
      *
      * @param dark whether the game foreground has a luminance < 40.
      */
