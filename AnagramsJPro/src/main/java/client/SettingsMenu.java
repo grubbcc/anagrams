@@ -45,7 +45,7 @@ class SettingsMenu extends PopWindow {
 
         //labels
         Label lexiconLabel = new Label("Word list");
-        lexiconLabel.setTooltip(new Tooltip("NWL20 = North American\nCSW21 = International"));
+        lexiconLabel.setTooltip(new Tooltip("NWL23 = North American\nCSW21 = International"));
 
         //selectors
         lexiconChooser.getSelectionModel().select(client.prefs.getString("lexicon"));
