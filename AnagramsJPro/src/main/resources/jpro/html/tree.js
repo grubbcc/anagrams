@@ -75,8 +75,8 @@ function setLexicon(lexicon) {
             document.getElementById('copyright-notice').innerHTML = 'Collins Official Scrabble Words, an imprint of HarperCollins Publishers Limited.';
             break;
 
-        case 'NWL20' :
-            document.getElementById('copyright-notice').innerHTML = 'NASPA Word List, 2020 Edition, © 2020 North American Word Game Players Association';
+        case 'NWL23' :
+            document.getElementById('copyright-notice').innerHTML = 'NASPA Word List, 2023 Edition, © 2023 North American Word Game Players Association';
             break;
     }
     return lexicon;
@@ -94,11 +94,11 @@ window.onload = function() {
             lexicon = setLexicon('CSW21');
         }
         else if(lexicon.match(/NWL[0-9]*/i)) {
-            lexicon = setLexicon('NWL20');
+            lexicon = setLexicon('NWL23');
         }
     }
     else
-        lexicon = setLexicon(localStorage.getItem('lexicon') || 'NWL20');
+        lexicon = setLexicon(localStorage.getItem('lexicon') || 'NWL23');
 
     let query = (new URL(document.location)).searchParams.get("query");
     if(query !== null && query.match(/[A-Za-z]{4,15}/)) {
