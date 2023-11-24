@@ -33,7 +33,7 @@ class WordExplorer extends PopWindow {
     private String lexicon;
     private final TextField textField = new TextField();
     private final Button goButton = new Button("Go");
-    private final String[] lexicons = {"CSW21", "NWL20"};
+    private final String[] lexicons = {"CSW21", "NWL23"};
     private final ComboBox<String> lexiconSelector = new ComboBox<>(FXCollections.observableArrayList(lexicons));
 
     private final TextArea messagePane = new TextArea();
