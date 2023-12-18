@@ -203,7 +203,7 @@ class Play {
             return longWord.length() - minLength >= penalty;
         }
         else if(longWord.length() - shortWord.length() >= Math.max(penalty, 1))  {
-            return isRearrangement(shortWord.replaceAll("[a-z]", "?"), nextWord().replaceAll("[a-z]","?"));
+            return isRearrangement(shortWord.toUpperCase(), longWord);
         }
         return false;
     }
