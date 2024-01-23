@@ -461,13 +461,15 @@ class Game {
 		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
 		if(!play.isValid()) return false;
 
+		if(!Utils.isRearrangement(shortWord.toUpperCase(), longWord.toUpperCase()))
+			return false;
+
 		//prevent duplicate words
 		for(Player player : players.values()) {
 			if(Utils.containsCaseInsensitive(player.words, longWord)) return false;
 		}
 
 		String nextWord = play.nextWord();
-		if(!Utils.isRearrangement(shortWord.replaceAll("[a-z]", "?"), nextWord.replaceAll("[a-z]","?"))) return false;
 
 		if(hasRobot) {
 			robotPlayer.removeTree(shortWord);
@@ -642,6 +644,5 @@ class Game {
 			}
 		}
 	}
-
 
 }
