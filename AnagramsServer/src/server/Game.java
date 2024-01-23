@@ -461,7 +461,7 @@ class Game {
 		Play play = new Play(shortWord, longWord, tilePool, minLength, blankPenalty);
 		if(!play.isValid()) return false;
 
-		if(!Utils.isRearrangement(shortWord.toUpperCase(), longWord.toUpperCase()))
+		if(!Utils.isRearrangement(shortWord.toUpperCase(), longWord))
 			return false;
 
 		//prevent duplicate words
