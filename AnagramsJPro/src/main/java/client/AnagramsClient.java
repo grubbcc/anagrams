@@ -1,6 +1,8 @@
 package client;
 
 import com.jpro.webapi.JProApplication;
+
+import com.jpro.webapi.WebAPI;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -200,17 +202,16 @@ class AnagramsClient extends JProApplication {
 				chatBox.scrollTopProperty().set(Double.MAX_VALUE);
 		});
 		chatField.setOnAction(ae -> {
-			String msg = String.format("%1.500s", chatField.getText()); //ISN'T WORKING
+			String msg = String.format("%1.500s", chatField.getText());
 			if(!msg.isBlank())
 				send("chat", new JSONObject().put("msg", username + ": " + msg));
 			chatField.clear();
 		});
-		KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
+
+		final KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
 		chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-			if(copyKey.match(keyEvent)) {
-				ClipboardContent content = new ClipboardContent();
-				content.putString(chatField.getSelectedText());
-				Clipboard.getSystemClipboard().setContent(content);
+			if (copyKey.match(keyEvent)) {
+				getWebAPI().executeScript("navigator.clipboard.writeText('%s')".formatted(chatBox.getSelectedText()));
 			}
 		});
 
