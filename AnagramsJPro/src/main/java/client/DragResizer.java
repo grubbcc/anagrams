@@ -5,7 +5,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 
 /**
- * Adapted from <a href="https://gist.github.com/andytill/4369729">...</a>
+ * Adapted from <a href="https://gist.github.com/andytill/4369729">gist.github.com/andytill/4369729</a>
  * @author atill
  */
 class DragResizer {
