@@ -9,8 +9,7 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -122,6 +121,12 @@ class WordExplorer extends PopWindow {
         messagePane.addEventFilter(MouseEvent.ANY, event -> {
             if(!(event.getTarget() instanceof Text || event.getTarget() instanceof ScrollBar || event.getTarget() instanceof StackPane)) {
                 Event.fireEvent(splitPane, event);
+            }
+        });
+        KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
+        messagePane.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+            if (copyKey.match(keyEvent)) {
+                client.getWebAPI().executeScript("navigator.clipboard.writeText('%s')".formatted(messagePane.getSelectedText()));
             }
         });
 
