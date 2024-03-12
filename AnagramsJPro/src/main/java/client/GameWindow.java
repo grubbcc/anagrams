@@ -8,7 +8,6 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.css.PseudoClass;
 import javafx.css.Styleable;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
@@ -208,13 +207,10 @@ class GameWindow extends PopWindow {
                     );
                 chatField.clear();
             });
-
             KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
             chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-                if(copyKey.match(keyEvent)) {
-                    ClipboardContent content = new ClipboardContent();
-                    content.putString(chatField.getSelectedText());
-                    Clipboard.getSystemClipboard().setContent(content);
+                if (copyKey.match(keyEvent)) {
+                    client.getWebAPI().executeScript("navigator.clipboard.writeText('%s')".formatted(chatBox.getSelectedText()));
                 }
             });
             chatPanel.setMaxHeight(100);
