@@ -9,7 +9,7 @@ buildscript {
 
     dependencies {
         classpath 'org.openjfx:javafx-plugin:0.0.14'
-        classpath 'one.jpro:jpro-gradle-plugin:2023.2.1'
+        classpath 'one.jpro:jpro-gradle-plugin:2024.1.0'
     }
 }
 
