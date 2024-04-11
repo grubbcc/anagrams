@@ -30,6 +30,7 @@ jpro {
 dependencies {
     implementation "com.sandec:mdfx:0.2.12"
     implementation "one.jpro:one.jpro.sound:0.1.0"
-    implementation 'org.json:json:20230227'
+    implementation 'org.json:json:20231013'
     implementation 'com.madgag:animated-gif-lib:1.4'
 }
+
