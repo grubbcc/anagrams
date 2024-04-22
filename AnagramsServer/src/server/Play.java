@@ -16,11 +16,16 @@ class Play {
 
     /**
      *
-     * @param shortWord
-     * @param longWord
-     * @param tiles
-     * @param minLength
-     * @param blankPenalty
+     * @param shortWord The word that is being stolen. For plays taken directly from the pool (i.e. not steals)
+     *                  this is the empty String. Blanks are indicated by lowercase letters.
+     * @param longWord The word the player is trying to form
+     * @param tiles The tiles in the pool, including wildcards (? tiles)
+     * @param minLength A word must be at least this many letters long. This will be a number between 4 and 10, inclusive.
+     * @param blankPenalty For each blank used in the word, this many additional tiles must be added. For example,
+     *                     if the minLength is 7 and the blankPenalty is 2, then a word taken from the pool must be
+     *                     at least 10 letters long (7 from the original word, 1 more to make the steal, and 2 more
+     *                     because of the penalty). If a blank is changed, the rule is the same; the longWord must be
+     *                     at least 10 letters long.
      */
     Play(String shortWord, String longWord, String tiles, int minLength, int blankPenalty) {
         this.shortWord = shortWord;
