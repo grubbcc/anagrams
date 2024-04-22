@@ -121,9 +121,6 @@ class GameWindow extends PopWindow {
         this.isWatcher = isWatcher;
         this.gameLog = gameLog;
 
-        Play.minLength = minLength;
-        Play.blankPenalty = blankPenalty;
-
         this.client = client;
         client.gameWindows.put(gameID, this);
         explorer = client.explorer;
@@ -390,11 +387,11 @@ class GameWindow extends PopWindow {
         }
 
         //Find the best play
-        Play bestPlay = new Play("", entry, tilePool);
+        Play bestPlay = new Play("", entry, tilePool, minLength, blankPenalty);
         int bestScore = bestPlay.getScore();
         outer: for (GamePanel panel : players.values()) {
             for (GamePanel.Word word : panel.words.values()) {
-                Play play = new Play(word.letters, entry, tilePool);
+                Play play = new Play(word.letters, entry, tilePool, minLength, blankPenalty);
                 int score = play.getScore();
                 if (score > bestScore) {
                     bestPlay = play;
@@ -1331,7 +1328,7 @@ class GameWindow extends PopWindow {
                     }
                     else if (input.length() > shortWord.length()) {
                         //Attempt to steal
-                        Play play = new Play(shortWord.letters, input, tilePool);
+                        Play play = new Play(shortWord.letters, input, tilePool, minLength, blankPenalty);
                         if (play.isValid()) {
                             client.send("steal", new JSONObject()
                                     .put("gameID", gameID)
@@ -1347,7 +1344,7 @@ class GameWindow extends PopWindow {
                 }
             }
             //Attempt to form word from pool
-            Play play = new Play("", input, tilePool);
+            Play play = new Play("", input, tilePool, minLength, blankPenalty);
             if (play.isValid()) {
                 client.send("makeword", new JSONObject()
                         .put("gameID", gameID)
