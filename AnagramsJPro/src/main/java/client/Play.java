@@ -5,8 +5,8 @@ package client;
  */
 class Play {
 
-    static int minLength;
-    static int blankPenalty;
+    final int minLength;
+    final int blankPenalty;
     final String shortWord;
     final String longWord;
     final String tilePool;
@@ -16,10 +16,12 @@ class Play {
     /**
      *
      */
-    Play(String shortWord, String longWord, String tiles) {
+    Play(String shortWord, String longWord, String tiles, int minLength, int blankPenalty) {
         this.shortWord = shortWord;
         this.longWord = longWord;
         this.tilePool = tiles;
+        this.minLength = minLength;
+        this.blankPenalty = blankPenalty;
     }
 
     /**
@@ -227,7 +229,7 @@ class Play {
      */
     static boolean isRearrangement(String shortWord, String longWord) {
 
-        while(longWord.length() >= shortWord.length() && shortWord.length() > 0) {
+        while(longWord.length() >= shortWord.length() && !shortWord.isEmpty()) {
             if (shortWord.charAt(0) == longWord.charAt(0)) {
                 shortWord = shortWord.substring(1);
             }
