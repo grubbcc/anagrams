@@ -652,7 +652,7 @@ class GameWindow extends PopWindow {
                 }
                 else {
                     ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
-                    constraints.setMinWidth(Math.max(newWord.width(), constraints.getMinWidth() * 1.2));
+                    constraints.setMinWidth(Math.max(newWord.width(), constraints.getPrefWidth() * 1.2));
                     allocateSpace();
                 }
             }
@@ -721,7 +721,7 @@ class GameWindow extends PopWindow {
             if(newWord.width() > paneWidth) return true;
             if(words.isEmpty()) return false;
 
-            Bounds bounds = wordPane.getChildren().get(wordPane.getChildren().size() - 1).getBoundsInParent();
+            Bounds bounds = wordPane.getChildren().getLast().getBoundsInParent();
 
             if (bounds.getMaxY() + wordPane.getVgap() + newWord.height() > paneHeight) {
                 return bounds.getMaxX() + (wordPane.getHgap() + newWord.width()) / 2 > paneWidth;
@@ -921,7 +921,7 @@ class GameWindow extends PopWindow {
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
                     getChildren().addAll(rect, text);
-                    x += tileWidth.get() + TILE_GAP;
+                    x += (int) (tileWidth.get() + TILE_GAP);
                 }
             }
         }
