@@ -61,7 +61,6 @@ class SnapshotPane extends GameWindowBase {
                 e.printStackTrace();
             }
         });
-
     }
 
     /**
@@ -70,7 +69,7 @@ class SnapshotPane extends GameWindowBase {
      */
     void animate() throws IOException {
 
-        final Duration frameDuration = Duration.millis(1000);
+        final Duration frameDuration = Duration.millis(200);
         Timeline animation = new Timeline(20);
 
         File tempFile = new File("tmp/" + gameID + ".gif");
