@@ -208,13 +208,6 @@ class AnagramsClient extends JProApplication {
 			chatField.clear();
 		});
 
-		final KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
-		chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-			if (copyKey.match(keyEvent)) {
-				getWebAPI().executeScript("navigator.clipboard.writeText('%s')".formatted(chatBox.getSelectedText()));
-			}
-		});
-
 		chatPanel.setBottom(chatField);
 		chatBox.setWrapText(true);
 		chatBox.setStyle("-fx-font-size: " + (getWebAPI().isMobile() ? 18 : 16) + ";");

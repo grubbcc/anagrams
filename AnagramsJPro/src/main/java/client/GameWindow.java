@@ -204,12 +204,7 @@ class GameWindow extends PopWindow {
                     );
                 chatField.clear();
             });
-            KeyCombination copyKey = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
-            chatBox.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-                if (copyKey.match(keyEvent)) {
-                    client.getWebAPI().executeScript("navigator.clipboard.writeText('%s')".formatted(chatBox.getSelectedText()));
-                }
-            });
+
             chatPanel.setMaxHeight(100);
             chatPanel.setPrefHeight(100);
             chatPanel.setMinHeight(0);
