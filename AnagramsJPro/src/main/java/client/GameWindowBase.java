@@ -1,7 +1,6 @@
 package client;
 
 
-import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -68,7 +67,7 @@ abstract class GameWindowBase extends BorderPane {
         );
 
         //game panels
-        gameGrid.setPadding(new Insets(3));
+        gameGrid.setPadding(new Insets(2));
         gameGrid.setHgap(3);
         gameGrid.setVgap(3);
 
@@ -136,13 +135,13 @@ abstract class GameWindowBase extends BorderPane {
         private final SimpleIntegerProperty tileHeight = new SimpleIntegerProperty();
         private final SimpleIntegerProperty tileFontSize = new SimpleIntegerProperty();
         private final SimpleBooleanProperty savingSpace = new SimpleBooleanProperty(false);
+        final static int PADDING = 3;
 
         final int column;
 
         boolean isAvailable = true;
         private final LinkedHashMap<String, Word> words = new LinkedHashMap<>();
         protected int score;
-
 
         /**
          * An empty placeholder gamePanel
@@ -160,8 +159,8 @@ abstract class GameWindowBase extends BorderPane {
             scrollPane.setFitToHeight(true);
             scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            scrollPane.prefViewportWidthProperty().bind(widthProperty().subtract(2));
-            scrollPane.prefViewportHeightProperty().bind(heightProperty().subtract(2));
+            scrollPane.prefViewportWidthProperty().bind(widthProperty());
+            scrollPane.prefViewportHeightProperty().bind(heightProperty());
 
             wordPane.setMaxHeight(column >= 0 ? 185 : 137);
 
@@ -169,7 +168,7 @@ abstract class GameWindowBase extends BorderPane {
             GridPane.setVgrow(this, Priority.ALWAYS);
             wordPane.setAlignment(Pos.TOP_CENTER);
             wordPane.hgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 6 : 12, savingSpace));
-            wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 6, savingSpace));
+            wordPane.vgapProperty().bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 2 : 5, savingSpace));
 
             tileWidth.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 12 : 16, savingSpace));
             tileHeight.bind(Bindings.createIntegerBinding(() -> savingSpace.get() ? 16 : 20, savingSpace));
@@ -210,7 +209,6 @@ abstract class GameWindowBase extends BorderPane {
             playerScoreLabel.setText("");
             playerNameLabel.setGraphic(null);
             isAvailable = true;
-            savingSpace.set(false);
         }
 
 
@@ -228,24 +226,24 @@ abstract class GameWindowBase extends BorderPane {
             double width = wordPane.getWidth();
             double height = wordPane.getMaxHeight();
 
+            savingSpace.set(false);
             boolean widthChanged = false;
 
-            if(!savingSpace.get()) {
-                if (willOverflow(width, height - 4, false)) {
-                    savingSpace.set(true);
-                }
-            }
+            if (willOverflow(width, height, false))
+                savingSpace.set(true);
 
-            if(savingSpace.get() && column >= 0) {
+            if(column >= 0 && savingSpace.get()) {
                 ColumnConstraints constraints = gameGrid.getColumnConstraints().get(column);
                 double columnWidth = constraints.getPrefWidth();
-                while (willOverflow(width, height - 4, true)) {
+
+                while (willOverflow(width, height, true)) {
                     widthChanged = true;
                     width *= 1.15;
                     columnWidth *= 1.15;
                 }
                 if(widthChanged) {
                     constraints.setMinWidth(columnWidth);
+                    constraints.setPrefWidth(columnWidth);
                     allocateSpace();
                 }
             }
@@ -254,6 +252,34 @@ abstract class GameWindowBase extends BorderPane {
                 word.draw();
 
             wordPane.getChildren().addAll(words.values());
+        }
+
+        /**
+         * Check if this panel of given width can fit the words of the given size without resizing.
+         * <b>
+         * Used during postgame in conjunction with the addWords method.
+         * @param paneWidth How wide this pane should be.
+         */
+        private boolean willOverflow(double paneWidth, double paneHeight, boolean small) {
+            double HGAP = wordPane.hgapProperty().get();
+            double VGAP = wordPane.vgapProperty().get();
+
+            double TILE_HEIGHT = savingSpace.get() ? 21 : 28;
+
+            double x = paneWidth/2 - HGAP/2;
+            double y = TILE_HEIGHT;
+
+            for(Word word : words.values()) {
+                x += (HGAP + word.width())/2;
+
+                if(x > paneWidth - PADDING) {
+                    x = paneWidth/2 + word.width()/2;
+                    y += TILE_HEIGHT + VGAP;
+                }
+            }
+
+            return y > paneHeight - PADDING;
+
         }
 
         /**
@@ -269,32 +295,6 @@ abstract class GameWindowBase extends BorderPane {
             }
         }
 
-        /**
-         * Check if this panel of given width can fit the words of the given size without resizing.
-         * <b>
-         * Used during postgame in conjunction with the addWords method.
-         * @param paneWidth How wide this pane should be.
-         */
-        private boolean willOverflow(double paneWidth, double paneHeight, boolean small) {
-            double HGAP = small ? 6 : 12;
-            double VGAP = small ? 7 : 14;
-            double TILE_WIDTH = small ? 12 : 16;
-            double TILE_HEIGHT = small ? 16 : 20;
-
-            double x = -HGAP;
-            double y = small ? 4.4 + TILE_HEIGHT : 7.2 + TILE_HEIGHT;
-
-            for(Word word : words.values()) {
-                x += HGAP + word.length()*TILE_WIDTH + (word.length()-1)* GamePanel.Word.TILE_GAP;
-                if(x > paneWidth) {
-                    x = -HGAP + word.length()*(TILE_WIDTH) + (word.length()-1)* GamePanel.Word.TILE_GAP + 2* GamePanel.Word.PADDING;
-                    y += VGAP + TILE_HEIGHT;
-                }
-            }
-
-            return y > paneHeight;
-
-        }
 
 
 
@@ -303,7 +303,6 @@ abstract class GameWindowBase extends BorderPane {
          */
         protected class Word extends Region {
 
-            protected static final int PADDING = 4;
             protected final static double TILE_GAP = 2;
             protected final String letters;
             protected final boolean highlight;
@@ -336,7 +335,7 @@ abstract class GameWindowBase extends BorderPane {
              *
              */
             protected double width() {
-                return length()*tileWidth.get() + (length() - 1)*TILE_GAP + 1 + PADDING;
+                return length()*tileWidth.get() + (length() - 1)*TILE_GAP;
             }
 
             /**
@@ -359,7 +358,7 @@ abstract class GameWindowBase extends BorderPane {
                     text.setFill(Character.isLowerCase(tile) ? Color.RED : Color.BLACK);
 
                     getChildren().addAll(rect, text);
-                    x += tileWidth.get() + TILE_GAP;
+                    x += (int) (tileWidth.get() + TILE_GAP);
                 }
             }
         }
