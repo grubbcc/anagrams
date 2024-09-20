@@ -20,7 +20,7 @@ class Server extends Thread {
 	private static final int GAME_PORT = 8118;
 
 
-	private static final String[] lexicons = {"NWL23", "CSW21"};
+	private static final String[] lexicons = {"NWL23", "CSW24"};
 	private final Logger consoleLogger = Logger.getLogger("console");
 	private final Logger chatLogger = Logger.getLogger("chat"); // currently unused
 	private final HashMap<String, AlphagramTrie> dictionaries = new HashMap<>();
@@ -77,7 +77,7 @@ class Server extends Thread {
 			ioexception.printStackTrace();
 		}
 
-		httpServer.createContext("/CSW21/", this::handleRequest);
+		httpServer.createContext("/CSW24/", this::handleRequest);
 		httpServer.createContext("/NWL23/", this::handleRequest);
 
 		httpServer.start();

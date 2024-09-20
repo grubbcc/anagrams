@@ -2,7 +2,6 @@ package client;
 
 import com.jpro.webapi.JProApplication;
 
-import com.jpro.webapi.WebAPI;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -76,7 +75,7 @@ class AnagramsClient extends JProApplication {
 	boolean guest = true;
 	JSONObject prefs;
 
-	static final String[] lexicons = {"CSW21", "NWL23"}; //change to enum
+	static final String[] lexicons = {"CSW24", "NWL23"}; //change to enum
 	final EnumMap<Colors, String> colors = new EnumMap<>(Colors.class);
 	private final String newPlayerSound = getClass().getResource("/sounds/new player sound.mp3").toExternalForm();
 	private final String newGameSound = getClass().getResource("/sounds/new game sound.mp3").toExternalForm();
@@ -491,8 +490,8 @@ class AnagramsClient extends JProApplication {
 
 			//labels
 			Label lexiconLabel = new Label("Lexicon: " + lexicon);
-			if(lexicon.equals("CSW21"))
-				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words © 2021"));
+			if(lexicon.equals("CSW24"))
+				lexiconLabel.setTooltip(new Tooltip("Collins Official Scrabble Words © 2024"));
 			else if(lexicon.equals("NWL23"))
 				lexiconLabel.setTooltip(new Tooltip("NASPA Word List © 2023"));
 			Label minLengthLabel = new Label("Minimum word length: " + minLength);

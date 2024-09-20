@@ -111,7 +111,7 @@ class ServerWorker implements Runnable {
 		send("availability", new JSONObject().put("available", true));
 		try(ExecutorService emailExecutor = Executors.newSingleThreadExecutor()) {
 			Random rand = new Random();
-			code = String.format("%06d", rand.nextInt(1000000));
+			code = String.format("%06d", rand.nextInt(1_000_000));
 
 			MimeMessage message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(from));

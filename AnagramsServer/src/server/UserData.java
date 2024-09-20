@@ -25,7 +25,7 @@ class UserData {
         .put("game_background", "#2d6893")
         .put("chat_area", "#a4dffc")
         .put("game_chat", "#002868")
-        .put("lexicon", "CSW21")
+        .put("lexicon", "CSW24")
         .put("speed", "medium")
         .put("robot_skill", "standard")
 
