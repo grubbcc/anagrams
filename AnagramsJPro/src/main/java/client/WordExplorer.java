@@ -330,7 +330,7 @@ class WordExplorer extends PopWindow {
     }
 
     /**
-     * Creates a table showing the number of steals of the rootWord organized by word length
+     * Creates a table showing the number of steals of the root word organized by word length
      *
      * @param counts The raw data as computed in the setUpTree method
      */
@@ -403,9 +403,10 @@ class WordExplorer extends PopWindow {
      * Sends the tree JSON data to the webpage and opens it.
      */
     private void viewListAsImage() {
-        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('lexicon', '" + lexicon + "')");
-        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('json', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
-        WebAPI.getWebAPI(getScene()).openURLAsTab("/tree.html");
+//        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('lexicon', '" + lexicon + "')");
+//        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('json', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
+        System.out.println("https://anagrams.site/tree/csw/" + lexicon + "/" + rootNode.getWord());
+        WebAPI.getWebAPI(getScene()).openURLAsTab("https://anagrams.site/tree/csw/" + lexicon + "/" + rootNode.getWord());
     }
 
 }
