@@ -405,8 +405,7 @@ class WordExplorer extends PopWindow {
     private void viewListAsImage() {
 //        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('lexicon', '" + lexicon + "')");
 //        WebAPI.getWebAPI(getScene()).executeScript("localStorage.setItem('json', '" + data.toString().replaceAll("'", "\\\\'") + "');" );
-        System.out.println("https://anagrams.site/tree/csw/" + lexicon + "/" + rootNode.getWord());
-        WebAPI.getWebAPI(getScene()).openURLAsTab("https://anagrams.site/tree/csw/" + lexicon + "/" + rootNode.getWord());
+        WebAPI.getWebAPI(getScene()).openURLAsTab("https://anagrams.site/tree/" + lexicon + "/" + rootNode.getWord());
     }
 
 }
